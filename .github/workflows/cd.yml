@@ -42,7 +42,8 @@ jobs:
       run: |
         if [ "${{ matrix.platform }}" = "windows" ]; then
           # Windows binaries have .exe extension
-          zip "vapor-${{ matrix.platform }}.zip" "target/${{ matrix.target }}/release/vapor.exe"
+          # Use 7z for better cross-platform compatibility
+          7z a "vapor-${{ matrix.platform }}.zip" "target/${{ matrix.target }}/release/vapor.exe"
         else
           # Unix-like systems (Linux, macOS)
           tar -czf "vapor-${{ matrix.platform }}.tar.gz" -C "target/${{ matrix.target }}/release" "vapor"
