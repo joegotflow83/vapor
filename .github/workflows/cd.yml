@@ -1,0 +1,100 @@
+name: CD - Continuous Deployment
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    name: Deploy Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            platform: macos
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            platform: windows
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: ${{ matrix.target }}
+
+    - name: Build release
+      run: |
+        cargo build --release --target ${{ matrix.target }}
+
+    - name: Package binary
+      run: |
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          # Windows
+          zip "vapor-${{ matrix.platform }}.zip" "target/${{ matrix.target }}/release/vapor.exe"
+        else
+          # Unix-like systems
+          tar -czf "vapor-${{ matrix.platform }}.tar.gz" -C "target/${{ matrix.target }}/release" "vapor"
+        fi
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: vapor-${{ matrix.platform }}
+        path: vapor-${{ matrix.platform }}.*
+
+  release:
+    name: Create GitHub Release
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Linux Release
+      uses: actions/upload-release-asset@v1
+      with:
+        asset_path: ./vapor-linux.tar.gz
+        asset_name: vapor-linux.tar.gz
+        asset_content_type: application/gzip
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    - name: Upload macOS Release
+      uses: actions/upload-release-asset@v1
+      with:
+        asset_path: ./vapor-macos.tar.gz
+        asset_name: vapor-macos.tar.gz
+        asset_content_type: application/gzip
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    - name: Upload Windows Release
+      uses: actions/upload-release-asset@v1
+      with:
+        asset_path: ./vapor-windows.zip
+        asset_name: vapor-windows.zip
+        asset_content_type: application/zip
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
