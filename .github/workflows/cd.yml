@@ -38,12 +38,13 @@ jobs:
         cargo build --release --target ${{ matrix.target }}
 
     - name: Package binary
+      shell: bash
       run: |
         if [ "${{ matrix.platform }}" = "windows" ]; then
-          # Windows
+          # Windows binaries have .exe extension
           zip "vapor-${{ matrix.platform }}.zip" "target/${{ matrix.target }}/release/vapor.exe"
         else
-          # Unix-like systems
+          # Unix-like systems (Linux, macOS)
           tar -czf "vapor-${{ matrix.platform }}.tar.gz" -C "target/${{ matrix.target }}/release" "vapor"
         fi
 
