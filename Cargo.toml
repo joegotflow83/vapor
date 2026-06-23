@@ -1,0 +1,170 @@
+[package]
+name = "vapor"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "vapor"
+path = "src/main.rs"
+
+[dependencies]
+async-graphql = { version = "7", features = ["chrono"] }
+async-graphql-axum = "7"
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+aws-sdk-ec2 = { version = "1", optional = true }
+aws-sdk-ssm = { version = "1", optional = true }
+aws-sdk-cloudwatch = { version = "1", optional = true }
+aws-sdk-cloudwatchlogs = { version = "1", optional = true }
+aws-sdk-autoscaling = { version = "1", optional = true }
+aws-sdk-elasticloadbalancingv2 = { version = "1", optional = true }
+aws-sdk-rds = { version = "1", optional = true }
+aws-sdk-ecs = { version = "1", optional = true }
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-kms = { version = "1", optional = true }
+aws-sdk-sqs = { version = "1", optional = true }
+aws-sdk-sns = { version = "1", optional = true }
+aws-sdk-secretsmanager = { version = "1", optional = true }
+aws-sdk-route53 = { version = "1", optional = true }
+aws-sdk-dynamodb = { version = "1", optional = true }
+aws-sdk-opensearch = { version = "1", optional = true }
+aws-sdk-eks = { version = "1", optional = true }
+aws-sdk-acm = { version = "1", optional = true }
+aws-sdk-lambda = { version = "1", optional = true }
+aws-sdk-s3 = { version = "1", optional = true }
+aws-sdk-iam = { version = "1", optional = true }
+aws-sdk-ecr = { version = "1", optional = true }
+aws-sdk-cloudfront = { version = "1", optional = true }
+aws-sdk-elasticache = { version = "1", optional = true }
+aws-sdk-cloudformation = { version = "1", optional = true }
+aws-sdk-eventbridge = { version = "1", optional = true }
+aws-sdk-guardduty = { version = "1", optional = true }
+aws-sdk-config = { version = "1", optional = true }
+aws-sdk-codepipeline = { version = "1", optional = true }
+aws-sdk-codebuild = { version = "1", optional = true }
+aws-sdk-codedeploy = { version = "1", optional = true }
+aws-sdk-kinesis = { version = "1", optional = true }
+aws-sdk-firehose = { version = "1", optional = true }
+aws-sdk-kafka = { version = "1", optional = true }
+aws-sdk-redshift = { version = "1", optional = true }
+aws-sdk-redshiftserverless = { version = "1", optional = true }
+aws-sdk-memorydb = { version = "1", optional = true }
+aws-sdk-sfn = { version = "1", optional = true }
+aws-sdk-costexplorer = { version = "1", optional = true }
+aws-sdk-sts = { version = "1", optional = true }
+aws-sdk-cloudtrail = { version = "1", optional = true }
+aws-sdk-wafv2 = { version = "1", optional = true }
+aws-sdk-glue = { version = "1", optional = true }
+aws-sdk-efs = { version = "1", optional = true }
+aws-sdk-athena = { version = "1", optional = true }
+aws-sdk-organizations = { version = "1", optional = true }
+aws-sdk-cognitoidentityprovider = { version = "1", optional = true }
+aws-sdk-appsync = { version = "1", optional = true }
+aws-sdk-backup = { version = "1", optional = true }
+aws-sdk-servicequotas = { version = "1", optional = true }
+aws-sdk-health = { version = "1", optional = true }
+aws-sdk-inspector2 = { version = "1", optional = true }
+aws-sdk-securityhub = { version = "1", optional = true }
+aws-sdk-neptune = { version = "1", optional = true }
+aws-sdk-docdb = { version = "1", optional = true }
+aws-sdk-emr = { version = "1", optional = true }
+aws-sdk-sagemaker = { version = "1", optional = true }
+aws-sdk-batch = { version = "1", optional = true }
+aws-sdk-apigateway = { version = "1", optional = true }
+aws-sdk-apigatewayv2 = { version = "1", optional = true }
+aws-sdk-transfer = { version = "1", optional = true }
+aws-sdk-appconfig = { version = "1", optional = true }
+aws-sdk-globalaccelerator = { version = "1", optional = true }
+aws-sdk-directconnect = { version = "1", optional = true }
+aws-sdk-macie2 = { version = "1", optional = true }
+aws-sdk-networkfirewall = { version = "1", optional = true }
+aws-sdk-shield = { version = "1", optional = true }
+futures = "0.3"
+base64 = "0.22"
+chrono = "0.4"
+serde_json = "1"
+
+[features]
+default = ["ec2", "s3", "lambda"]
+ec2 = ["dep:aws-sdk-ec2"]
+ssm = ["dep:aws-sdk-ssm"]
+cloudwatch = ["dep:aws-sdk-cloudwatch"]
+cloudwatchlogs = ["dep:aws-sdk-cloudwatchlogs"]
+autoscaling = ["dep:aws-sdk-autoscaling"]
+elbv2 = ["dep:aws-sdk-elasticloadbalancingv2"]
+rds = ["dep:aws-sdk-rds"]
+ecs = ["dep:aws-sdk-ecs"]
+kms = ["dep:aws-sdk-kms"]
+sqs = ["dep:aws-sdk-sqs"]
+sns = ["dep:aws-sdk-sns"]
+secretsmanager = ["dep:aws-sdk-secretsmanager"]
+route53 = ["dep:aws-sdk-route53"]
+dynamodb = ["dep:aws-sdk-dynamodb"]
+opensearch = ["dep:aws-sdk-opensearch"]
+eks = ["dep:aws-sdk-eks"]
+acm = ["dep:aws-sdk-acm"]
+lambda = ["dep:aws-sdk-lambda"]
+s3 = ["dep:aws-sdk-s3"]
+iam = ["dep:aws-sdk-iam"]
+ecr = ["dep:aws-sdk-ecr"]
+cloudfront = ["dep:aws-sdk-cloudfront"]
+elasticache = ["dep:aws-sdk-elasticache"]
+cloudformation = ["dep:aws-sdk-cloudformation"]
+eventbridge = ["dep:aws-sdk-eventbridge"]
+guardduty = ["dep:aws-sdk-guardduty"]
+config = ["dep:aws-sdk-config"]
+codepipeline = ["dep:aws-sdk-codepipeline"]
+codebuild = ["dep:aws-sdk-codebuild"]
+codedeploy = ["dep:aws-sdk-codedeploy"]
+kinesis = ["dep:aws-sdk-kinesis"]
+firehose = ["dep:aws-sdk-firehose"]
+kafka = ["dep:aws-sdk-kafka"]
+redshift = ["dep:aws-sdk-redshift"]
+redshiftserverless = ["dep:aws-sdk-redshiftserverless"]
+memorydb = ["dep:aws-sdk-memorydb"]
+sfn = ["dep:aws-sdk-sfn"]
+costexplorer = ["dep:aws-sdk-costexplorer"]
+sts = ["dep:aws-sdk-sts"]
+cloudtrail = ["dep:aws-sdk-cloudtrail"]
+wafv2 = ["dep:aws-sdk-wafv2"]
+glue = ["dep:aws-sdk-glue"]
+efs = ["dep:aws-sdk-efs"]
+athena = ["dep:aws-sdk-athena"]
+organizations = ["dep:aws-sdk-organizations"]
+cognitoidentityprovider = ["dep:aws-sdk-cognitoidentityprovider"]
+appsync = ["dep:aws-sdk-appsync"]
+backup = ["dep:aws-sdk-backup"]
+servicequotas = ["dep:aws-sdk-servicequotas"]
+health = ["dep:aws-sdk-health"]
+inspector2 = ["dep:aws-sdk-inspector2"]
+securityhub = ["dep:aws-sdk-securityhub"]
+neptune = ["dep:aws-sdk-neptune"]
+docdb = ["dep:aws-sdk-docdb"]
+emr = ["dep:aws-sdk-emr"]
+sagemaker = ["dep:aws-sdk-sagemaker"]
+batch = ["dep:aws-sdk-batch"]
+apigateway = ["dep:aws-sdk-apigateway"]
+apigatewayv2 = ["dep:aws-sdk-apigatewayv2"]
+transfer = ["dep:aws-sdk-transfer"]
+appconfig = ["dep:aws-sdk-appconfig"]
+globalaccelerator = ["dep:aws-sdk-globalaccelerator"]
+directconnect = ["dep:aws-sdk-directconnect"]
+macie2 = ["dep:aws-sdk-macie2"]
+networkfirewall = ["dep:aws-sdk-networkfirewall"]
+shield = ["dep:aws-sdk-shield"]
+
+# Feature groups for easier combinations
+# Basic AWS services
+basic = ["ec2", "s3", "lambda", "ssm"]
+# Web services
+web = ["ec2", "elbv2", "s3", "lambda", "apigateway"]
+# Data services
+data = ["s3", "dynamodb", "redshift", "athena", "glue"]
+# Monitoring and management
+monitoring = ["cloudwatch", "cloudwatchlogs", "config", "inspector2", "securityhub"]
+# DevOps services
+devops = ["codepipeline", "codebuild", "codedeploy", "cloudformation"]
+
+[profile.release]
+codegen-units = 1
