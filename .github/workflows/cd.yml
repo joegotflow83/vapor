@@ -42,7 +42,6 @@ jobs:
       run: |
         if [ "${{ matrix.platform }}" = "windows" ]; then
           # Windows binaries have .exe extension
-          # Use 7z for better cross-platform compatibility
           7z a "vapor-${{ matrix.platform }}.zip" "target/${{ matrix.target }}/release/vapor.exe"
         else
           # Unix-like systems (Linux, macOS)
@@ -54,52 +53,3 @@ jobs:
       with:
         name: vapor-${{ matrix.platform }}
         path: vapor-${{ matrix.platform }}.*
-
-  release:
-    name: Create GitHub Release
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-        token: ${{ secrets.GITHUB_TOKEN }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Linux Release
-      uses: actions/upload-release-asset@v1
-      with:
-        asset_path: ./vapor-linux.tar.gz
-        asset_name: vapor-linux.tar.gz
-        asset_content_type: application/gzip
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-
-    - name: Upload macOS Release
-      uses: actions/upload-release-asset@v1
-      with:
-        asset_path: ./vapor-macos.tar.gz
-        asset_name: vapor-macos.tar.gz
-        asset_content_type: application/gzip
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-
-    - name: Upload Windows Release
-      uses: actions/upload-release-asset@v1
-      with:
-        asset_path: ./vapor-windows.zip
-        asset_name: vapor-windows.zip
-        asset_content_type: application/zip
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
