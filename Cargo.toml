@@ -13,73 +13,73 @@ async-graphql-axum = "7"
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
 clap = { version = "4", features = ["derive"] }
-aws-sdk-ec2 = { version = "1", optional = true }
-aws-sdk-ssm = { version = "1", optional = true }
-aws-sdk-cloudwatch = { version = "1", optional = true }
-aws-sdk-cloudwatchlogs = { version = "1", optional = true }
-aws-sdk-autoscaling = { version = "1", optional = true }
-aws-sdk-elasticloadbalancingv2 = { version = "1", optional = true }
-aws-sdk-rds = { version = "1", optional = true }
-aws-sdk-ecs = { version = "1", optional = true }
+aws-sdk-ec2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-ssm = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-cloudwatch = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-cloudwatchlogs = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-autoscaling = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-elasticloadbalancingv2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-rds = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-ecs = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
-aws-sdk-kms = { version = "1", optional = true }
-aws-sdk-sqs = { version = "1", optional = true }
-aws-sdk-sns = { version = "1", optional = true }
-aws-sdk-secretsmanager = { version = "1", optional = true }
-aws-sdk-route53 = { version = "1", optional = true }
-aws-sdk-dynamodb = { version = "1", optional = true }
-aws-sdk-opensearch = { version = "1", optional = true }
-aws-sdk-eks = { version = "1", optional = true }
-aws-sdk-acm = { version = "1", optional = true }
-aws-sdk-lambda = { version = "1", optional = true }
-aws-sdk-s3 = { version = "1", optional = true }
-aws-sdk-iam = { version = "1", optional = true }
-aws-sdk-ecr = { version = "1", optional = true }
-aws-sdk-cloudfront = { version = "1", optional = true }
-aws-sdk-elasticache = { version = "1", optional = true }
-aws-sdk-cloudformation = { version = "1", optional = true }
-aws-sdk-eventbridge = { version = "1", optional = true }
-aws-sdk-guardduty = { version = "1", optional = true }
-aws-sdk-config = { version = "1", optional = true }
-aws-sdk-codepipeline = { version = "1", optional = true }
-aws-sdk-codebuild = { version = "1", optional = true }
-aws-sdk-codedeploy = { version = "1", optional = true }
-aws-sdk-kinesis = { version = "1", optional = true }
-aws-sdk-firehose = { version = "1", optional = true }
-aws-sdk-kafka = { version = "1", optional = true }
-aws-sdk-redshift = { version = "1", optional = true }
-aws-sdk-redshiftserverless = { version = "1", optional = true }
-aws-sdk-memorydb = { version = "1", optional = true }
-aws-sdk-sfn = { version = "1", optional = true }
-aws-sdk-costexplorer = { version = "1", optional = true }
-aws-sdk-sts = { version = "1", optional = true }
-aws-sdk-cloudtrail = { version = "1", optional = true }
-aws-sdk-wafv2 = { version = "1", optional = true }
-aws-sdk-glue = { version = "1", optional = true }
-aws-sdk-efs = { version = "1", optional = true }
-aws-sdk-athena = { version = "1", optional = true }
-aws-sdk-organizations = { version = "1", optional = true }
-aws-sdk-cognitoidentityprovider = { version = "1", optional = true }
-aws-sdk-appsync = { version = "1", optional = true }
-aws-sdk-backup = { version = "1", optional = true }
-aws-sdk-servicequotas = { version = "1", optional = true }
-aws-sdk-health = { version = "1", optional = true }
-aws-sdk-inspector2 = { version = "1", optional = true }
-aws-sdk-securityhub = { version = "1", optional = true }
-aws-sdk-neptune = { version = "1", optional = true }
-aws-sdk-docdb = { version = "1", optional = true }
-aws-sdk-emr = { version = "1", optional = true }
-aws-sdk-sagemaker = { version = "1", optional = true }
-aws-sdk-batch = { version = "1", optional = true }
-aws-sdk-apigateway = { version = "1", optional = true }
-aws-sdk-apigatewayv2 = { version = "1", optional = true }
-aws-sdk-transfer = { version = "1", optional = true }
-aws-sdk-appconfig = { version = "1", optional = true }
-aws-sdk-globalaccelerator = { version = "1", optional = true }
-aws-sdk-directconnect = { version = "1", optional = true }
-aws-sdk-macie2 = { version = "1", optional = true }
-aws-sdk-networkfirewall = { version = "1", optional = true }
-aws-sdk-shield = { version = "1", optional = true }
+aws-sdk-kms = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-sqs = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-sns = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-secretsmanager = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-route53 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-dynamodb = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-opensearch = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-eks = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-acm = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-lambda = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-s3 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-iam = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-ecr = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-cloudfront = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-elasticache = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-cloudformation = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-eventbridge = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-guardduty = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-config = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-codepipeline = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-codebuild = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-codedeploy = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-kinesis = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-firehose = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-kafka = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-redshift = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-redshiftserverless = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-memorydb = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-sfn = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-costexplorer = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-sts = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-cloudtrail = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-wafv2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-glue = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-efs = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-athena = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-organizations = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-cognitoidentityprovider = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-appsync = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-backup = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-servicequotas = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-health = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-inspector2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-securityhub = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-neptune = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-docdb = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-emr = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-sagemaker = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-batch = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-apigateway = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-apigatewayv2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-transfer = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-appconfig = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-globalaccelerator = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-directconnect = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-macie2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-networkfirewall = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-shield = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 futures = "0.3"
 base64 = "0.22"
 chrono = "0.4"
