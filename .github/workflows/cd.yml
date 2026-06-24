@@ -59,6 +59,8 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
@@ -72,37 +74,14 @@ jobs:
         merge-multiple: true
 
     - name: Create Release
-      id: create_release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
+        files: |
+          vapor-linux.tar.gz
+          vapor-macos.tar.gz
+          vapor-windows.zip
         token: ${{ secrets.GITHUB_TOKEN }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Linux Release
-      uses: actions/upload-release-asset@v1
-      with:
-        asset_path: ./vapor-linux.tar.gz
-        asset_name: vapor-linux.tar.gz
-        asset_content_type: application/gzip
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-
-    - name: Upload macOS Release
-      uses: actions/upload-release-asset@v1
-      with:
-        asset_path: ./vapor-macos.tar.gz
-        asset_name: vapor-macos.tar.gz
-        asset_content_type: application/gzip
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-
-    - name: Upload Windows Release
-      uses: actions/upload-release-asset@v1
-      with:
-        asset_path: ./vapor-windows.zip
-        asset_name: vapor-windows.zip
-        asset_content_type: application/zip
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
