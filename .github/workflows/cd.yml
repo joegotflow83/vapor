@@ -69,6 +69,7 @@ jobs:
       with:
         pattern: vapor-*
         path: .
+        merge-multiple: true
 
     - name: Create Release
       id: create_release
