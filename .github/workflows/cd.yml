@@ -6,9 +6,22 @@ on:
       - 'v*'
 
 jobs:
-  build-and-release:
-    name: Build and Release
-    runs-on: ubuntu-latest
+  deploy:
+    name: Deploy Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            platform: macos
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            platform: windows
 
     steps:
     - name: Checkout code
@@ -18,24 +31,44 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        target: ${{ matrix.target }}
 
-    # Build for Linux
-    - name: Build Linux release
+    - name: Build release
       run: |
-        cargo build --release --target x86_64-unknown-linux-gnu
-        tar -czf vapor-linux.tar.gz -C target/x86_64-unknown-linux-gnu/release vapor
+        cargo build --release --target ${{ matrix.target }}
 
-    # Build for macOS
-    - name: Build macOS release
+    - name: Package binary
+      shell: bash
       run: |
-        cargo build --release --target x86_64-apple-darwin
-        tar -czf vapor-macos.tar.gz -C target/x86_64-apple-darwin/release vapor
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          # Windows binaries have .exe extension
+          7z a "vapor-${{ matrix.platform }}.zip" "target/${{ matrix.target }}/release/vapor.exe"
+        else
+          # Unix-like systems (Linux, macOS)
+          tar -czf "vapor-${{ matrix.platform }}.tar.gz" -C "target/${{ matrix.target }}/release" "vapor"
+        fi
 
-    # Build for Windows
-    - name: Build Windows release
-      run: |
-        cargo build --release --target x86_64-pc-windows-gnu
-        7z a vapor-windows.zip target/x86_64-pc-windows-gnu/release/vapor.exe
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: vapor-${{ matrix.platform }}
+        path: vapor-${{ matrix.platform }}.*
+
+  release:
+    name: Create GitHub Release
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: vapor-*
+        path: .
 
     - name: Create Release
       id: create_release
@@ -46,7 +79,29 @@ jobs:
         draft: false
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
-        files: |
-          vapor-linux.tar.gz
-          vapor-macos.tar.gz
-          vapor-windows.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Linux Release
+      uses: actions/upload-release-asset@v1
+      with:
+        asset_path: ./vapor-linux.tar.gz
+        asset_name: vapor-linux.tar.gz
+        asset_content_type: application/gzip
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    - name: Upload macOS Release
+      uses: actions/upload-release-asset@v1
+      with:
+        asset_path: ./vapor-macos.tar.gz
+        asset_name: vapor-macos.tar.gz
+        asset_content_type: application/gzip
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    - name: Upload Windows Release
+      uses: actions/upload-release-asset@v1
+      with:
+        asset_path: ./vapor-windows.zip
+        asset_name: vapor-windows.zip
+        asset_content_type: application/zip
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
