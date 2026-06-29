@@ -4,3 +4,6 @@ PROMPT*
 loop.sh
 target/
 CLAUDE.md
+memory/
+specs/
+.aider*

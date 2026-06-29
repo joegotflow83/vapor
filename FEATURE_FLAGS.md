@@ -7,72 +7,108 @@ This document describes how to use the feature flags system in Vapor to enable/d
 ### Individual Service Features
 Each AWS service has its own feature flag that can be enabled/disabled:
 
-- `ec2` - EC2 service
-- `s3` - S3 service  
-- `lambda` - Lambda service
-- `ssm` - Systems Manager service
-- `cloudwatch` - CloudWatch service
-- `cloudwatchlogs` - CloudWatch Logs service
-- `autoscaling` - Auto Scaling service
-- `elbv2` - Elastic Load Balancing v2 service
-- `rds` - RDS service
-- `ecs` - ECS service
-- `kms` - KMS service
-- `sqs` - SQS service
-- `sns` - SNS service
-- `secretsmanager` - Secrets Manager service
-- `route53` - Route 53 service
-- `dynamodb` - DynamoDB service
-- `opensearch` - OpenSearch service
-- `eks` - EKS service
-- `acm` - ACM service
-- `iam` - IAM service
-- `ecr` - ECR service
-- `cloudfront` - CloudFront service
-- `elasticache` - ElastiCache service
-- `cloudformation` - CloudFormation service
-- `eventbridge` - EventBridge service
-- `guardduty` - GuardDuty service
-- `config` - AWS Config service
-- `codepipeline` - CodePipeline service
-- `codebuild` - CodeBuild service
-- `codedeploy` - CodeDeploy service
-- `kinesis` - Kinesis service
-- `firehose` - Firehose service
-- `kafka` - Kafka service
-- `redshift` - Redshift service
-- `redshiftserverless` - Redshift Serverless service
-- `memorydb` - MemoryDB service
-- `sfn` - Step Functions service
-- `costexplorer` - Cost Explorer service
-- `sts` - STS service
-- `cloudtrail` - CloudTrail service
-- `wafv2` - WAF v2 service
-- `glue` - Glue service
-- `efs` - EFS service
-- `athena` - Athena service
-- `organizations` - Organizations service
-- `cognitoidentityprovider` - Cognito Identity Provider service
-- `appsync` - AppSync service
-- `backup` - Backup service
-- `servicequotas` - Service Quotas service
-- `health` - Health service
-- `inspector2` - Inspector v2 service
-- `securityhub` - Security Hub service
-- `neptune` - Neptune service
-- `docdb` - DocumentDB service
-- `emr` - EMR service
-- `sagemaker` - SageMaker service
-- `batch` - Batch service
-- `apigateway` - API Gateway service
-- `apigatewayv2` - API Gateway v2 service
-- `transfer` - Transfer service
-- `appconfig` - AppConfig service
-- `globalaccelerator` - Global Accelerator service
-- `directconnect` - Direct Connect service
-- `macie2` - Macie v2 service
-- `networkfirewall` - Network Firewall service
-- `shield` - Shield service
+- `acm` - Certificate Manager
+- `acmpca` - ACM Private CA
+- `apigateway` - API Gateway (REST)
+- `apigatewayv2` - API Gateway v2 (HTTP/WebSocket)
+- `appconfig` - AppConfig
+- `apprunner` - App Runner
+- `appsync` - AppSync
+- `athena` - Athena
+- `auditmanager` - Audit Manager
+- `autoscaling` - Auto Scaling
+- `backup` - Backup
+- `batch` - Batch
+- `bedrock` - Bedrock
+- `budgets` - Budgets
+- `cloudformation` - CloudFormation
+- `cloudfront` - CloudFront
+- `cloudtrail` - CloudTrail
+- `cloudwatch` - CloudWatch (includes Logs)
+- `cloudwatchlogs` - CloudWatch Logs (pulled in by `cloudwatch`)
+- `codeartifact` - CodeArtifact
+- `codebuild` - CodeBuild
+- `codecommit` - CodeCommit
+- `codedeploy` - CodeDeploy
+- `codepipeline` - CodePipeline
+- `cognitoidentityprovider` - Cognito Identity Provider
+- `comprehend` - Comprehend
+- `config` - AWS Config
+- `connect` - Connect
+- `controltower` - Control Tower
+- `costexplorer` - Cost Explorer
+- `datasync` - DataSync
+- `detective` - Detective
+- `directconnect` - Direct Connect
+- `dms` - Database Migration Service
+- `docdb` - DocumentDB
+- `dynamodb` - DynamoDB
+- `ec2` - EC2 and VPC resources
+- `ecr` - ECR
+- `ecs` - ECS
+- `efs` - EFS
+- `eks` - EKS
+- `elasticache` - ElastiCache
+- `elasticbeanstalk` - Elastic Beanstalk
+- `elbv2` - Elastic Load Balancing v2
+- `emr` - EMR
+- `eventbridge` - EventBridge
+- `firehose` - Kinesis Data Firehose
+- `fms` - Firewall Manager
+- `fsx` - FSx
+- `globalaccelerator` - Global Accelerator
+- `glue` - Glue
+- `guardduty` - GuardDuty
+- `health` - Health
+- `iam` - IAM
+- `inspector2` - Inspector v2
+- `iot` - IoT Core
+- `kafka` - MSK (Managed Streaming for Kafka)
+- `keyspaces` - Amazon Keyspaces
+- `kinesis` - Kinesis Data Streams
+- `kms` - KMS
+- `lakeformation` - Lake Formation
+- `lambda` - Lambda
+- `licensemanager` - License Manager
+- `lightsail` - Lightsail
+- `macie2` - Macie v2
+- `memorydb` - MemoryDB
+- `mq` - Amazon MQ
+- `neptune` - Neptune
+- `networkfirewall` - Network Firewall
+- `opensearch` - OpenSearch
+- `organizations` - Organizations
+- `pinpoint` - Pinpoint
+- `polly` - Polly
+- `qldb` - QLDB
+- `quicksight` - QuickSight
+- `ram` - Resource Access Manager
+- `rds` - RDS
+- `redshift` - Redshift
+- `redshiftserverless` - Redshift Serverless
+- `rekognition` - Rekognition
+- `route53` - Route 53
+- `s3` - S3
+- `sagemaker` - SageMaker
+- `secretsmanager` - Secrets Manager
+- `securityhub` - Security Hub
+- `servicequotas` - Service Quotas
+- `sesv2` - Simple Email Service v2
+- `sfn` - Step Functions
+- `shield` - Shield
+- `sns` - SNS
+- `sqs` - SQS
+- `ssm` - Systems Manager
+- `ssoadmin` - IAM Identity Center (SSO Admin)
+- `storagegateway` - Storage Gateway
+- `sts` - STS
+- `timestream` - Timestream
+- `transcribe` - Transcribe
+- `transfer` - Transfer Family
+- `translate` - Translate
+- `wafv2` - WAF v2
+- `workspaces` - WorkSpaces
+- `xray` - X-Ray
 
 ### Feature Groups
 Predefined feature groups for common combinations:

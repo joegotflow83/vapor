@@ -347,5 +347,184 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
         builder = builder.data(crate::aws::backup::BackupClient::new(config));
     }
 
+    #[cfg(feature = "ssoadmin")]
+    {
+        builder = builder.data(crate::aws::sso_admin::SsoAdminClient::new(config));
+    }
+
+    #[cfg(feature = "acmpca")]
+    {
+        builder = builder.data(crate::aws::acm_pca::AcmPcaClient::new(config));
+    }
+
+    #[cfg(feature = "ram")]
+    {
+        builder = builder.data(crate::aws::ram::RamClient::new(config));
+    }
+
+    #[cfg(feature = "controltower")]
+    {
+        builder = builder.data(crate::aws::control_tower::ControlTowerClient::new(config));
+    }
+
+    #[cfg(feature = "fms")]
+    {
+        builder = builder.data(crate::aws::fms::FmsClient::new(config));
+    }
+
+    #[cfg(feature = "auditmanager")]
+    {
+        builder = builder.data(crate::aws::audit_manager::AuditManagerClient::new(config));
+    }
+
+    #[cfg(feature = "detective")]
+    {
+        builder = builder.data(crate::aws::detective::DetectiveClient::new(config));
+    }
+
+    #[cfg(feature = "sesv2")]
+    {
+        builder = builder.data(crate::aws::ses::SesClient::new(config));
+    }
+
+    #[cfg(feature = "elasticbeanstalk")]
+    {
+        builder = builder.data(crate::aws::elastic_beanstalk::ElasticBeanstalkClient::new(config));
+    }
+
+    #[cfg(feature = "apprunner")]
+    {
+        builder = builder.data(crate::aws::app_runner::AppRunnerClient::new(config));
+    }
+
+    #[cfg(feature = "fsx")]
+    {
+        builder = builder.data(crate::aws::fsx::FsxClient::new(config));
+    }
+
+    #[cfg(feature = "mq")]
+    {
+        builder = builder.data(crate::aws::mq::MqClient::new(config));
+    }
+
+    #[cfg(feature = "dms")]
+    {
+        builder = builder.data(crate::aws::dms::DmsClient::new(config));
+    }
+
+    #[cfg(feature = "workspaces")]
+    {
+        builder = builder.data(crate::aws::workspaces::WorkspacesClient::new(config));
+    }
+
+    #[cfg(feature = "storagegateway")]
+    {
+        builder = builder.data(crate::aws::storage_gateway::StorageGatewayClient::new(config));
+    }
+
+    #[cfg(feature = "datasync")]
+    {
+        builder = builder.data(crate::aws::datasync::DataSyncClient::new(config));
+    }
+
+    #[cfg(feature = "lightsail")]
+    {
+        builder = builder.data(crate::aws::lightsail::LightsailClient::new(config));
+    }
+
+    #[cfg(feature = "qldb")]
+    {
+        builder = builder.data(crate::aws::qldb::QldbClient::new(config));
+    }
+
+    #[cfg(feature = "keyspaces")]
+    {
+        builder = builder.data(crate::aws::keyspaces::KeyspacesClient::new(config));
+    }
+
+    #[cfg(feature = "bedrock")]
+    {
+        builder = builder.data(crate::aws::bedrock::BedrockClient::new(config));
+    }
+
+    #[cfg(feature = "xray")]
+    {
+        builder = builder.data(crate::aws::xray::XRayClient::new(config));
+    }
+
+    #[cfg(feature = "timestream")]
+    {
+        builder = builder.data(crate::aws::timestream::TimestreamClient::new(config));
+    }
+
+    #[cfg(feature = "lakeformation")]
+    {
+        builder = builder.data(crate::aws::lake_formation::LakeFormationClient::new(config));
+    }
+
+    #[cfg(feature = "quicksight")]
+    {
+        builder = builder.data(crate::aws::quicksight::QuickSightClient::new(config));
+    }
+
+    #[cfg(feature = "comprehend")]
+    {
+        builder = builder.data(crate::aws::comprehend::ComprehendClient::new(config));
+    }
+
+    #[cfg(feature = "rekognition")]
+    {
+        builder = builder.data(crate::aws::rekognition::RekognitionClient::new(config));
+    }
+
+    #[cfg(feature = "transcribe")]
+    {
+        builder = builder.data(crate::aws::transcribe::TranscribeClient::new(config));
+    }
+
+    #[cfg(feature = "translate")]
+    {
+        builder = builder.data(crate::aws::translate::TranslateClient::new(config));
+    }
+    #[cfg(feature = "polly")]
+    {
+        builder = builder.data(crate::aws::polly::PollyClient::new(config));
+    }
+
+    #[cfg(feature = "codeartifact")]
+    {
+        builder = builder.data(crate::aws::codeartifact::CodeArtifactClient::new(config));
+    }
+
+    #[cfg(feature = "codecommit")]
+    {
+        builder = builder.data(crate::aws::codecommit::CodeCommitClient::new(config));
+    }
+
+    #[cfg(feature = "iot")]
+    {
+        builder = builder.data(crate::aws::iot::IotClient::new(config));
+    }
+
+    #[cfg(feature = "licensemanager")]
+    {
+        builder = builder.data(crate::aws::license_manager::LicenseManagerClient::new(config));
+    }
+
+    #[cfg(feature = "budgets")]
+    {
+        builder = builder.data(crate::aws::budgets::BudgetsClient::new(config));
+    }
+
+    #[cfg(feature = "connect")]
+    {
+        builder = builder.data(crate::aws::connect::ConnectClient::new(config));
+    }
+
+    #[cfg(feature = "pinpoint")]
+    {
+        builder = builder.data(crate::aws::pinpoint::PinpointClient::new(config));
+    }
+
     builder.finish()
 }
