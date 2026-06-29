@@ -1,6 +1,6 @@
 [package]
 name = "vapor"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [[bin]]
@@ -80,16 +80,56 @@ aws-sdk-directconnect = { version = "1", optional = true, default-features = fal
 aws-sdk-macie2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-networkfirewall = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-shield = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-ssoadmin = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-acmpca = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-ram = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-controltower = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-fms = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-auditmanager = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-detective = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-sesv2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-elasticbeanstalk = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-apprunner = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-fsx = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-mq = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-databasemigration = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-workspaces = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-storagegateway = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-datasync = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-lightsail = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-qldb = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-keyspaces = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-bedrock = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-xray = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-timestreamwrite = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-timestreamquery = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-lakeformation = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-quicksight = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-comprehend = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-rekognition = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-transcribe = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-translate = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-polly = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-codeartifact = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-codecommit = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-iot = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-licensemanager = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-budgets = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-connect = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-pinpoint = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 futures = "0.3"
 base64 = "0.22"
 chrono = "0.4"
 serde_json = "1"
 
+[dev-dependencies]
+aws-smithy-types = "1"
+
 [features]
 default = ["ec2", "s3", "lambda"]
 ec2 = ["dep:aws-sdk-ec2"]
 ssm = ["dep:aws-sdk-ssm"]
-cloudwatch = ["dep:aws-sdk-cloudwatch"]
+cloudwatch = ["dep:aws-sdk-cloudwatch", "cloudwatchlogs"]
 cloudwatchlogs = ["dep:aws-sdk-cloudwatchlogs"]
 autoscaling = ["dep:aws-sdk-autoscaling"]
 elbv2 = ["dep:aws-sdk-elasticloadbalancingv2"]
@@ -153,6 +193,42 @@ directconnect = ["dep:aws-sdk-directconnect"]
 macie2 = ["dep:aws-sdk-macie2"]
 networkfirewall = ["dep:aws-sdk-networkfirewall"]
 shield = ["dep:aws-sdk-shield"]
+ssoadmin = ["dep:aws-sdk-ssoadmin"]
+acmpca = ["dep:aws-sdk-acmpca"]
+ram = ["dep:aws-sdk-ram"]
+controltower = ["dep:aws-sdk-controltower"]
+fms = ["dep:aws-sdk-fms"]
+auditmanager = ["dep:aws-sdk-auditmanager"]
+detective = ["dep:aws-sdk-detective"]
+sesv2 = ["dep:aws-sdk-sesv2"]
+elasticbeanstalk = ["dep:aws-sdk-elasticbeanstalk"]
+apprunner = ["dep:aws-sdk-apprunner"]
+fsx = ["dep:aws-sdk-fsx"]
+mq = ["dep:aws-sdk-mq"]
+dms = ["dep:aws-sdk-databasemigration"]
+workspaces = ["dep:aws-sdk-workspaces"]
+storagegateway = ["dep:aws-sdk-storagegateway"]
+datasync = ["dep:aws-sdk-datasync"]
+lightsail = ["dep:aws-sdk-lightsail"]
+qldb = ["dep:aws-sdk-qldb"]
+keyspaces = ["dep:aws-sdk-keyspaces"]
+bedrock = ["dep:aws-sdk-bedrock"]
+xray = ["dep:aws-sdk-xray"]
+timestream = ["dep:aws-sdk-timestreamwrite", "dep:aws-sdk-timestreamquery"]
+lakeformation = ["dep:aws-sdk-lakeformation"]
+quicksight = ["dep:aws-sdk-quicksight"]
+comprehend = ["dep:aws-sdk-comprehend"]
+rekognition = ["dep:aws-sdk-rekognition"]
+transcribe = ["dep:aws-sdk-transcribe"]
+translate = ["dep:aws-sdk-translate"]
+polly = ["dep:aws-sdk-polly"]
+codeartifact = ["dep:aws-sdk-codeartifact"]
+codecommit = ["dep:aws-sdk-codecommit"]
+iot = ["dep:aws-sdk-iot"]
+licensemanager = ["dep:aws-sdk-licensemanager"]
+budgets = ["dep:aws-sdk-budgets"]
+connect = ["dep:aws-sdk-connect"]
+pinpoint = ["dep:aws-sdk-pinpoint"]
 
 # Feature groups for easier combinations
 # Basic AWS services
