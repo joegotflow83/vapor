@@ -34,7 +34,7 @@ jobs:
         targets: ${{ matrix.target }}
 
     - name: Cache Rust build artifacts
-      uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778b1b7c0 # v2
+      uses: Swatinem/rust-cache@v2
       with:
         key: ${{ matrix.target }}
 
