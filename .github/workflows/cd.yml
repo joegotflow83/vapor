@@ -35,7 +35,7 @@ jobs:
 
     - name: Build release
       run: |
-        cargo build --release --target ${{ matrix.target }}
+        cargo build --release --all-features --target ${{ matrix.target }}
 
     - name: Package binary
       shell: bash
