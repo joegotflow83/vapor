@@ -20,7 +20,7 @@ jobs:
             target: x86_64-apple-darwin
             platform: macos
           - os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             platform: windows
 
     steps:
@@ -33,7 +33,14 @@ jobs:
         toolchain: stable
         targets: ${{ matrix.target }}
 
+    - name: Cache Rust build artifacts
+      uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778b1b7c0 # v2
+      with:
+        key: ${{ matrix.target }}
+
     - name: Build release
+      env:
+        CARGO_BUILD_JOBS: 2
       run: |
         cargo build --release --all-features --target ${{ matrix.target }}
 
