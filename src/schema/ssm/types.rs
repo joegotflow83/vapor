@@ -1,6 +1,6 @@
 use async_graphql::{Enum, InputObject, SimpleObject};
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum PingStatus {

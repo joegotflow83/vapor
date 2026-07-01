@@ -2,7 +2,7 @@ use async_graphql::{Context, Object, Result};
 use futures::future::join_all;
 
 use crate::aws::s3::S3Client;
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 use crate::schema::s3::types::{S3Bucket, S3PublicAccessBlock};
 
 #[derive(Default)]

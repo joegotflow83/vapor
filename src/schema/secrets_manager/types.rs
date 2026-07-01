@@ -1,7 +1,7 @@
 use async_graphql::SimpleObject;
 use base64::{Engine as _, engine::general_purpose};
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 /// An AWS Secrets Manager secret with its metadata.
 #[derive(SimpleObject, Clone)]

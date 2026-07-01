@@ -63,7 +63,7 @@ Each AWS service has its own feature flag that can be enabled/disabled:
 - `iam` - IAM
 - `inspector2` - Inspector v2
 - `iot` - IoT Core
-- `kafka` - MSK (Managed Streaming for Kafka)
+- `kafka` - MSK (Managed Streaming for Kafka); pulls in `ec2` since broker AZ enrichment needs `describe_subnets`
 - `keyspaces` - Amazon Keyspaces
 - `kinesis` - Kinesis Data Streams
 - `kms` - KMS
@@ -118,6 +118,13 @@ Predefined feature groups for common combinations:
 - `data` - Data services: s3, dynamodb, redshift, athena, glue
 - `monitoring` - Monitoring and management: cloudwatch, cloudwatchlogs, config, inspector2, securityhub
 - `devops` - DevOps services: codepipeline, codebuild, codedeploy, cloudformation
+- `release` - Curated ~26 commonly used services, built for prebuilt GitHub releases: ec2, s3, lambda, iam, rds, dynamodb, cloudwatch, cloudwatchlogs, sqs, sns, kms, secretsmanager, ecs, ecr, eks, elbv2, autoscaling, route53, cloudfront, cloudformation, sts, apigateway, apigatewayv2, eventbridge, ssm, kinesis
+
+### Building for Your Own AWS Account
+
+The prebuilt release binaries only include the `release` feature group. If you rely on a service
+outside that set, run `./scripts/detect-aws-services.sh` to scan your account (via the Resource
+Groups Tagging API) and print a `cargo build` command with only the features you actually need.
 
 ## Usage Examples
 

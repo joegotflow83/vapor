@@ -4,7 +4,7 @@ use crate::aws::lightsail::{
     LightsailDatabaseInfo, LightsailEndpointInfo, LightsailInstanceHealthInfo,
     LightsailInstanceInfo, LightsailLoadBalancerInfo, LightsailStaticIpInfo,
 };
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 #[derive(SimpleObject, Clone)]
 pub struct LightsailInstance {

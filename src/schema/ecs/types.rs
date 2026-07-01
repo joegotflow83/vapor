@@ -1,6 +1,6 @@
 use async_graphql::{Enum, SimpleObject};
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 // === Enums ===
 

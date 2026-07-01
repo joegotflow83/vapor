@@ -39,10 +39,8 @@ jobs:
         key: ${{ matrix.target }}
 
     - name: Build release
-      env:
-        CARGO_BUILD_JOBS: 2
       run: |
-        cargo build --release --all-features --target ${{ matrix.target }}
+        cargo build --release --no-default-features --features release --target ${{ matrix.target }}
 
     - name: Package binary
       shell: bash

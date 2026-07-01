@@ -1,6 +1,7 @@
 //! Schema modules for vapor project
 
 pub mod aws;
+pub mod common;
 #[cfg(feature = "ec2")]
 pub mod ec2;
 #[cfg(feature = "s3")]

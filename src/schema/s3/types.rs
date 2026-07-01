@@ -1,6 +1,6 @@
 use async_graphql::SimpleObject;
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 /// Public access block configuration for an S3 bucket.
 /// All four settings default to false when not configured.

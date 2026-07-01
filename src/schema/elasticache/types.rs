@@ -1,7 +1,7 @@
 use async_graphql::SimpleObject;
 use aws_sdk_elasticache::types::{CacheCluster, CacheSubnetGroup, ReplicationGroup, Tag as SdkTag};
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 #[derive(SimpleObject, Clone)]
 pub struct ElastiCacheSecurityGroup {

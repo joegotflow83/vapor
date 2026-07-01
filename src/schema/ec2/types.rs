@@ -10,11 +10,7 @@ pub enum InstanceState {
     Stopped,
 }
 
-#[derive(SimpleObject, Clone)]
-pub struct Tag {
-    pub key: String,
-    pub value: String,
-}
+pub use crate::schema::common::types::Tag;
 
 #[derive(InputObject)]
 pub struct TagFilter {

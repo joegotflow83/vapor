@@ -1,7 +1,7 @@
 use async_graphql::SimpleObject;
 
 use crate::aws::mq::{MqBrokerInfo, MqBrokerInstanceInfo, MqConfigurationInfo};
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 #[derive(SimpleObject, Clone)]
 pub struct MqBrokerInstance {

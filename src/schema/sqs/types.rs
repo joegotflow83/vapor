@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use async_graphql::SimpleObject;
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 /// An SQS queue with its metadata, attributes, and tags.
 #[derive(SimpleObject, Clone)]

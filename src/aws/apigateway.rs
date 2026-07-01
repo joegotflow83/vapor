@@ -7,18 +7,12 @@ use crate::error::VaporError;
 #[cfg(feature = "apigateway")]
 pub struct ApiGatewayClient {
     rest: aws_sdk_apigateway::Client,
-    #[cfg(feature = "apigatewayv2")]
-    http: aws_sdk_apigatewayv2::Client,
 }
 
 #[cfg(feature = "apigateway")]
 impl ApiGatewayClient {
     pub fn new(config: &SdkConfig) -> Self {
-        Self {
-            rest: aws_sdk_apigateway::Client::new(config),
-            #[cfg(feature = "apigatewayv2")]
-            http: aws_sdk_apigatewayv2::Client::new(config),
-        }
+        Self { rest: aws_sdk_apigateway::Client::new(config) }
     }
 
     // ── REST API (v1) ─────────────────────────────────────────────────────────
@@ -93,73 +87,6 @@ impl ApiGatewayClient {
             results.extend(output.items().iter().cloned());
             match output.position() {
                 Some(p) => position = Some(p.to_string()),
-                None => break,
-            }
-        }
-        Ok(results)
-    }
-
-    // ── HTTP / WebSocket API (v2) ─────────────────────────────────────────────
-
-    #[cfg(feature = "apigatewayv2")]
-    pub async fn list_http_apis(
-        &self,
-    ) -> Result<Vec<aws_sdk_apigatewayv2::types::Api>, VaporError> {
-        let mut results = Vec::new();
-        let mut next_token: Option<String> = None;
-        loop {
-            let mut req = self.http.get_apis();
-            if let Some(ref token) = next_token {
-                req = req.next_token(token);
-            }
-            let output = req.send().await.map_err(|e| VaporError::AwsSdk(e.to_string()))?;
-            results.extend(output.items().iter().cloned());
-            match output.next_token() {
-                Some(t) => next_token = Some(t.to_string()),
-                None => break,
-            }
-        }
-        Ok(results)
-    }
-
-    #[cfg(feature = "apigatewayv2")]
-    pub async fn list_http_stages(
-        &self,
-        api_id: &str,
-    ) -> Result<Vec<aws_sdk_apigatewayv2::types::Stage>, VaporError> {
-        let mut results = Vec::new();
-        let mut next_token: Option<String> = None;
-        loop {
-            let mut req = self.http.get_stages().api_id(api_id);
-            if let Some(ref token) = next_token {
-                req = req.next_token(token);
-            }
-            let output = req.send().await.map_err(|e| VaporError::AwsSdk(e.to_string()))?;
-            results.extend(output.items().iter().cloned());
-            match output.next_token() {
-                Some(t) => next_token = Some(t.to_string()),
-                None => break,
-            }
-        }
-        Ok(results)
-    }
-
-    #[cfg(feature = "apigatewayv2")]
-    pub async fn list_http_routes(
-        &self,
-        api_id: &str,
-    ) -> Result<Vec<aws_sdk_apigatewayv2::types::Route>, VaporError> {
-        let mut results = Vec::new();
-        let mut next_token: Option<String> = None;
-        loop {
-            let mut req = self.http.get_routes().api_id(api_id);
-            if let Some(ref token) = next_token {
-                req = req.next_token(token);
-            }
-            let output = req.send().await.map_err(|e| VaporError::AwsSdk(e.to_string()))?;
-            results.extend(output.items().iter().cloned());
-            match output.next_token() {
-                Some(t) => next_token = Some(t.to_string()),
                 None => break,
             }
         }

@@ -1,7 +1,7 @@
 use async_graphql::SimpleObject;
 
 use crate::aws::qldb::{QldbJournalExportInfo, QldbLedgerInfo};
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 #[derive(SimpleObject, Clone)]
 pub struct QldbLedger {

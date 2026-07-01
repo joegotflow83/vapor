@@ -1,7 +1,7 @@
 use async_graphql::SimpleObject;
 
 use crate::aws::ses::{SesAccountInfo, SesConfigSetDetail, SesIdentityInfo};
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 #[derive(SimpleObject, Clone)]
 pub struct SesIdentity {

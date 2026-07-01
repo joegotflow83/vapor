@@ -1,6 +1,6 @@
 use async_graphql::SimpleObject;
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 /// Decode a percent-encoded string (e.g. URL-encoded IAM policy documents).
 fn percent_decode(s: &str) -> String {

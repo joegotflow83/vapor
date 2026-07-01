@@ -29,6 +29,15 @@ To build with all services:
 cargo build --release --all-features
 ```
 
+Prebuilt binaries on the [releases page](../../releases) are compiled with the curated `release`
+feature group (~26 commonly used services — see [FEATURE_FLAGS.md](FEATURE_FLAGS.md)) rather than
+`--all-features`, to keep CI build times reasonable. If you rely on a service outside that set,
+build your own binary. `scripts/detect-aws-services.sh` scans your AWS account for services
+actually in use and prints a ready-to-run `cargo build` command with the matching features:
+```bash
+./scripts/detect-aws-services.sh
+```
+
 ## Prerequisites
 
 Valid AWS credentials must be available via one of the standard mechanisms:
@@ -91,9 +100,6 @@ apigwRestApis: [ApigwRestApi!]!
 apigwRestStages(apiId: String!): [ApigwRestStage!]!
 apigwRestResources(apiId: String!): [ApigwResource!]!
 apigwRestDeployments(apiId: String!): [ApigwDeployment!]!
-apigwHttpApis: [ApigwHttpApi!]!
-apigwHttpStages(apiId: String!): [ApigwHttpStage!]!
-apigwHttpRoutes(apiId: String!): [ApigwHttpRoute!]!
 ```
 
 ### API Gateway v2 (HTTP & WebSocket)
@@ -1174,7 +1180,7 @@ Each service is gated behind a Cargo feature flag. Build only what you need:
 | `iam` | IAM |
 | `inspector2` | Inspector v2 |
 | `iot` | IoT |
-| `kafka` | MSK (Managed Kafka) |
+| `kafka` | MSK (Managed Kafka) — pulls in `ec2` |
 | `keyspaces` | Keyspaces |
 | `kinesis` | Kinesis |
 | `kms` | KMS |
@@ -1230,6 +1236,7 @@ Each service is gated behind a Cargo feature flag. Build only what you need:
 | `data` | s3, dynamodb, redshift, athena, glue |
 | `monitoring` | cloudwatch, config, inspector2, securityhub |
 | `devops` | codepipeline, codebuild, codedeploy, cloudformation |
+| `release` | ec2, s3, lambda, iam, rds, dynamodb, cloudwatch, cloudwatchlogs, sqs, sns, kms, secretsmanager, ecs, ecr, eks, elbv2, autoscaling, route53, cloudfront, cloudformation, sts, apigateway, apigatewayv2, eventbridge, ssm, kinesis — used for prebuilt GitHub releases |
 
 ## Configuration
 

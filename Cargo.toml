@@ -159,7 +159,7 @@ codebuild = ["dep:aws-sdk-codebuild"]
 codedeploy = ["dep:aws-sdk-codedeploy"]
 kinesis = ["dep:aws-sdk-kinesis"]
 firehose = ["dep:aws-sdk-firehose"]
-kafka = ["dep:aws-sdk-kafka"]
+kafka = ["dep:aws-sdk-kafka", "ec2"]
 redshift = ["dep:aws-sdk-redshift"]
 redshiftserverless = ["dep:aws-sdk-redshiftserverless"]
 memorydb = ["dep:aws-sdk-memorydb"]
@@ -241,6 +241,15 @@ data = ["s3", "dynamodb", "redshift", "athena", "glue"]
 monitoring = ["cloudwatch", "cloudwatchlogs", "config", "inspector2", "securityhub"]
 # DevOps services
 devops = ["codepipeline", "codebuild", "codedeploy", "cloudformation"]
+# Curated set of the ~26 most commonly used services, built for prebuilt GitHub releases.
+# Users with a broader footprint should build their own binary — see scripts/detect-aws-services.sh.
+release = [
+    "ec2", "s3", "lambda", "iam", "rds", "dynamodb",
+    "cloudwatch", "cloudwatchlogs", "sqs", "sns", "kms", "secretsmanager",
+    "ecs", "ecr", "eks", "elbv2", "autoscaling", "route53",
+    "cloudfront", "cloudformation", "sts", "apigateway", "apigatewayv2", "eventbridge",
+    "ssm", "kinesis",
+]
 
 [profile.release]
 codegen-units = 1

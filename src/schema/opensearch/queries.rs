@@ -1,7 +1,7 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::opensearch::OpenSearchClient;
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 use crate::schema::opensearch::types::{convert_opensearch_tag, OpenSearchDomain};
 
 #[derive(Default)]

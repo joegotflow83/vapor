@@ -1,7 +1,7 @@
 use async_graphql::SimpleObject;
 use std::collections::HashMap;
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 /// VPC configuration for a Lambda function.
 #[derive(SimpleObject, Clone)]

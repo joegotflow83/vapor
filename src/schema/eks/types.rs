@@ -1,6 +1,6 @@
 use async_graphql::SimpleObject;
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 fn tags_from_map(map: Option<&std::collections::HashMap<String, String>>) -> Vec<Tag> {
     map.into_iter()

@@ -1,7 +1,7 @@
 use async_graphql::SimpleObject;
 use aws_sdk_cloudformation::types::{Export, Stack, StackResourceSummary};
 
-use crate::schema::ec2::types::Tag;
+use crate::schema::common::types::Tag;
 
 #[derive(SimpleObject, Clone)]
 pub struct CfnParameter {
