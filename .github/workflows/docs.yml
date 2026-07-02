@@ -32,10 +32,12 @@ jobs:
       uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
     - name: Generate service pages from the GraphQL schema
-      run: |
-        # Build with release profile for faster execution
-        cargo build --release --all-features --bin gen-docs
-        ./target/release/gen-docs
+      # Deliberately not --release: Cargo.toml's [profile.release] sets
+      # codegen-units = 1 (tuned for the small curated CD release build),
+      # which applied to --all-features (~102 SDK crates) is memory-heavy
+      # enough to get the job OOM-killed. The dev profile matches what
+      # ci.yml already builds successfully with --all-features.
+      run: cargo build --all-features --bin gen-docs && ./target/debug/gen-docs
 
     - name: Install mdBook
       uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
