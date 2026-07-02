@@ -7,6 +7,10 @@ edition = "2021"
 name = "vapor"
 path = "src/main.rs"
 
+[[bin]]
+name = "gen-docs"
+path = "src/bin/gen_docs.rs"
+
 [dependencies]
 async-graphql = { version = "7", features = ["chrono"] }
 async-graphql-axum = "7"

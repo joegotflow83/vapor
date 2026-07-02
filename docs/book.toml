@@ -1,0 +1,10 @@
+[book]
+title = "vapor — AWS GraphQL Reference"
+description = "GraphQL query reference for every AWS service vapor exposes, one page per service — generated from the live schema."
+src = "src"
+language = "en"
+
+[output.html]
+git-repository-url = "https://github.com/joegotflow83/vapor"
+default-theme = "navy"
+preferred-dark-theme = "navy"
