@@ -13,6 +13,16 @@ jobs:
     steps:
     - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+    - name: Free disk space
+      # --all-features builds all ~102 AWS SDK crates at once; the runner's
+      # default free space (~14GB on the root partition) isn't enough
+      # headroom once rust-cache's tarball is added on top. These
+      # preinstalled toolchains are unused here and reclaim ~30GB.
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force
+        df -h /
+
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       with:
