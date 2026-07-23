@@ -352,3 +352,122 @@ fn main() {
 
     println!("gen-docs: wrote {} service pages to docs/src/services/", pages.len());
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strip_block_removes_balanced_braces_and_trailing_newline() {
+        let input = "schema {\n  query: Query\n}\nkeep this\n";
+        assert_eq!(strip_block(input, "schema {"), "keep this\n");
+    }
+
+    #[test]
+    fn strip_block_handles_nested_braces() {
+        let input = "type EmptyMutation {\n  nested: Nested {\n    x: Int\n  }\n}\nkeep\n";
+        assert_eq!(strip_block(input, "type EmptyMutation"), "keep\n");
+    }
+
+    #[test]
+    fn strip_block_returns_original_when_marker_missing() {
+        assert_eq!(strip_block("hello world", "schema {"), "hello world");
+    }
+
+    #[test]
+    fn strip_block_returns_original_when_no_brace_after_marker() {
+        assert_eq!(strip_block("foo bar", "foo"), "foo bar");
+    }
+
+    #[test]
+    fn clean_sdl_strips_schema_and_empty_stub_blocks() {
+        let sdl = "schema {\n  query: Query\n  mutation: Mutation\n}\n\
+                   type EmptyMutation {\n}\n\
+                   type EmptySubscription {\n}\n\
+                   type Query {\n  placeholder: Boolean!\n}\n";
+        assert_eq!(clean_sdl(sdl), "type Query {\n  placeholder: Boolean!\n}");
+    }
+
+    #[test]
+    fn query_field_names_skips_descriptions_and_keeps_fields() {
+        let sdl = "type Query {\n\
+                   \x20\x20\"\"\"\n  Multi-line description\n  \"\"\"\n\
+                   \x20\x20fieldOne: String\n\
+                   \x20\x20\"\"\"One-line description\"\"\"\n\
+                   \x20\x20fieldTwo: Int\n\
+                   \x20\x20fieldThree: Boolean!\n\
+                   }\n";
+        let fields = query_field_names(sdl, "Query");
+        assert_eq!(
+            fields,
+            BTreeSet::from(["fieldOne".to_string(), "fieldTwo".to_string(), "fieldThree".to_string()])
+        );
+    }
+
+    #[test]
+    fn query_field_names_returns_empty_when_type_missing() {
+        let sdl = "type Foo {\n  a: Int\n}\n";
+        assert_eq!(query_field_names(sdl, "Bar"), BTreeSet::new());
+    }
+
+    #[test]
+    fn render_page_includes_note_when_present() {
+        let page = ServicePage {
+            slug: "s3",
+            title: "S3",
+            feature: "s3",
+            note: Some("note text"),
+            query_type_name: "S3Query".to_string(),
+            sdl: "type S3Query {\n  buckets: [S3Bucket!]!\n}".to_string(),
+        };
+        assert_eq!(
+            render_page(&page),
+            "# S3\n\nCargo feature: `s3` (`cargo build --features s3`)\n\n\
+             > note text\n\n```graphql\ntype S3Query {\n  buckets: [S3Bucket!]!\n}\n```\n"
+        );
+    }
+
+    #[test]
+    fn render_page_omits_note_line_when_none() {
+        let page = ServicePage {
+            slug: "x",
+            title: "X",
+            feature: "x",
+            note: None,
+            query_type_name: "XQuery".to_string(),
+            sdl: "type XQuery {\n  a: Int\n}".to_string(),
+        };
+        assert_eq!(
+            render_page(&page),
+            "# X\n\nCargo feature: `x` (`cargo build --features x`)\n\n\
+             ```graphql\ntype XQuery {\n  a: Int\n}\n```\n"
+        );
+    }
+
+    #[test]
+    fn render_summary_lists_pages_in_order() {
+        let pages = vec![
+            ServicePage {
+                slug: "a",
+                title: "Alpha",
+                feature: "a",
+                note: None,
+                query_type_name: "AQuery".to_string(),
+                sdl: String::new(),
+            },
+            ServicePage {
+                slug: "b",
+                title: "Beta",
+                feature: "b",
+                note: None,
+                query_type_name: "BQuery".to_string(),
+                sdl: String::new(),
+            },
+        ];
+        assert_eq!(
+            render_summary(&pages),
+            "# Summary\n\n[Introduction](introduction.md)\n\n# AWS Services\n\n\
+             - [Alpha](services/a.md)\n- [Beta](services/b.md)\n"
+        );
+    }
+}
