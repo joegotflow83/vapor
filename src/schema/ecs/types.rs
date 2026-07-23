@@ -1,6 +1,8 @@
 use async_graphql::{Enum, SimpleObject};
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 // === Enums ===
 
@@ -167,8 +169,8 @@ pub struct Task {
     pub last_status: Option<String>,
     pub desired_status: Option<String>,
     pub launch_type: Option<EcsLaunchType>,
-    pub started_at: Option<String>,
-    pub stopped_at: Option<String>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub stopped_at: Option<DateTime<Utc>>,
     pub stopped_reason: Option<String>,
     pub cpu: Option<String>,
     pub memory: Option<String>,
@@ -185,8 +187,8 @@ impl From<aws_sdk_ecs::types::Task> for Task {
             last_status: t.last_status().map(|s| s.to_string()),
             desired_status: t.desired_status().map(|s| s.to_string()),
             launch_type: t.launch_type().map(EcsLaunchType::from_sdk),
-            started_at: t.started_at().map(|d| d.to_string()),
-            stopped_at: t.stopped_at().map(|d| d.to_string()),
+            started_at: to_utc(t.started_at()),
+            stopped_at: to_utc(t.stopped_at()),
             stopped_reason: t.stopped_reason().map(|s| s.to_string()),
             cpu: t.cpu().map(|s| s.to_string()),
             memory: t.memory().map(|s| s.to_string()),
@@ -258,7 +260,7 @@ pub struct Service {
     pub pending_count: i32,
     pub launch_type: Option<EcsLaunchType>,
     pub task_definition: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub load_balancers: Vec<ServiceLoadBalancer>,
     pub network_configuration: Option<AwsVpcConfiguration>,
     pub tags: Vec<Tag>,
@@ -276,7 +278,7 @@ impl From<aws_sdk_ecs::types::Service> for Service {
             pending_count: s.pending_count(),
             launch_type: s.launch_type().map(EcsLaunchType::from_sdk),
             task_definition: s.task_definition().map(|v| v.to_string()),
-            created_at: s.created_at().map(|d| d.to_string()),
+            created_at: to_utc(s.created_at()),
             load_balancers: s
                 .load_balancers()
                 .iter()
@@ -483,6 +485,8 @@ mod tests {
             .memory("512")
             .tags(tag)
             .containers(container)
+            .started_at(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .stopped_at(aws_smithy_types::DateTime::from_secs(1_700_000_600))
             .build();
         let result = Task::from(task);
         assert_eq!(
@@ -498,6 +502,14 @@ mod tests {
         assert_eq!(result.tags[0].value, "prod");
         assert_eq!(result.containers.len(), 1);
         assert_eq!(result.containers[0].name, Some("web".to_string()));
+        assert_eq!(
+            result.started_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.stopped_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_600))
+        );
     }
 
     #[test]
@@ -578,6 +590,7 @@ mod tests {
             .load_balancers(lb)
             .network_configuration(net_config)
             .tags(tag)
+            .created_at(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = Service::from(service);
         assert_eq!(result.name, "my-service");
@@ -594,6 +607,10 @@ mod tests {
         assert!(result.network_configuration.is_some());
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Team");
+        assert_eq!(
+            result.created_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]

@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 /// VPC configuration for a Lambda function.
 #[derive(SimpleObject, Clone)]
@@ -131,7 +133,7 @@ pub struct LambdaEventSourceMapping {
     pub state: Option<String>,
     pub batch_size: Option<i32>,
     pub starting_position: Option<String>,
-    pub last_modified: Option<String>,
+    pub last_modified: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_lambda::types::EventSourceMappingConfiguration> for LambdaEventSourceMapping {
@@ -143,7 +145,7 @@ impl From<aws_sdk_lambda::types::EventSourceMappingConfiguration> for LambdaEven
             state: m.state().map(|s| s.to_string()),
             batch_size: m.batch_size(),
             starting_position: m.starting_position().map(|s| s.as_str().to_string()),
-            last_modified: m.last_modified().map(|d| d.to_string()),
+            last_modified: to_utc(m.last_modified()),
         }
     }
 }
@@ -243,6 +245,31 @@ mod tests {
         assert_eq!(func.tags.len(), 1);
         assert_eq!(func.tags[0].key, "env");
         assert_eq!(func.tags[0].value, "prod");
+    }
+
+    #[test]
+    fn test_lambda_event_source_mapping_from() {
+        let mapping = aws_sdk_lambda::types::EventSourceMappingConfiguration::builder()
+            .uuid("uuid-123")
+            .event_source_arn("arn:aws:sqs:us-east-1:123456789012:my-queue")
+            .function_arn("arn:aws:lambda:us-east-1:123456789012:function:my-fn")
+            .state("Enabled")
+            .batch_size(10)
+            .starting_position(aws_sdk_lambda::types::EventSourcePosition::TrimHorizon)
+            .last_modified(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .build();
+        let result = LambdaEventSourceMapping::from(mapping);
+        assert_eq!(result.uuid, Some("uuid-123".to_string()));
+        assert_eq!(
+            result.event_source_arn,
+            Some("arn:aws:sqs:us-east-1:123456789012:my-queue".to_string())
+        );
+        assert_eq!(result.state, Some("Enabled".to_string()));
+        assert_eq!(result.batch_size, Some(10));
+        assert_eq!(
+            result.last_modified,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]

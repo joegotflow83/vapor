@@ -1,4 +1,7 @@
 use async_graphql::{Enum, InputObject, SimpleObject};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum InstanceState {
@@ -8,6 +11,26 @@ pub enum InstanceState {
     Terminated,
     Stopping,
     Stopped,
+    /// AWS returned an `InstanceStateName` this client doesn't recognize yet.
+    /// Must never be conflated with `Running` — a state-reporting tool that
+    /// silently downgrades unknown states to "running" can hide a terminated
+    /// or stopped instance from safety checks built on this field.
+    Unknown,
+}
+
+impl InstanceState {
+    /// The AWS `instance-state-name` filter value for this state.
+    pub fn as_aws_str(&self) -> &'static str {
+        match self {
+            InstanceState::Pending => "pending",
+            InstanceState::Running => "running",
+            InstanceState::ShuttingDown => "shutting-down",
+            InstanceState::Terminated => "terminated",
+            InstanceState::Stopping => "stopping",
+            InstanceState::Stopped => "stopped",
+            InstanceState::Unknown => "unknown",
+        }
+    }
 }
 
 pub use crate::schema::common::types::Tag;
@@ -76,7 +99,7 @@ pub struct Instance {
     pub vpc_id: Option<String>,
     pub subnet_id: Option<String>,
     pub key_name: Option<String>,
-    pub launch_time: Option<String>,
+    pub launch_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
     pub security_groups: Vec<SecurityGroupRef>,
     pub network_interfaces: Vec<NetworkInterface>,
@@ -346,6 +369,9 @@ pub struct Image {
     pub platform: Option<String>,
     pub owner_id: Option<String>,
     pub public: bool,
+    /// Kept as `String`, not `DateTime<Utc>`: `Image::creation_date` is a
+    /// plain `String` field in the SDK (`_image.rs`), not
+    /// `aws_smithy_types::DateTime` — no conversion applies.
     pub creation_date: Option<String>,
     pub root_device_type: Option<String>,
     pub virtualization_type: Option<String>,
@@ -433,7 +459,7 @@ pub struct LaunchTemplate {
     pub default_version: Option<i64>,
     pub latest_version: Option<i64>,
     pub created_by: Option<String>,
-    pub create_time: Option<String>,
+    pub create_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -445,7 +471,7 @@ impl From<aws_sdk_ec2::types::LaunchTemplate> for LaunchTemplate {
             default_version: lt.default_version_number(),
             latest_version: lt.latest_version_number(),
             created_by: lt.created_by().map(|s| s.to_string()),
-            create_time: lt.create_time().map(|d| d.to_string()),
+            create_time: to_utc(lt.create_time()),
             tags: lt
                 .tags()
                 .iter()
@@ -466,7 +492,7 @@ pub struct LaunchTemplateVersion {
     pub version_description: Option<String>,
     pub default_version: Option<bool>,
     pub created_by: Option<String>,
-    pub create_time: Option<String>,
+    pub create_time: Option<DateTime<Utc>>,
     pub image_id: Option<String>,
     pub instance_type: Option<String>,
     pub key_name: Option<String>,
@@ -486,7 +512,7 @@ impl From<aws_sdk_ec2::types::LaunchTemplateVersion> for LaunchTemplateVersion {
             version_description: v.version_description().map(|s| s.to_string()),
             default_version: v.default_version(),
             created_by: v.created_by().map(|s| s.to_string()),
-            create_time: v.create_time().map(|d| d.to_string()),
+            create_time: to_utc(v.create_time()),
             image_id: data.and_then(|d| d.image_id()).map(|s| s.to_string()),
             instance_type: data
                 .and_then(|d| d.instance_type())
@@ -515,7 +541,7 @@ pub struct Snapshot {
     pub volume_size: Option<i32>,
     pub state: Option<String>,
     pub progress: Option<String>,
-    pub start_time: Option<String>,
+    pub start_time: Option<DateTime<Utc>>,
     pub description: Option<String>,
     pub owner_id: Option<String>,
     pub encrypted: bool,
@@ -540,7 +566,7 @@ impl From<aws_sdk_ec2::types::Snapshot> for Snapshot {
             volume_size: s.volume_size(),
             state: s.state().map(|st| st.as_str().to_string()),
             progress: s.progress().map(|p| p.to_string()),
-            start_time: s.start_time().map(|d| d.to_string()),
+            start_time: to_utc(s.start_time()),
             description: s.description().map(|d| d.to_string()),
             owner_id: s.owner_id().map(|o| o.to_string()),
             encrypted: s.encrypted().unwrap_or(false),
@@ -719,8 +745,8 @@ mod tests {
 
         let instance: Instance = sdk_instance.into();
         assert_eq!(instance.id, "i-abc123");
-        // No state set → defaults to Running
-        assert_eq!(instance.state, InstanceState::Running);
+        // No state set → Unknown, never silently reported as Running
+        assert_eq!(instance.state, InstanceState::Unknown);
         assert!(instance.tags.is_empty());
         assert!(instance.security_groups.is_empty());
         assert!(instance.network_interfaces.is_empty());
@@ -765,6 +791,22 @@ mod tests {
             let instance: Instance = sdk_instance.into();
             assert_eq!(instance.state, expected);
         }
+    }
+
+    #[test]
+    fn test_instance_state_unrecognized_value_is_unknown_not_running() {
+        // Simulates AWS adding a new InstanceStateName value this client
+        // doesn't know about yet. Must map to Unknown, never Running.
+        let sdk_state = aws_sdk_ec2::types::InstanceState::builder()
+            .name(aws_sdk_ec2::types::InstanceStateName::from("some-future-state"))
+            .build();
+        let sdk_instance = aws_sdk_ec2::types::Instance::builder()
+            .instance_id("i-abc123")
+            .state(sdk_state)
+            .build();
+
+        let instance: Instance = sdk_instance.into();
+        assert_eq!(instance.state, InstanceState::Unknown);
     }
 
     #[test]
@@ -1203,9 +1245,9 @@ impl From<aws_sdk_ec2::types::Instance> for Instance {
                 aws_sdk_ec2::types::InstanceStateName::Terminated => InstanceState::Terminated,
                 aws_sdk_ec2::types::InstanceStateName::Stopping => InstanceState::Stopping,
                 aws_sdk_ec2::types::InstanceStateName::Stopped => InstanceState::Stopped,
-                _ => InstanceState::Running,
+                _ => InstanceState::Unknown,
             })
-            .unwrap_or(InstanceState::Running);
+            .unwrap_or(InstanceState::Unknown);
 
         let tags = i
             .tags()
@@ -1279,7 +1321,7 @@ impl From<aws_sdk_ec2::types::Instance> for Instance {
             vpc_id: i.vpc_id().map(|s| s.to_string()),
             subnet_id: i.subnet_id().map(|s| s.to_string()),
             key_name: i.key_name().map(|s| s.to_string()),
-            launch_time: i.launch_time().map(|dt| dt.to_string()),
+            launch_time: to_utc(i.launch_time()),
             tags,
             security_groups,
             network_interfaces,

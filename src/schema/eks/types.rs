@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 fn tags_from_map(map: Option<&std::collections::HashMap<String, String>>) -> Vec<Tag> {
     map.into_iter()
@@ -162,8 +164,8 @@ pub struct EksNodegroup {
     pub node_role: Option<String>,
     /// Kubernetes labels as key/value pairs.
     pub labels: Vec<Tag>,
-    pub created_at: Option<String>,
-    pub modified_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub modified_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -183,8 +185,8 @@ impl From<aws_sdk_eks::types::Nodegroup> for EksNodegroup {
             subnet_ids: ng.subnets().iter().map(|s| s.to_string()).collect(),
             node_role: ng.node_role().map(|s| s.to_string()),
             labels: labels_from_map(ng.labels()),
-            created_at: ng.created_at().map(|d| d.to_string()),
-            modified_at: ng.modified_at().map(|d| d.to_string()),
+            created_at: to_utc(ng.created_at()),
+            modified_at: to_utc(ng.modified_at()),
             tags: tags_from_map(ng.tags()),
         }
     }
@@ -217,7 +219,7 @@ pub struct EksFargateProfile {
     pub pod_execution_role_arn: Option<String>,
     pub subnet_ids: Vec<String>,
     pub selectors: Vec<EksFargateSelector>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -231,7 +233,7 @@ impl From<aws_sdk_eks::types::FargateProfile> for EksFargateProfile {
             pod_execution_role_arn: fp.pod_execution_role_arn().map(|s| s.to_string()),
             subnet_ids: fp.subnets().iter().map(|s| s.to_string()).collect(),
             selectors: fp.selectors().iter().map(EksFargateSelector::from).collect(),
-            created_at: fp.created_at().map(|d| d.to_string()),
+            created_at: to_utc(fp.created_at()),
             tags: tags_from_map(fp.tags()),
         }
     }
@@ -248,8 +250,8 @@ pub struct EksAddon {
     pub service_account_role_arn: Option<String>,
     pub marketplace_version: Option<String>,
     pub configuration_values: Option<String>,
-    pub created_at: Option<String>,
-    pub modified_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub modified_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -266,8 +268,8 @@ impl From<aws_sdk_eks::types::Addon> for EksAddon {
             // details via `marketplace_information` (product id/url only).
             marketplace_version: None,
             configuration_values: addon.configuration_values().map(|s| s.to_string()),
-            created_at: addon.created_at().map(|d| d.to_string()),
-            modified_at: addon.modified_at().map(|d| d.to_string()),
+            created_at: to_utc(addon.created_at()),
+            modified_at: to_utc(addon.modified_at()),
             tags: tags_from_map(addon.tags()),
         }
     }
@@ -441,6 +443,7 @@ mod tests {
             .disk_size(20)
             .subnets("subnet-aaa")
             .node_role("arn:aws:iam::123:role/node-role")
+            .created_at(aws_smithy_types::DateTime::from_secs(0))
             .build();
         let result = EksNodegroup::from(ng);
         assert_eq!(result.name, "my-ng");
@@ -454,6 +457,8 @@ mod tests {
             Some("arn:aws:iam::123:role/node-role".to_string())
         );
         assert!(result.labels.is_empty());
+        assert_eq!(result.created_at, Some(DateTime::<Utc>::UNIX_EPOCH));
+        assert_eq!(result.modified_at, None);
     }
 
     #[test]
@@ -465,6 +470,7 @@ mod tests {
             .status(aws_sdk_eks::types::FargateProfileStatus::Active)
             .pod_execution_role_arn("arn:aws:iam::123:role/fargate-role")
             .subnets("subnet-aaa")
+            .created_at(aws_smithy_types::DateTime::from_secs(0))
             .build();
         let result = EksFargateProfile::from(fp);
         assert_eq!(result.name, "my-fp");
@@ -477,6 +483,7 @@ mod tests {
         assert_eq!(result.subnet_ids, vec!["subnet-aaa".to_string()]);
         assert!(result.selectors.is_empty());
         assert!(result.tags.is_empty());
+        assert_eq!(result.created_at, Some(DateTime::<Utc>::UNIX_EPOCH));
     }
 
     #[test]
@@ -488,6 +495,7 @@ mod tests {
             .status(aws_sdk_eks::types::AddonStatus::Active)
             .addon_version("v1.12.0-eksbuild.1")
             .service_account_role_arn("arn:aws:iam::123:role/addon-role")
+            .created_at(aws_smithy_types::DateTime::from_secs(0))
             .build();
         let result = EksAddon::from(addon);
         assert_eq!(result.name, "vpc-cni");
@@ -499,5 +507,7 @@ mod tests {
             Some("arn:aws:iam::123:role/addon-role".to_string())
         );
         assert!(result.tags.is_empty());
+        assert_eq!(result.created_at, Some(DateTime::<Utc>::UNIX_EPOCH));
+        assert_eq!(result.modified_at, None);
     }
 }
