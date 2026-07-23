@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 /// Decode a percent-encoded string (e.g. URL-encoded IAM policy documents).
 fn percent_decode(s: &str) -> String {
@@ -28,7 +30,7 @@ pub struct IamRole {
     pub role_id: String,
     pub role_name: String,
     pub path: String,
-    pub create_date: Option<String>,
+    pub create_date: Option<DateTime<Utc>>,
     pub description: Option<String>,
     /// Maximum session duration in seconds.
     pub max_session_duration: Option<i32>,
@@ -53,7 +55,7 @@ impl From<aws_sdk_iam::types::Role> for IamRole {
             role_id: r.role_id().to_string(),
             role_name: r.role_name().to_string(),
             path: r.path().to_string(),
-            create_date: Some(r.create_date().to_string()),
+            create_date: to_utc(Some(r.create_date())),
             description: r.description().map(|s| s.to_string()),
             max_session_duration: r.max_session_duration(),
             assume_role_policy_document: r
@@ -75,8 +77,8 @@ pub struct IamPolicy {
     pub attachment_count: Option<i32>,
     pub is_attachable: Option<bool>,
     pub description: Option<String>,
-    pub create_date: Option<String>,
-    pub update_date: Option<String>,
+    pub create_date: Option<DateTime<Utc>>,
+    pub update_date: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_iam::types::Policy> for IamPolicy {
@@ -90,8 +92,8 @@ impl From<aws_sdk_iam::types::Policy> for IamPolicy {
             attachment_count: p.attachment_count(),
             is_attachable: Some(p.is_attachable()),
             description: p.description().map(|s| s.to_string()),
-            create_date: p.create_date().map(|d| d.to_string()),
-            update_date: p.update_date().map(|d| d.to_string()),
+            create_date: to_utc(p.create_date()),
+            update_date: to_utc(p.update_date()),
         }
     }
 }
@@ -103,8 +105,8 @@ pub struct IamUser {
     pub user_id: String,
     pub user_name: String,
     pub path: String,
-    pub create_date: Option<String>,
-    pub password_last_used: Option<String>,
+    pub create_date: Option<DateTime<Utc>>,
+    pub password_last_used: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -124,8 +126,8 @@ impl From<aws_sdk_iam::types::User> for IamUser {
             user_id: u.user_id().to_string(),
             user_name: u.user_name().to_string(),
             path: u.path().to_string(),
-            create_date: Some(u.create_date().to_string()),
-            password_last_used: u.password_last_used().map(|d| d.to_string()),
+            create_date: to_utc(Some(u.create_date())),
+            password_last_used: to_utc(u.password_last_used()),
             tags,
         }
     }
@@ -138,7 +140,7 @@ pub struct IamGroup {
     pub group_id: String,
     pub group_name: String,
     pub path: String,
-    pub create_date: Option<String>,
+    pub create_date: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_iam::types::Group> for IamGroup {
@@ -148,7 +150,7 @@ impl From<aws_sdk_iam::types::Group> for IamGroup {
             group_id: g.group_id().to_string(),
             group_name: g.group_name().to_string(),
             path: g.path().to_string(),
-            create_date: Some(g.create_date().to_string()),
+            create_date: to_utc(Some(g.create_date())),
         }
     }
 }
@@ -177,7 +179,7 @@ pub struct IamPolicyDocument {
     pub is_default_version: bool,
     /// URL-decoded JSON policy document.
     pub document: String,
-    pub create_date: Option<String>,
+    pub create_date: Option<DateTime<Utc>>,
 }
 
 impl From<(String, aws_sdk_iam::types::PolicyVersion)> for IamPolicyDocument {
@@ -187,7 +189,7 @@ impl From<(String, aws_sdk_iam::types::PolicyVersion)> for IamPolicyDocument {
             version_id: version.version_id().unwrap_or("").to_string(),
             is_default_version: version.is_default_version(),
             document: version.document().map(|d| percent_decode(d)).unwrap_or_default(),
-            create_date: version.create_date().map(|d| d.to_string()),
+            create_date: to_utc(version.create_date()),
         }
     }
 }
@@ -199,9 +201,9 @@ pub struct IamAccessKey {
     pub user_name: String,
     /// "Active" or "Inactive".
     pub status: String,
-    pub create_date: Option<String>,
-    /// ISO-8601 timestamp of when the key was last used, or None if never used.
-    pub last_used_date: Option<String>,
+    pub create_date: Option<DateTime<Utc>>,
+    /// Timestamp of when the key was last used, or None if never used.
+    pub last_used_date: Option<DateTime<Utc>>,
     /// AWS region where the key was last used (e.g. "us-east-1"), or None if never used.
     pub last_used_region: Option<String>,
     /// AWS service where the key was last used (e.g. "s3"), or None if never used.
@@ -220,10 +222,7 @@ impl
             Option<aws_sdk_iam::types::AccessKeyLastUsed>,
         ),
     ) -> Self {
-        let last_used_date = last_used
-            .as_ref()
-            .and_then(|lu| lu.last_used_date())
-            .map(|d| d.to_string());
+        let last_used_date = to_utc(last_used.as_ref().and_then(|lu| lu.last_used_date()));
         let last_used_region = last_used.as_ref().map(|lu| lu.region()).and_then(|r| {
             if r == "N/A" {
                 None
@@ -250,7 +249,7 @@ impl
                 .status()
                 .map(|s| s.as_str().to_string())
                 .unwrap_or_default(),
-            create_date: key.create_date().map(|d| d.to_string()),
+            create_date: to_utc(key.create_date()),
             last_used_date,
             last_used_region,
             last_used_service,
@@ -281,8 +280,8 @@ pub struct IamMfaDevice {
     pub user_name: String,
     /// For virtual MFA devices this is the ARN; for hardware tokens it is the serial number.
     pub serial_number: String,
-    /// ISO-8601 timestamp when the device was associated with the user.
-    pub enable_date: Option<String>,
+    /// Timestamp when the device was associated with the user.
+    pub enable_date: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_iam::types::MfaDevice> for IamMfaDevice {
@@ -290,7 +289,7 @@ impl From<aws_sdk_iam::types::MfaDevice> for IamMfaDevice {
         Self {
             user_name: d.user_name().to_string(),
             serial_number: d.serial_number().to_string(),
-            enable_date: Some(d.enable_date().to_string()),
+            enable_date: to_utc(Some(d.enable_date())),
         }
     }
 }
@@ -339,6 +338,48 @@ impl From<aws_sdk_iam::types::PasswordPolicy> for IamPasswordPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_iam_policy_from_sdk_timestamps() {
+        let policy = aws_sdk_iam::types::Policy::builder()
+            .policy_name("my-policy")
+            .create_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .update_date(aws_smithy_types::DateTime::from_secs(1_710_000_000))
+            .build();
+        let result = IamPolicy::from(policy);
+        assert_eq!(result.policy_name, Some("my-policy".to_string()));
+        assert_eq!(
+            result.create_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.update_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
+    }
+
+    #[test]
+    fn test_iam_user_from_sdk_timestamps() {
+        let user = aws_sdk_iam::types::User::builder()
+            .user_name("my-user")
+            .user_id("AIDA123")
+            .arn("arn:aws:iam::123456789012:user/my-user")
+            .path("/")
+            .create_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .password_last_used(aws_smithy_types::DateTime::from_secs(1_710_000_000))
+            .build()
+            .unwrap();
+        let result = IamUser::from(user);
+        assert_eq!(result.user_name, "my-user");
+        assert_eq!(
+            result.create_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.password_last_used,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
+    }
 
     #[test]
     fn test_percent_decode_basic() {

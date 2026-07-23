@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 /// A CloudFront distribution.
 #[derive(SimpleObject, Clone)]
@@ -19,7 +21,7 @@ pub struct CfDistribution {
     pub viewer_certificate: Option<CfViewerCertificate>,
     pub web_acl_id: Option<String>,
     pub comment: Option<String>,
-    pub last_modified_time: Option<String>,
+    pub last_modified_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -142,7 +144,7 @@ pub fn distribution_from_summary(
             let c = d.comment();
             if c.is_empty() { None } else { Some(c.to_string()) }
         },
-        last_modified_time: Some(d.last_modified_time().to_string()),
+        last_modified_time: to_utc(Some(d.last_modified_time())),
         tags,
     }
 }
@@ -192,7 +194,7 @@ pub fn distribution_from_get(
             let cc = c.comment();
             if cc.is_empty() { None } else { Some(cc.to_string()) }
         }),
-        last_modified_time: Some(d.last_modified_time().to_string()),
+        last_modified_time: to_utc(Some(d.last_modified_time())),
         tags,
     }
 }
@@ -204,6 +206,48 @@ mod tests {
         AllowedMethods, CachedMethods, DefaultCacheBehavior, Method, MinimumProtocolVersion,
         Origin, Origins, SslSupportMethod, ViewerCertificate, ViewerProtocolPolicy,
     };
+
+    #[test]
+    fn test_distribution_from_summary_last_modified_time() {
+        let summary = aws_sdk_cloudfront::types::DistributionSummary::builder()
+            .id("dist-1")
+            .arn("arn:aws:cloudfront::123456789012:distribution/dist-1")
+            .status("Deployed")
+            .last_modified_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .domain_name("d123.cloudfront.net")
+            .comment("")
+            .price_class(aws_sdk_cloudfront::types::PriceClass::PriceClassAll)
+            .enabled(true)
+            .web_acl_id("")
+            .http_version(aws_sdk_cloudfront::types::HttpVersion::Http2)
+            .is_ipv6_enabled(true)
+            .staging(false)
+            .build()
+            .unwrap();
+        let result = distribution_from_summary(&summary, vec![]);
+        assert_eq!(
+            result.last_modified_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+    }
+
+    #[test]
+    fn test_distribution_from_get_last_modified_time() {
+        let dist = aws_sdk_cloudfront::types::Distribution::builder()
+            .id("dist-1")
+            .arn("arn:aws:cloudfront::123456789012:distribution/dist-1")
+            .status("Deployed")
+            .last_modified_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .in_progress_invalidation_batches(0)
+            .domain_name("d123.cloudfront.net")
+            .build()
+            .unwrap();
+        let result = distribution_from_get(&dist, vec![]);
+        assert_eq!(
+            result.last_modified_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+    }
 
     #[test]
     fn test_map_tags_with_values() {

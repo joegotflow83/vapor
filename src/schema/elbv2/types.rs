@@ -1,4 +1,7 @@
 use async_graphql::{Enum, SimpleObject};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 // === Enums ===
 
@@ -94,7 +97,7 @@ pub struct LoadBalancer {
     pub vpc_id: Option<String>,
     pub availability_zones: Vec<AvailabilityZone>,
     pub security_groups: Vec<String>,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_elasticloadbalancingv2::types::LoadBalancer> for LoadBalancer {
@@ -120,7 +123,7 @@ impl From<aws_sdk_elasticloadbalancingv2::types::LoadBalancer> for LoadBalancer 
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            created_time: lb.created_time().map(|d| d.to_string()),
+            created_time: to_utc(lb.created_time()),
         }
     }
 }
@@ -485,6 +488,7 @@ mod tests {
             .vpc_id("vpc-12345")
             .availability_zones(az)
             .security_groups("sg-12345")
+            .created_time(aws_sdk_elasticloadbalancingv2::primitives::DateTime::from_secs(1_700_000_000))
             .build();
         let result = LoadBalancer::from(lb);
         assert_eq!(result.arn, "arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc");
@@ -496,6 +500,7 @@ mod tests {
         assert_eq!(result.vpc_id, Some("vpc-12345".to_string()));
         assert_eq!(result.availability_zones.len(), 1);
         assert_eq!(result.security_groups, vec!["sg-12345".to_string()]);
+        assert_eq!(result.created_time.unwrap().timestamp(), 1_700_000_000);
     }
 
     #[test]

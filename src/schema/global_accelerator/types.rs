@@ -2,6 +2,9 @@ use async_graphql::SimpleObject;
 use aws_sdk_globalaccelerator::types::{
     Accelerator as SdkAccelerator, EndpointGroup, Listener,
 };
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct Accelerator {
@@ -12,7 +15,7 @@ pub struct Accelerator {
     pub ip_address_type: Option<String>,
     pub ip_addresses: Vec<String>,
     pub dns_name: Option<String>,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
 }
 
 impl From<SdkAccelerator> for Accelerator {
@@ -30,7 +33,7 @@ impl From<SdkAccelerator> for Accelerator {
             ip_address_type: a.ip_address_type().map(|t| t.as_str().to_string()),
             ip_addresses,
             dns_name: a.dns_name().map(|s| s.to_string()),
-            created_time: a.created_time().map(|t| t.to_string()),
+            created_time: to_utc(a.created_time()),
         }
     }
 }
@@ -88,7 +91,7 @@ mod tests {
             ip_address_type: Some("IPV4".to_string()),
             ip_addresses: vec!["1.2.3.4".to_string(), "5.6.7.8".to_string()],
             dns_name: Some("abc123.awsglobalaccelerator.com".to_string()),
-            created_time: Some("2024-01-01T00:00:00Z".to_string()),
+            created_time: Some(DateTime::<Utc>::UNIX_EPOCH),
         };
         assert_eq!(acc.arn, "arn:aws:globalaccelerator::123456789012:accelerator/test");
         assert_eq!(acc.name, Some("test-accelerator".to_string()));

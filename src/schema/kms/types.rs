@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 /// A KMS customer master key with full metadata.
 #[derive(SimpleObject, Clone)]
@@ -16,9 +19,9 @@ pub struct KmsKey {
     pub origin: Option<String>,
     pub multi_region: Option<bool>,
     pub enabled: Option<bool>,
-    pub creation_date: Option<String>,
-    pub deletion_date: Option<String>,
-    pub valid_to: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub deletion_date: Option<DateTime<Utc>>,
+    pub valid_to: Option<DateTime<Utc>>,
     pub custom_key_store_id: Option<String>,
     /// Whether automatic annual key rotation is enabled (CIS 3.8).
     /// `None` for keys that don't support rotation (asymmetric, HMAC, AWS-managed, external).
@@ -40,9 +43,9 @@ impl KmsKey {
             origin: m.origin().map(|s| s.as_str().to_string()),
             multi_region: m.multi_region(),
             enabled: Some(m.enabled()),
-            creation_date: m.creation_date().map(|d| d.to_string()),
-            deletion_date: m.deletion_date().map(|d| d.to_string()),
-            valid_to: m.valid_to().map(|d| d.to_string()),
+            creation_date: to_utc(m.creation_date()),
+            deletion_date: to_utc(m.deletion_date()),
+            valid_to: to_utc(m.valid_to()),
             custom_key_store_id: m.custom_key_store_id().map(|s| s.to_string()),
             rotation_enabled,
         }
@@ -61,8 +64,8 @@ pub struct KmsAlias {
     pub alias_name: Option<String>,
     pub alias_arn: Option<String>,
     pub target_key_id: Option<String>,
-    pub creation_date: Option<String>,
-    pub last_updated_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub last_updated_date: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_kms::types::AliasListEntry> for KmsAlias {
@@ -71,8 +74,8 @@ impl From<aws_sdk_kms::types::AliasListEntry> for KmsAlias {
             alias_name: a.alias_name().map(|s| s.to_string()),
             alias_arn: a.alias_arn().map(|s| s.to_string()),
             target_key_id: a.target_key_id().map(|s| s.to_string()),
-            creation_date: a.creation_date().map(|d| d.to_string()),
-            last_updated_date: a.last_updated_date().map(|d| d.to_string()),
+            creation_date: to_utc(a.creation_date()),
+            last_updated_date: to_utc(a.last_updated_date()),
         }
     }
 }
@@ -164,9 +167,9 @@ mod tests {
             .expect("key_id provided");
 
         let key = KmsKey::from(sdk);
-        assert!(key.creation_date.is_some());
-        assert!(key.deletion_date.is_some());
-        assert!(key.valid_to.is_some());
+        assert_eq!(key.creation_date.unwrap().timestamp(), 1_700_000_000);
+        assert_eq!(key.deletion_date.unwrap().timestamp(), 1_700_000_000);
+        assert_eq!(key.valid_to.unwrap().timestamp(), 1_700_000_000);
     }
 
     #[test]
@@ -219,8 +222,8 @@ mod tests {
             alias.target_key_id,
             Some("1234abcd-12ab-34cd-56ef-1234567890ab".to_string())
         );
-        assert!(alias.creation_date.is_some());
-        assert!(alias.last_updated_date.is_some());
+        assert_eq!(alias.creation_date.unwrap().timestamp(), 1_600_000_000);
+        assert_eq!(alias.last_updated_date.unwrap().timestamp(), 1_600_000_000);
     }
 
     #[test]
