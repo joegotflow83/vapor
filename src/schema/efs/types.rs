@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "EfsTag")]
@@ -20,7 +23,7 @@ pub struct EfsFileSystem {
     pub encrypted: bool,
     pub kms_key_id: Option<String>,
     pub number_of_mount_targets: i32,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -48,7 +51,7 @@ impl From<&aws_sdk_efs::types::FileSystemDescription> for EfsFileSystem {
             encrypted: fs.encrypted().unwrap_or(false),
             kms_key_id: fs.kms_key_id().map(|s| s.to_string()),
             number_of_mount_targets: fs.number_of_mount_targets() as i32,
-            creation_time: Some(fs.creation_time().to_string()),
+            creation_time: to_utc(Some(fs.creation_time())),
             tags,
         }
     }
@@ -148,6 +151,10 @@ mod tests {
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Name");
         assert_eq!(result.tags[0].value, "my-fs");
+        assert_eq!(
+            result.creation_time,
+            DateTime::from_timestamp(1_000_000, 0)
+        );
     }
 
     #[test]
@@ -171,6 +178,7 @@ mod tests {
         assert!(result.kms_key_id.is_none());
         assert!(result.throughput_mode.is_none());
         assert!(result.provisioned_throughput.is_none());
+        assert_eq!(result.creation_time, Some(DateTime::<Utc>::UNIX_EPOCH));
     }
 
     #[test]

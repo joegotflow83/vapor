@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 // === Helper Types ===
 
@@ -58,8 +60,12 @@ pub struct DbInstance {
     pub preferred_backup_window: Option<String>,
     pub preferred_maintenance_window: Option<String>,
     pub subnet_group: Option<String>,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
     pub security_groups: Vec<DbVpcSecurityGroup>,
+    /// EC2-Classic (non-VPC) security groups. Empty for VPC-based instances,
+    /// which is the norm for any instance created after EC2-Classic's 2022
+    /// retirement — see `security_groups` for the VPC equivalent.
+    pub classic_security_groups: Vec<DbSecurityGroupRef>,
     pub tags: Vec<Tag>,
 }
 
@@ -92,11 +98,16 @@ impl From<aws_sdk_rds::types::DbInstance> for DbInstance {
                 .db_subnet_group()
                 .and_then(|s| s.db_subnet_group_name())
                 .map(|s| s.to_string()),
-            created_time: db.instance_create_time().map(|d| d.to_string()),
+            created_time: to_utc(db.instance_create_time()),
             security_groups: db
                 .vpc_security_groups()
                 .iter()
                 .map(DbVpcSecurityGroup::from)
+                .collect(),
+            classic_security_groups: db
+                .db_security_groups()
+                .iter()
+                .map(DbSecurityGroupRef::from)
                 .collect(),
             tags: db
                 .tag_list()
@@ -124,7 +135,7 @@ pub struct DbCluster {
     pub db_name: Option<String>,
     pub master_username: Option<String>,
     pub storage_encrypted: bool,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
     pub members: Vec<String>,
     pub tags: Vec<Tag>,
 }
@@ -144,7 +155,7 @@ impl From<aws_sdk_rds::types::DbCluster> for DbCluster {
             db_name: db.database_name().map(|s| s.to_string()),
             master_username: db.master_username().map(|s| s.to_string()),
             storage_encrypted: db.storage_encrypted().unwrap_or(false),
-            created_time: db.cluster_create_time().map(|d| d.to_string()),
+            created_time: to_utc(db.cluster_create_time()),
             members: db
                 .db_cluster_members()
                 .iter()
@@ -174,7 +185,7 @@ pub struct DbSnapshot {
     pub engine_version: Option<String>,
     pub allocated_storage: Option<i32>,
     pub encrypted: bool,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -190,7 +201,7 @@ impl From<aws_sdk_rds::types::DbSnapshot> for DbSnapshot {
             engine_version: snap.engine_version().map(|s| s.to_string()),
             allocated_storage: snap.allocated_storage(),
             encrypted: snap.encrypted().unwrap_or(false),
-            created_time: snap.snapshot_create_time().map(|d| d.to_string()),
+            created_time: to_utc(snap.snapshot_create_time()),
             tags: snap
                 .tag_list()
                 .iter()
@@ -296,6 +307,10 @@ mod tests {
             .vpc_security_group_id("sg-abc")
             .status("active")
             .build();
+        let classic_sg = aws_sdk_rds::types::DbSecurityGroupMembership::builder()
+            .db_security_group_name("classic-sg")
+            .status("active")
+            .build();
         let tag = aws_sdk_rds::types::Tag::builder()
             .key("env")
             .value("prod")
@@ -320,7 +335,9 @@ mod tests {
             .preferred_backup_window("02:00-03:00")
             .preferred_maintenance_window("sun:05:00-sun:06:00")
             .vpc_security_groups(vpc_sg)
+            .db_security_groups(classic_sg)
             .tag_list(tag)
+            .instance_create_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = DbInstance::from(db);
         assert_eq!(result.id, "my-db");
@@ -354,9 +371,22 @@ mod tests {
             result.security_groups[0].vpc_security_group_id,
             Some("sg-abc".to_string())
         );
+        assert_eq!(result.classic_security_groups.len(), 1);
+        assert_eq!(
+            result.classic_security_groups[0].name,
+            Some("classic-sg".to_string())
+        );
+        assert_eq!(
+            result.classic_security_groups[0].status,
+            Some("active".to_string())
+        );
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "env");
         assert_eq!(result.tags[0].value, "prod");
+        assert_eq!(
+            result.created_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -408,6 +438,7 @@ mod tests {
             .storage_encrypted(true)
             .db_cluster_members(member)
             .tag_list(tag)
+            .cluster_create_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = DbCluster::from(db);
         assert_eq!(result.id, "my-cluster");
@@ -434,6 +465,10 @@ mod tests {
         assert_eq!(result.members, vec!["my-db-1".to_string()]);
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "env");
+        assert_eq!(
+            result.created_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -465,6 +500,7 @@ mod tests {
             .allocated_storage(100)
             .encrypted(true)
             .tag_list(tag)
+            .snapshot_create_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = DbSnapshot::from(snap);
         assert_eq!(result.id, "my-snapshot");
@@ -481,6 +517,10 @@ mod tests {
         assert!(result.encrypted);
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "backup");
+        assert_eq!(
+            result.created_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]

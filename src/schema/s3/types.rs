@@ -1,4 +1,5 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
 
@@ -17,7 +18,7 @@ pub struct S3PublicAccessBlock {
 #[derive(SimpleObject)]
 pub struct S3Bucket {
     pub name: String,
-    pub creation_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
     /// Normalized bucket region. Always populated — us-east-1 classic buckets
     /// are normalized from the SDK's None response to "us-east-1".
     pub region: Option<String>,
@@ -38,7 +39,7 @@ mod tests {
     fn test_s3_bucket_all_fields() {
         let bucket = S3Bucket {
             name: "my-bucket".to_string(),
-            creation_date: Some("2024-01-01T00:00:00Z".to_string()),
+            creation_date: Some("2024-01-01T00:00:00Z".parse().unwrap()),
             region: Some("us-east-1".to_string()),
             versioning: Some("Enabled".to_string()),
             encryption: Some("AES256".to_string()),

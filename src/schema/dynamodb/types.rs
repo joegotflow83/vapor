@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::dynamodb::attribute_value_to_json;
+use crate::schema::time::to_utc;
 
 // === Helper Types ===
 
@@ -127,8 +129,7 @@ pub struct DynamoTable {
     pub name: String,
     pub arn: Option<String>,
     pub status: Option<String>,
-    /// ISO 8601 creation timestamp.
-    pub creation_date_time: Option<String>,
+    pub creation_date_time: Option<DateTime<Utc>>,
     pub billing_mode: Option<String>,
     pub read_capacity_units: Option<i64>,
     pub write_capacity_units: Option<i64>,
@@ -178,9 +179,7 @@ impl From<aws_sdk_dynamodb::types::TableDescription> for DynamoTable {
             .stream_specification()
             .and_then(|ss| ss.stream_view_type())
             .map(|svt| svt.as_str().to_string());
-        let creation_date_time = t
-            .creation_date_time()
-            .map(|dt| dt.to_string());
+        let creation_date_time = to_utc(t.creation_date_time());
 
         Self {
             name: t.table_name().unwrap_or_default().to_string(),
@@ -381,5 +380,125 @@ mod tests {
         let parsed: serde_json::Value = serde_json::from_str(&result.items[0]).unwrap();
         assert!(parsed.is_object());
         assert_eq!(parsed["id"], serde_json::Value::String("row1".to_string()));
+    }
+
+    #[test]
+    fn test_dynamo_scan_result_with_last_evaluated_key() {
+        let mut lek = std::collections::HashMap::new();
+        lek.insert("id".to_string(), AttributeValue::S("row1".to_string()));
+
+        let output = aws_sdk_dynamodb::operation::scan::ScanOutput::builder()
+            .count(1)
+            .scanned_count(1)
+            .set_last_evaluated_key(Some(lek))
+            .build();
+        let result = DynamoScanResult::from_scan_output(output);
+        let lek_json: serde_json::Value =
+            serde_json::from_str(&result.last_evaluated_key.unwrap()).unwrap();
+        assert_eq!(lek_json["id"], serde_json::Value::String("row1".to_string()));
+    }
+
+    #[test]
+    fn test_dynamo_global_secondary_index_from_full() {
+        let gsi = aws_sdk_dynamodb::types::GlobalSecondaryIndexDescription::builder()
+            .index_name("gsi1")
+            .key_schema(
+                aws_sdk_dynamodb::types::KeySchemaElement::builder()
+                    .attribute_name("pk")
+                    .key_type(aws_sdk_dynamodb::types::KeyType::Hash)
+                    .build()
+                    .unwrap(),
+            )
+            .projection(
+                aws_sdk_dynamodb::types::Projection::builder()
+                    .projection_type(aws_sdk_dynamodb::types::ProjectionType::Include)
+                    .non_key_attributes("extra")
+                    .build(),
+            )
+            .index_status(aws_sdk_dynamodb::types::IndexStatus::Active)
+            .provisioned_throughput(
+                aws_sdk_dynamodb::types::ProvisionedThroughputDescription::builder()
+                    .read_capacity_units(5)
+                    .write_capacity_units(5)
+                    .build(),
+            )
+            .item_count(10)
+            .index_arn("arn:aws:dynamodb:us-east-1:123456789012:table/t/index/gsi1")
+            .build();
+
+        let result = DynamoGlobalSecondaryIndex::from(&gsi);
+        assert_eq!(result.index_name, "gsi1");
+        assert_eq!(result.key_schema.len(), 1);
+        assert_eq!(result.key_schema[0].attribute_name, "pk");
+        assert_eq!(result.projection_type, Some("INCLUDE".to_string()));
+        assert_eq!(result.non_key_attributes, vec!["extra".to_string()]);
+        assert_eq!(result.index_status, Some("ACTIVE".to_string()));
+        assert_eq!(result.read_capacity_units, Some(5));
+        assert_eq!(result.write_capacity_units, Some(5));
+        assert_eq!(result.item_count, Some(10));
+        assert_eq!(
+            result.index_arn,
+            Some("arn:aws:dynamodb:us-east-1:123456789012:table/t/index/gsi1".to_string())
+        );
+    }
+
+    #[test]
+    fn test_dynamo_global_secondary_index_from_minimal() {
+        let gsi = aws_sdk_dynamodb::types::GlobalSecondaryIndexDescription::builder().build();
+
+        let result = DynamoGlobalSecondaryIndex::from(&gsi);
+        assert_eq!(result.index_name, "");
+        assert!(result.key_schema.is_empty());
+        assert_eq!(result.projection_type, None);
+        assert!(result.non_key_attributes.is_empty());
+        assert_eq!(result.index_status, None);
+        assert_eq!(result.read_capacity_units, None);
+        assert_eq!(result.write_capacity_units, None);
+        assert_eq!(result.item_count, None);
+        assert_eq!(result.index_arn, None);
+    }
+
+    #[test]
+    fn test_dynamo_local_secondary_index_from_full() {
+        let lsi = aws_sdk_dynamodb::types::LocalSecondaryIndexDescription::builder()
+            .index_name("lsi1")
+            .key_schema(
+                aws_sdk_dynamodb::types::KeySchemaElement::builder()
+                    .attribute_name("sk")
+                    .key_type(aws_sdk_dynamodb::types::KeyType::Range)
+                    .build()
+                    .unwrap(),
+            )
+            .projection(
+                aws_sdk_dynamodb::types::Projection::builder()
+                    .projection_type(aws_sdk_dynamodb::types::ProjectionType::All)
+                    .build(),
+            )
+            .item_count(3)
+            .index_arn("arn:aws:dynamodb:us-east-1:123456789012:table/t/index/lsi1")
+            .build();
+
+        let result = DynamoLocalSecondaryIndex::from(&lsi);
+        assert_eq!(result.index_name, "lsi1");
+        assert_eq!(result.key_schema[0].attribute_name, "sk");
+        assert_eq!(result.projection_type, Some("ALL".to_string()));
+        assert!(result.non_key_attributes.is_empty());
+        assert_eq!(result.item_count, Some(3));
+        assert_eq!(
+            result.index_arn,
+            Some("arn:aws:dynamodb:us-east-1:123456789012:table/t/index/lsi1".to_string())
+        );
+    }
+
+    #[test]
+    fn test_dynamo_local_secondary_index_from_minimal() {
+        let lsi = aws_sdk_dynamodb::types::LocalSecondaryIndexDescription::builder().build();
+
+        let result = DynamoLocalSecondaryIndex::from(&lsi);
+        assert_eq!(result.index_name, "");
+        assert!(result.key_schema.is_empty());
+        assert_eq!(result.projection_type, None);
+        assert_eq!(result.item_count, None);
+        assert_eq!(result.index_arn, None);
     }
 }

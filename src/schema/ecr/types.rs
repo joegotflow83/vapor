@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::ecr::ImageScanFindingsResult;
+use crate::schema::time::to_utc;
 
 /// An ECR repository.
 #[derive(SimpleObject, Clone)]
@@ -9,7 +11,7 @@ pub struct EcrRepository {
     pub repository_id: Option<String>,
     pub repository_name: Option<String>,
     pub repository_uri: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub image_tag_mutability: Option<String>,
     pub scan_on_push: Option<bool>,
     pub encryption_type: Option<String>,
@@ -24,7 +26,7 @@ impl From<aws_sdk_ecr::types::Repository> for EcrRepository {
             repository_id: None,
             repository_name: r.repository_name().map(|s| s.to_string()),
             repository_uri: r.repository_uri().map(|s| s.to_string()),
-            created_at: r.created_at().map(|d| d.to_string()),
+            created_at: to_utc(r.created_at()),
             image_tag_mutability: r.image_tag_mutability().map(|m| m.as_str().to_string()),
             scan_on_push: r.image_scanning_configuration().map(|c| c.scan_on_push()),
             encryption_type: r
@@ -46,7 +48,7 @@ pub struct EcrImage {
     pub image_digest: Option<String>,
     pub image_tags: Vec<String>,
     pub image_size_in_bytes: Option<i64>,
-    pub image_pushed_at: Option<String>,
+    pub image_pushed_at: Option<DateTime<Utc>>,
     pub image_scan_status: Option<String>,
     pub artifact_media_type: Option<String>,
     pub image_manifest_media_type: Option<String>,
@@ -66,7 +68,7 @@ impl From<aws_sdk_ecr::types::ImageDetail> for EcrImage {
             image_digest: img.image_digest().map(|s| s.to_string()),
             image_tags,
             image_size_in_bytes: img.image_size_in_bytes(),
-            image_pushed_at: img.image_pushed_at().map(|d| d.to_string()),
+            image_pushed_at: to_utc(img.image_pushed_at()),
             image_scan_status: img
                 .image_scan_status()
                 .and_then(|s| s.status())
@@ -131,10 +133,12 @@ pub struct EcrSeverityCount {
 pub struct EcrImageScanFindings {
     pub image_tags: Vec<String>,
     pub scan_status: Option<String>,
-    pub scan_completed_at: Option<String>,
+    pub scan_completed_at: Option<DateTime<Utc>>,
     /// Finding counts broken down by severity (CRITICAL, HIGH, MEDIUM, LOW, etc.).
     pub finding_severity_counts: Vec<EcrSeverityCount>,
     pub findings: Vec<EcrImageScanFinding>,
+    /// Opaque continuation token for the findings list; pass back as `nextToken` to resume.
+    pub next_token: Option<String>,
 }
 
 impl From<ImageScanFindingsResult> for EcrImageScanFindings {
@@ -148,9 +152,10 @@ impl From<ImageScanFindingsResult> for EcrImageScanFindings {
         Self {
             image_tags: r.image_tags,
             scan_status: r.scan_status,
-            scan_completed_at: r.scan_completed_at,
+            scan_completed_at: to_utc(r.scan_completed_at.as_ref()),
             finding_severity_counts,
             findings,
+            next_token: None,
         }
     }
 }
@@ -162,6 +167,7 @@ mod tests {
         EncryptionConfiguration, EncryptionType, ImageDetail, ImageScanningConfiguration,
         ImageScanStatus, ImageTagMutability, Repository, ScanStatus,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_ecr_repository_all_fields() {
@@ -177,6 +183,7 @@ mod tests {
             .registry_id("123456789012")
             .repository_name("my-app")
             .repository_uri("123456789012.dkr.ecr.us-east-1.amazonaws.com/my-app")
+            .created_at(SmithyDateTime::from_secs(1_704_067_200))
             .image_tag_mutability(ImageTagMutability::Mutable)
             .image_scanning_configuration(scan_config)
             .encryption_configuration(encryption_config)
@@ -188,6 +195,10 @@ mod tests {
         assert!(repo.repository_id.is_none());
         assert_eq!(repo.repository_name, Some("my-app".to_string()));
         assert_eq!(repo.repository_uri, Some("123456789012.dkr.ecr.us-east-1.amazonaws.com/my-app".to_string()));
+        assert_eq!(
+            repo.created_at.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
         assert_eq!(repo.image_tag_mutability, Some("MUTABLE".to_string()));
         assert_eq!(repo.scan_on_push, Some(true));
         assert_eq!(repo.encryption_type, Some("AES256".to_string()));
@@ -232,6 +243,7 @@ mod tests {
         let repo = EcrRepository::from(sdk);
         assert!(repo.registry_id.is_none());
         assert!(repo.repository_name.is_none());
+        assert!(repo.created_at.is_none());
         assert!(repo.scan_on_push.is_none());
         assert!(repo.encryption_type.is_none());
         assert!(repo.kms_key.is_none());
@@ -250,6 +262,7 @@ mod tests {
             .image_tags("latest")
             .image_tags("v1.0")
             .image_size_in_bytes(10_485_760i64)
+            .image_pushed_at(SmithyDateTime::from_secs(1_717_200_000))
             .image_scan_status(scan_status)
             .artifact_media_type("application/vnd.oci.image.manifest.v1+json")
             .image_manifest_media_type("application/vnd.docker.distribution.manifest.v2+json")
@@ -261,6 +274,7 @@ mod tests {
         assert_eq!(img.image_digest, Some("sha256:abc123def456".to_string()));
         assert_eq!(img.image_tags, vec!["latest".to_string(), "v1.0".to_string()]);
         assert_eq!(img.image_size_in_bytes, Some(10_485_760i64));
+        assert!(img.image_pushed_at.is_some());
         assert_eq!(img.image_scan_status, Some("COMPLETE".to_string()));
         assert_eq!(img.artifact_media_type, Some("application/vnd.oci.image.manifest.v1+json".to_string()));
         assert_eq!(img.image_manifest_media_type, Some("application/vnd.docker.distribution.manifest.v2+json".to_string()));
@@ -275,6 +289,7 @@ mod tests {
         let img = EcrImage::from(sdk);
         assert_eq!(img.image_digest, Some("sha256:def456".to_string()));
         assert!(img.image_tags.is_empty());
+        assert!(img.image_pushed_at.is_none());
         assert!(img.image_scan_status.is_none());
         assert!(img.artifact_media_type.is_none());
     }
@@ -353,7 +368,7 @@ mod tests {
         let result = ImageScanFindingsResult {
             image_tags: vec!["latest".to_string()],
             scan_status: Some("COMPLETE".to_string()),
-            scan_completed_at: Some("2026-06-16T00:00:00Z".to_string()),
+            scan_completed_at: Some(SmithyDateTime::from_secs(1_750_032_000)),
             finding_severity_counts: vec![
                 ("CRITICAL".to_string(), 1i64),
                 ("HIGH".to_string(), 3i64),
@@ -363,11 +378,13 @@ mod tests {
         let out = EcrImageScanFindings::from(result);
         assert_eq!(out.image_tags, vec!["latest".to_string()]);
         assert_eq!(out.scan_status, Some("COMPLETE".to_string()));
+        assert!(out.scan_completed_at.is_some());
         assert_eq!(out.finding_severity_counts.len(), 2);
         assert_eq!(out.finding_severity_counts[0].severity, "CRITICAL");
         assert_eq!(out.finding_severity_counts[0].count, 1);
         assert_eq!(out.findings.len(), 1);
         assert_eq!(out.findings[0].name, Some("CVE-2023-9999".to_string()));
         assert_eq!(out.findings[0].severity, Some("CRITICAL".to_string()));
+        assert!(out.next_token.is_none());
     }
 }
