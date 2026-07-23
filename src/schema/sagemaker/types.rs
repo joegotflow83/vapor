@@ -2,6 +2,9 @@ use async_graphql::SimpleObject;
 use aws_sdk_sagemaker::operation::describe_endpoint::DescribeEndpointOutput;
 use aws_sdk_sagemaker::operation::describe_training_job::DescribeTrainingJobOutput;
 use aws_sdk_sagemaker::types::ModelSummary;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct SageMakerEndpoint {
@@ -9,8 +12,8 @@ pub struct SageMakerEndpoint {
     pub arn: Option<String>,
     pub status: Option<String>,
     pub endpoint_config_name: Option<String>,
-    pub creation_time: Option<String>,
-    pub last_modified_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub last_modified_time: Option<DateTime<Utc>>,
 }
 
 impl From<DescribeEndpointOutput> for SageMakerEndpoint {
@@ -20,8 +23,8 @@ impl From<DescribeEndpointOutput> for SageMakerEndpoint {
             arn: e.endpoint_arn().map(|s| s.to_string()),
             status: e.endpoint_status().map(|s| s.as_str().to_string()),
             endpoint_config_name: e.endpoint_config_name().map(|s| s.to_string()),
-            creation_time: e.creation_time().map(|t| t.to_string()),
-            last_modified_time: e.last_modified_time().map(|t| t.to_string()),
+            creation_time: to_utc(e.creation_time()),
+            last_modified_time: to_utc(e.last_modified_time()),
         }
     }
 }
@@ -31,8 +34,8 @@ pub struct SageMakerTrainingJob {
     pub name: String,
     pub arn: Option<String>,
     pub status: Option<String>,
-    pub creation_time: Option<String>,
-    pub training_end_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub training_end_time: Option<DateTime<Utc>>,
     pub instance_type: Option<String>,
     pub instance_count: Option<i32>,
 }
@@ -44,8 +47,8 @@ impl From<DescribeTrainingJobOutput> for SageMakerTrainingJob {
             name: j.training_job_name().unwrap_or_default().to_string(),
             arn: j.training_job_arn().map(|s| s.to_string()),
             status: j.training_job_status().map(|s| s.as_str().to_string()),
-            creation_time: j.creation_time().map(|t| t.to_string()),
-            training_end_time: j.training_end_time().map(|dt| dt.to_string()),
+            creation_time: to_utc(j.creation_time()),
+            training_end_time: to_utc(j.training_end_time()),
             instance_type: rc
                 .and_then(|c| c.instance_type())
                 .map(|it| it.as_str().to_string()),
@@ -58,7 +61,7 @@ impl From<DescribeTrainingJobOutput> for SageMakerTrainingJob {
 pub struct SageMakerModel {
     pub name: String,
     pub arn: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
 }
 
 impl From<ModelSummary> for SageMakerModel {
@@ -66,7 +69,7 @@ impl From<ModelSummary> for SageMakerModel {
         Self {
             name: m.model_name().unwrap_or_default().to_string(),
             arn: m.model_arn().map(|s| s.to_string()),
-            creation_time: m.creation_time().map(|dt| dt.to_string()),
+            creation_time: to_utc(m.creation_time()),
         }
     }
 }
@@ -82,8 +85,8 @@ mod tests {
             arn: Some("arn:aws:sagemaker:us-east-1:123456789012:endpoint/my-endpoint".to_string()),
             status: Some("InService".to_string()),
             endpoint_config_name: Some("my-config".to_string()),
-            creation_time: Some("2024-01-01T00:00:00Z".to_string()),
-            last_modified_time: Some("2024-01-02T00:00:00Z".to_string()),
+            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
+            last_modified_time: Some(DateTime::parse_from_rfc3339("2024-01-02T00:00:00Z").unwrap().with_timezone(&Utc)),
         };
 
         assert_eq!(endpoint.name, "my-endpoint");
@@ -118,8 +121,8 @@ mod tests {
             name: "my-training-job".to_string(),
             arn: Some("arn:aws:sagemaker:us-east-1:123456789012:training-job/my-training-job".to_string()),
             status: Some("Completed".to_string()),
-            creation_time: Some("2024-01-01T00:00:00Z".to_string()),
-            training_end_time: Some("2024-01-01T02:00:00Z".to_string()),
+            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
+            training_end_time: Some(DateTime::parse_from_rfc3339("2024-01-01T02:00:00Z").unwrap().with_timezone(&Utc)),
             instance_type: Some("ml.m5.xlarge".to_string()),
             instance_count: Some(2),
         };
@@ -155,7 +158,7 @@ mod tests {
         let model = SageMakerModel {
             name: "my-model".to_string(),
             arn: Some("arn:aws:sagemaker:us-east-1:123456789012:model/my-model".to_string()),
-            creation_time: Some("2024-01-01T00:00:00Z".to_string()),
+            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
         };
 
         assert_eq!(model.name, "my-model");

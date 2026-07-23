@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct GlueDatabase {
@@ -6,7 +9,7 @@ pub struct GlueDatabase {
     pub catalog_id: Option<String>,
     pub description: Option<String>,
     pub location_uri: Option<String>,
-    pub create_time: Option<String>,
+    pub create_time: Option<DateTime<Utc>>,
 }
 
 impl From<&aws_sdk_glue::types::Database> for GlueDatabase {
@@ -16,7 +19,7 @@ impl From<&aws_sdk_glue::types::Database> for GlueDatabase {
             catalog_id: db.catalog_id().map(|s| s.to_string()),
             description: db.description().map(|s| s.to_string()),
             location_uri: db.location_uri().map(|s| s.to_string()),
-            create_time: db.create_time().map(|t| t.to_string()),
+            create_time: to_utc(db.create_time()),
         }
     }
 }
@@ -33,8 +36,8 @@ pub struct GlueTable {
     pub serde: Option<String>,
     pub columns: Vec<GlueColumn>,
     pub partition_keys: Vec<GlueColumn>,
-    pub create_time: Option<String>,
-    pub update_time: Option<String>,
+    pub create_time: Option<DateTime<Utc>>,
+    pub update_time: Option<DateTime<Utc>>,
 }
 
 impl From<&aws_sdk_glue::types::Table> for GlueTable {
@@ -55,8 +58,8 @@ impl From<&aws_sdk_glue::types::Table> for GlueTable {
                 .map(|s| s.columns().iter().map(GlueColumn::from).collect())
                 .unwrap_or_default(),
             partition_keys: t.partition_keys().iter().map(GlueColumn::from).collect(),
-            create_time: t.create_time().map(|ts| ts.to_string()),
-            update_time: t.update_time().map(|ts| ts.to_string()),
+            create_time: to_utc(t.create_time()),
+            update_time: to_utc(t.update_time()),
         }
     }
 }
@@ -86,8 +89,8 @@ pub struct GlueCrawler {
     pub state: Option<String>,
     pub schedule: Option<String>,
     pub last_crawl_status: Option<String>,
-    pub last_crawl_time: Option<String>,
-    pub creation_time: Option<String>,
+    pub last_crawl_time: Option<DateTime<Utc>>,
+    pub creation_time: Option<DateTime<Utc>>,
 }
 
 impl From<&aws_sdk_glue::types::Crawler> for GlueCrawler {
@@ -100,8 +103,8 @@ impl From<&aws_sdk_glue::types::Crawler> for GlueCrawler {
             state: c.state().map(|s| s.as_str().to_string()),
             schedule: c.schedule().and_then(|s| s.schedule_expression().map(|e| e.to_string())),
             last_crawl_status: last_crawl.and_then(|l| l.status().map(|s| s.as_str().to_string())),
-            last_crawl_time: last_crawl.and_then(|l| l.start_time().map(|t| t.to_string())),
-            creation_time: c.creation_time().map(|t| t.to_string()),
+            last_crawl_time: last_crawl.and_then(|l| to_utc(l.start_time())),
+            creation_time: to_utc(c.creation_time()),
         }
     }
 }
@@ -116,8 +119,8 @@ pub struct GlueJob {
     pub number_of_workers: Option<i32>,
     pub glue_version: Option<String>,
     pub last_run_status: Option<String>,
-    pub created_on: Option<String>,
-    pub last_modified_on: Option<String>,
+    pub created_on: Option<DateTime<Utc>>,
+    pub last_modified_on: Option<DateTime<Utc>>,
 }
 
 impl GlueJob {
@@ -131,8 +134,8 @@ impl GlueJob {
             number_of_workers: job.number_of_workers(),
             glue_version: job.glue_version().map(|s| s.to_string()),
             last_run_status,
-            created_on: job.created_on().map(|t| t.to_string()),
-            last_modified_on: job.last_modified_on().map(|t| t.to_string()),
+            created_on: to_utc(job.created_on()),
+            last_modified_on: to_utc(job.last_modified_on()),
         }
     }
 }
@@ -148,6 +151,7 @@ mod tests {
             .catalog_id("123456789012")
             .description("Test database")
             .location_uri("s3://bucket/path")
+            .create_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build()
             .unwrap();
         let result = GlueDatabase::from(&db);
@@ -155,6 +159,10 @@ mod tests {
         assert_eq!(result.catalog_id, Some("123456789012".to_string()));
         assert_eq!(result.description, Some("Test database".to_string()));
         assert_eq!(result.location_uri, Some("s3://bucket/path".to_string()));
+        assert_eq!(
+            result.create_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -213,6 +221,8 @@ mod tests {
             .table_type("EXTERNAL_TABLE")
             .storage_descriptor(sd)
             .partition_keys(partition_key)
+            .create_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .update_time(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build()
             .unwrap();
         let result = GlueTable::from(&table);
@@ -225,6 +235,14 @@ mod tests {
         assert_eq!(result.partition_keys.len(), 1);
         assert_eq!(result.partition_keys[0].name, "dt");
         assert!(result.serde.is_some());
+        assert_eq!(
+            result.create_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.update_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]
@@ -242,10 +260,15 @@ mod tests {
 
     #[test]
     fn test_glue_crawler_from_sdk() {
+        let last_crawl = aws_sdk_glue::types::LastCrawlInfo::builder()
+            .start_time(aws_smithy_types::DateTime::from_secs(1_690_000_000))
+            .build();
         let crawler = aws_sdk_glue::types::Crawler::builder()
             .name("my-crawler")
             .role("arn:aws:iam::123456789012:role/GlueRole")
             .database_name("my_db")
+            .last_crawl(last_crawl)
+            .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = GlueCrawler::from(&crawler);
         assert_eq!(result.name, "my-crawler");
@@ -254,6 +277,14 @@ mod tests {
             Some("arn:aws:iam::123456789012:role/GlueRole".to_string())
         );
         assert_eq!(result.database_name, Some("my_db".to_string()));
+        assert_eq!(
+            result.last_crawl_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_690_000_000))
+        );
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -277,6 +308,8 @@ mod tests {
             .command(cmd)
             .max_capacity(10.0)
             .glue_version("3.0")
+            .created_on(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_modified_on(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build();
         let result = GlueJob::from_sdk(&job, Some("SUCCEEDED".to_string()));
         assert_eq!(result.name, "my-job");
@@ -284,6 +317,14 @@ mod tests {
         assert_eq!(result.max_capacity, Some(10.0));
         assert_eq!(result.glue_version, Some("3.0".to_string()));
         assert_eq!(result.last_run_status, Some("SUCCEEDED".to_string()));
+        assert_eq!(
+            result.created_on,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.last_modified_on,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]

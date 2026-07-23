@@ -1,15 +1,14 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
-use crate::aws::rekognition::{
-    RekognitionCollectionInfo, RekognitionDatasetInfo, RekognitionProjectInfo,
-    RekognitionStreamProcessorInfo,
-};
+use crate::aws::rekognition::{RekognitionCollectionInfo, RekognitionStreamProcessorInfo};
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct RekognitionCollection {
     pub collection_id: Option<String>,
     pub collection_arn: Option<String>,
-    pub creation_timestamp: Option<String>,
+    pub creation_timestamp: Option<DateTime<Utc>>,
     pub face_model_version: Option<String>,
     pub face_count: Option<i64>,
 }
@@ -19,7 +18,7 @@ impl From<RekognitionCollectionInfo> for RekognitionCollection {
         Self {
             collection_id: info.collection_id,
             collection_arn: info.collection_arn,
-            creation_timestamp: info.creation_timestamp,
+            creation_timestamp: to_utc(info.creation_timestamp.as_ref()),
             face_model_version: info.face_model_version,
             face_count: info.face_count,
         }
@@ -28,19 +27,19 @@ impl From<RekognitionCollectionInfo> for RekognitionCollection {
 
 #[derive(SimpleObject, Clone)]
 pub struct RekognitionDataset {
-    pub creation_timestamp: Option<String>,
+    pub creation_timestamp: Option<DateTime<Utc>>,
     pub dataset_type: Option<String>,
     pub dataset_arn: Option<String>,
     pub status: Option<String>,
 }
 
-impl From<RekognitionDatasetInfo> for RekognitionDataset {
-    fn from(info: RekognitionDatasetInfo) -> Self {
+impl From<aws_sdk_rekognition::types::DatasetMetadata> for RekognitionDataset {
+    fn from(d: aws_sdk_rekognition::types::DatasetMetadata) -> Self {
         Self {
-            creation_timestamp: info.creation_timestamp,
-            dataset_type: info.dataset_type,
-            dataset_arn: info.dataset_arn,
-            status: info.status,
+            creation_timestamp: to_utc(d.creation_timestamp.as_ref()),
+            dataset_type: d.dataset_type.map(|dt| dt.as_str().to_string()),
+            dataset_arn: d.dataset_arn,
+            status: d.status.map(|s| s.as_str().to_string()),
         }
     }
 }
@@ -48,22 +47,28 @@ impl From<RekognitionDatasetInfo> for RekognitionDataset {
 #[derive(SimpleObject, Clone)]
 pub struct RekognitionProject {
     pub project_arn: Option<String>,
-    pub creation_timestamp: Option<String>,
+    pub creation_timestamp: Option<DateTime<Utc>>,
     pub status: Option<String>,
     pub project_name: Option<String>,
     pub datasets: Vec<RekognitionDataset>,
     pub feature: Option<String>,
 }
 
-impl From<RekognitionProjectInfo> for RekognitionProject {
-    fn from(info: RekognitionProjectInfo) -> Self {
+impl From<aws_sdk_rekognition::types::ProjectDescription> for RekognitionProject {
+    fn from(proj: aws_sdk_rekognition::types::ProjectDescription) -> Self {
         Self {
-            project_arn: info.project_arn,
-            creation_timestamp: info.creation_timestamp,
-            status: info.status,
-            project_name: info.project_name,
-            datasets: info.datasets.into_iter().map(RekognitionDataset::from).collect(),
-            feature: info.feature,
+            project_arn: proj.project_arn,
+            creation_timestamp: to_utc(proj.creation_timestamp.as_ref()),
+            status: proj.status.map(|s| s.as_str().to_string()),
+            // ProjectDescription exposes only project_arn, no separate name.
+            project_name: None,
+            datasets: proj
+                .datasets
+                .unwrap_or_default()
+                .into_iter()
+                .map(RekognitionDataset::from)
+                .collect(),
+            feature: proj.feature.map(|f| f.as_str().to_string()),
         }
     }
 }
@@ -88,10 +93,7 @@ impl From<RekognitionStreamProcessorInfo> for RekognitionStreamProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::rekognition::{
-        RekognitionCollectionInfo, RekognitionDatasetInfo, RekognitionProjectInfo,
-        RekognitionStreamProcessorInfo,
-    };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_collection_from_full() {
@@ -100,13 +102,14 @@ mod tests {
             collection_arn: Some(
                 "arn:aws:rekognition:us-east-1:123456789012:collection/my-collection".to_string(),
             ),
-            creation_timestamp: Some("2024-01-15T10:30:00Z".to_string()),
+            creation_timestamp: Some(SmithyDateTime::from_secs(1_705_314_600)),
             face_model_version: Some("7.0".to_string()),
             face_count: Some(42),
         };
         let result = RekognitionCollection::from(info);
         assert_eq!(result.collection_id, Some("my-collection".to_string()));
         assert!(result.collection_arn.is_some());
+        assert!(result.creation_timestamp.is_some());
         assert_eq!(result.face_model_version, Some("7.0".to_string()));
         assert_eq!(result.face_count, Some(42));
     }
@@ -123,71 +126,69 @@ mod tests {
         let result = RekognitionCollection::from(info);
         assert_eq!(result.collection_id, Some("empty-collection".to_string()));
         assert!(result.collection_arn.is_none());
+        assert!(result.creation_timestamp.is_none());
         assert_eq!(result.face_count, Some(0));
     }
 
     #[test]
     fn test_dataset_from() {
-        let info = RekognitionDatasetInfo {
-            creation_timestamp: Some("2024-01-10T08:00:00Z".to_string()),
-            dataset_type: Some("TRAIN".to_string()),
-            dataset_arn: Some(
-                "arn:aws:rekognition:us-east-1:123456789012:project/my-project/dataset/train/1"
-                    .to_string(),
-            ),
-            status: Some("CREATE_COMPLETE".to_string()),
-        };
+        let info = aws_sdk_rekognition::types::DatasetMetadata::builder()
+            .creation_timestamp(SmithyDateTime::from_secs(1_705_000_000))
+            .dataset_type(aws_sdk_rekognition::types::DatasetType::Train)
+            .dataset_arn(
+                "arn:aws:rekognition:us-east-1:123456789012:project/my-project/dataset/train/1",
+            )
+            .status(aws_sdk_rekognition::types::DatasetStatus::CreateComplete)
+            .build();
         let result = RekognitionDataset::from(info);
         assert_eq!(result.dataset_type, Some("TRAIN".to_string()));
         assert_eq!(result.status, Some("CREATE_COMPLETE".to_string()));
         assert!(result.dataset_arn.is_some());
+        assert!(result.creation_timestamp.is_some());
     }
 
     #[test]
     fn test_project_from_full() {
-        let info = RekognitionProjectInfo {
-            project_arn: Some(
-                "arn:aws:rekognition:us-east-1:123456789012:project/my-project".to_string(),
-            ),
-            creation_timestamp: Some("2024-01-05T09:00:00Z".to_string()),
-            status: Some("CREATED".to_string()),
-            project_name: Some("my-project".to_string()),
-            datasets: vec![
-                RekognitionDatasetInfo {
-                    creation_timestamp: Some("2024-01-10T08:00:00Z".to_string()),
-                    dataset_type: Some("TRAIN".to_string()),
-                    dataset_arn: Some("arn:aws:rekognition:us-east-1:123:project/my-project/dataset/train/1".to_string()),
-                    status: Some("CREATE_COMPLETE".to_string()),
-                },
-                RekognitionDatasetInfo {
-                    creation_timestamp: Some("2024-01-10T08:00:00Z".to_string()),
-                    dataset_type: Some("TEST".to_string()),
-                    dataset_arn: Some("arn:aws:rekognition:us-east-1:123:project/my-project/dataset/test/1".to_string()),
-                    status: Some("CREATE_COMPLETE".to_string()),
-                },
-            ],
-            feature: Some("CUSTOM_LABELS".to_string()),
-        };
-        let result = RekognitionProject::from(info);
-        assert_eq!(result.project_name, Some("my-project".to_string()));
+        let dataset1 = aws_sdk_rekognition::types::DatasetMetadata::builder()
+            .creation_timestamp(SmithyDateTime::from_secs(1_705_000_000))
+            .dataset_type(aws_sdk_rekognition::types::DatasetType::Train)
+            .dataset_arn("arn:aws:rekognition:us-east-1:123:project/my-project/dataset/train/1")
+            .status(aws_sdk_rekognition::types::DatasetStatus::CreateComplete)
+            .build();
+        let dataset2 = aws_sdk_rekognition::types::DatasetMetadata::builder()
+            .creation_timestamp(SmithyDateTime::from_secs(1_705_000_000))
+            .dataset_type(aws_sdk_rekognition::types::DatasetType::Test)
+            .dataset_arn("arn:aws:rekognition:us-east-1:123:project/my-project/dataset/test/1")
+            .status(aws_sdk_rekognition::types::DatasetStatus::CreateComplete)
+            .build();
+        let proj = aws_sdk_rekognition::types::ProjectDescription::builder()
+            .project_arn("arn:aws:rekognition:us-east-1:123456789012:project/my-project")
+            .creation_timestamp(SmithyDateTime::from_secs(1_704_442_800))
+            .status(aws_sdk_rekognition::types::ProjectStatus::Created)
+            .datasets(dataset1)
+            .datasets(dataset2)
+            .feature(aws_sdk_rekognition::types::CustomizationFeature::CustomLabels)
+            .build();
+        let result = RekognitionProject::from(proj);
+        assert!(result.project_arn.is_some());
+        assert!(result.creation_timestamp.is_some());
         assert_eq!(result.status, Some("CREATED".to_string()));
         assert_eq!(result.datasets.len(), 2);
         assert_eq!(result.datasets[0].dataset_type, Some("TRAIN".to_string()));
         assert_eq!(result.datasets[1].dataset_type, Some("TEST".to_string()));
         assert_eq!(result.feature, Some("CUSTOM_LABELS".to_string()));
+        // ProjectDescription has no separate name field.
+        assert!(result.project_name.is_none());
     }
 
     #[test]
     fn test_project_from_no_datasets() {
-        let info = RekognitionProjectInfo {
-            project_arn: Some("arn:aws:rekognition:us-east-1:123:project/empty".to_string()),
-            creation_timestamp: None,
-            status: Some("CREATING".to_string()),
-            project_name: Some("empty".to_string()),
-            datasets: vec![],
-            feature: Some("CONTENT_MODERATION".to_string()),
-        };
-        let result = RekognitionProject::from(info);
+        let proj = aws_sdk_rekognition::types::ProjectDescription::builder()
+            .project_arn("arn:aws:rekognition:us-east-1:123:project/empty")
+            .status(aws_sdk_rekognition::types::ProjectStatus::Creating)
+            .feature(aws_sdk_rekognition::types::CustomizationFeature::ContentModeration)
+            .build();
+        let result = RekognitionProject::from(proj);
         assert_eq!(result.datasets.len(), 0);
         assert_eq!(result.status, Some("CREATING".to_string()));
         assert_eq!(result.feature, Some("CONTENT_MODERATION".to_string()));

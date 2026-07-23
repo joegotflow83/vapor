@@ -1,11 +1,14 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct AthenaWorkgroup {
     pub name: String,
     pub state: Option<String>,
     pub description: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub output_location: Option<String>,
     pub enforce_workgroup_configuration: bool,
     pub bytes_scanned_cutoff: Option<i64>,
@@ -19,7 +22,7 @@ impl AthenaWorkgroup {
             name: wg.name().to_string(),
             state: wg.state().map(|s| s.as_str().to_string()),
             description: wg.description().map(|s| s.to_string()),
-            creation_time: wg.creation_time().map(|t| t.to_string()),
+            creation_time: to_utc(wg.creation_time()),
             output_location: config
                 .and_then(|c| c.result_configuration())
                 .and_then(|r| r.output_location())
@@ -67,8 +70,8 @@ pub struct AthenaQueryExecution {
     pub database: Option<String>,
     pub workgroup: Option<String>,
     pub state: Option<String>,
-    pub submission_time: Option<String>,
-    pub completion_time: Option<String>,
+    pub submission_time: Option<DateTime<Utc>>,
+    pub completion_time: Option<DateTime<Utc>>,
     pub data_scanned_bytes: Option<i64>,
     pub execution_time_ms: Option<i64>,
     pub output_location: Option<String>,
@@ -84,8 +87,8 @@ impl From<aws_sdk_athena::types::QueryExecution> for AthenaQueryExecution {
             database: qe.query_execution_context().and_then(|c| c.database()).map(|s| s.to_string()),
             workgroup: qe.work_group().map(|s| s.to_string()),
             state: status.and_then(|s| s.state()).map(|s| s.as_str().to_string()),
-            submission_time: status.and_then(|s| s.submission_date_time()).map(|t| t.to_string()),
-            completion_time: status.and_then(|s| s.completion_date_time()).map(|t| t.to_string()),
+            submission_time: to_utc(status.and_then(|s| s.submission_date_time())),
+            completion_time: to_utc(status.and_then(|s| s.completion_date_time())),
             data_scanned_bytes: stats.and_then(|s| s.data_scanned_in_bytes()),
             execution_time_ms: stats.and_then(|s| s.engine_execution_time_in_millis()),
             output_location: qe.result_configuration().and_then(|r| r.output_location()).map(|s| s.to_string()),
@@ -130,6 +133,7 @@ mod tests {
             .state(aws_sdk_athena::types::WorkGroupState::Enabled)
             .description("Primary workgroup")
             .configuration(config)
+            .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build()
             .unwrap();
         let result = AthenaWorkgroup::from_sdk(&wg);
@@ -140,6 +144,10 @@ mod tests {
         assert_eq!(result.bytes_scanned_cutoff, Some(1_000_000));
         assert_eq!(result.output_location, Some("s3://my-bucket/output/".to_string()));
         assert_eq!(result.engine_version, Some("Athena engine version 3".to_string()));
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -176,6 +184,8 @@ mod tests {
     fn test_query_execution_from_sdk_full() {
         let status = aws_sdk_athena::types::QueryExecutionStatus::builder()
             .state(aws_sdk_athena::types::QueryExecutionState::Succeeded)
+            .submission_date_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .completion_date_time(aws_smithy_types::DateTime::from_secs(1_700_000_600))
             .build();
         let stats = aws_sdk_athena::types::QueryExecutionStatistics::builder()
             .data_scanned_in_bytes(1024)
@@ -205,5 +215,13 @@ mod tests {
         assert_eq!(result.data_scanned_bytes, Some(1024));
         assert_eq!(result.execution_time_ms, Some(500));
         assert_eq!(result.output_location, Some("s3://results/query-123.csv".to_string()));
+        assert_eq!(
+            result.submission_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.completion_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_600))
+        );
     }
 }
