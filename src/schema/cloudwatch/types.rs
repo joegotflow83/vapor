@@ -2,14 +2,14 @@ use async_graphql::{Enum, InputObject, SimpleObject};
 use chrono::{DateTime, Duration, Utc};
 
 use crate::error::VaporError;
+use crate::schema::time::to_utc;
 
 // === Helpers ===
 
-/// Convert milliseconds since Unix epoch to an ISO-8601 / RFC-3339 string.
-fn ms_to_iso8601(ms: i64) -> String {
+/// Convert milliseconds since Unix epoch (CloudWatch Logs' wire format for
+/// every timestamp field) to a UTC `chrono` datetime.
+fn ms_to_datetime(ms: i64) -> Option<DateTime<Utc>> {
     chrono::DateTime::from_timestamp_millis(ms)
-        .map(|dt: DateTime<Utc>| dt.to_rfc3339())
-        .unwrap_or_default()
 }
 
 // === Enums ===
@@ -263,8 +263,8 @@ pub struct Alarm {
     pub state: AlarmState,
     /// Human-readable reason explaining the current alarm state.
     pub state_reason: Option<String>,
-    /// ISO-8601 timestamp of the last state change.
-    pub state_updated_timestamp: Option<String>,
+    /// Timestamp of the last state change.
+    pub state_updated_timestamp: Option<DateTime<Utc>>,
     pub metric: AlarmMetric,
     pub comparison_operator: Option<ComparisonOperator>,
     pub threshold: Option<f64>,
@@ -277,8 +277,8 @@ pub struct Alarm {
     pub alarm_actions: Vec<String>,
     /// Actions triggered when the alarm returns to OK state.
     pub ok_actions: Vec<String>,
-    /// ISO-8601 timestamp of the last alarm configuration change.
-    pub updated_timestamp: Option<String>,
+    /// Timestamp of the last alarm configuration change.
+    pub updated_timestamp: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_cloudwatch::types::MetricAlarm> for Alarm {
@@ -309,7 +309,7 @@ impl From<aws_sdk_cloudwatch::types::MetricAlarm> for Alarm {
             description: a.alarm_description().map(|s| s.to_string()),
             state,
             state_reason: a.state_reason().map(|s| s.to_string()),
-            state_updated_timestamp: a.state_updated_timestamp().map(|dt| dt.to_string()),
+            state_updated_timestamp: to_utc(a.state_updated_timestamp()),
             metric,
             comparison_operator,
             threshold: a.threshold(),
@@ -318,9 +318,7 @@ impl From<aws_sdk_cloudwatch::types::MetricAlarm> for Alarm {
             actions_enabled: a.actions_enabled().unwrap_or(true),
             alarm_actions: a.alarm_actions().iter().map(|s| s.to_string()).collect(),
             ok_actions: a.ok_actions().iter().map(|s| s.to_string()).collect(),
-            updated_timestamp: a
-                .alarm_configuration_updated_timestamp()
-                .map(|dt| dt.to_string()),
+            updated_timestamp: to_utc(a.alarm_configuration_updated_timestamp()),
         }
     }
 }
@@ -331,8 +329,8 @@ impl From<aws_sdk_cloudwatch::types::MetricAlarm> for Alarm {
 pub struct LogGroup {
     pub name: String,
     pub arn: Option<String>,
-    /// ISO-8601 timestamp of when this log group was created.
-    pub creation_time: Option<String>,
+    /// When this log group was created.
+    pub creation_time: Option<DateTime<Utc>>,
     pub retention_in_days: Option<i32>,
     pub stored_bytes: Option<i64>,
     /// KMS key ARN used to encrypt this log group, if any.
@@ -344,7 +342,7 @@ impl From<aws_sdk_cloudwatchlogs::types::LogGroup> for LogGroup {
         Self {
             name: g.log_group_name().unwrap_or("").to_string(),
             arn: g.arn().map(|s| s.to_string()),
-            creation_time: g.creation_time().map(ms_to_iso8601),
+            creation_time: g.creation_time().and_then(ms_to_datetime),
             retention_in_days: g.retention_in_days(),
             stored_bytes: g.stored_bytes(),
             kms_key_id: g.kms_key_id().map(|s| s.to_string()),
@@ -356,12 +354,12 @@ impl From<aws_sdk_cloudwatchlogs::types::LogGroup> for LogGroup {
 pub struct LogStream {
     pub name: String,
     pub arn: Option<String>,
-    /// ISO-8601 timestamp of when this log stream was created.
-    pub creation_time: Option<String>,
-    /// ISO-8601 timestamp of the last log event in this stream.
-    pub last_event_time: Option<String>,
-    /// ISO-8601 timestamp of the last log ingestion into this stream.
-    pub last_ingestion_time: Option<String>,
+    /// When this log stream was created.
+    pub creation_time: Option<DateTime<Utc>>,
+    /// Timestamp of the last log event in this stream.
+    pub last_event_time: Option<DateTime<Utc>>,
+    /// Timestamp of the last log ingestion into this stream.
+    pub last_ingestion_time: Option<DateTime<Utc>>,
     pub stored_bytes: Option<i64>,
 }
 
@@ -370,9 +368,9 @@ impl From<aws_sdk_cloudwatchlogs::types::LogStream> for LogStream {
         Self {
             name: s.log_stream_name().unwrap_or("").to_string(),
             arn: s.arn().map(|n| n.to_string()),
-            creation_time: s.creation_time().map(ms_to_iso8601),
-            last_event_time: s.last_event_timestamp().map(ms_to_iso8601),
-            last_ingestion_time: s.last_ingestion_time().map(ms_to_iso8601),
+            creation_time: s.creation_time().and_then(ms_to_datetime),
+            last_event_time: s.last_event_timestamp().and_then(ms_to_datetime),
+            last_ingestion_time: s.last_ingestion_time().and_then(ms_to_datetime),
             stored_bytes: s.stored_bytes(),
         }
     }
@@ -380,19 +378,24 @@ impl From<aws_sdk_cloudwatchlogs::types::LogStream> for LogStream {
 
 #[derive(SimpleObject, Clone)]
 pub struct LogEvent {
-    /// ISO-8601 timestamp of the log event.
-    pub timestamp: String,
+    /// Timestamp of the log event. Falls back to the Unix epoch in the
+    /// (theoretical) case where AWS omits it, since `FilteredLogEvent`
+    /// models this as optional but every real response populates it.
+    pub timestamp: DateTime<Utc>,
     pub message: String,
-    /// ISO-8601 timestamp of when the event was ingested.
-    pub ingestion_time: Option<String>,
+    /// When the event was ingested.
+    pub ingestion_time: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_cloudwatchlogs::types::FilteredLogEvent> for LogEvent {
     fn from(e: aws_sdk_cloudwatchlogs::types::FilteredLogEvent) -> Self {
         Self {
-            timestamp: e.timestamp().map(ms_to_iso8601).unwrap_or_default(),
+            timestamp: e
+                .timestamp()
+                .and_then(ms_to_datetime)
+                .unwrap_or(DateTime::<Utc>::UNIX_EPOCH),
             message: e.message().unwrap_or("").to_string(),
-            ingestion_time: e.ingestion_time().map(ms_to_iso8601),
+            ingestion_time: e.ingestion_time().and_then(ms_to_datetime),
         }
     }
 }
@@ -439,8 +442,8 @@ pub struct MetricFilter {
     /// The filter pattern used to match log events (CloudWatch Logs filter syntax).
     pub filter_pattern: String,
     pub log_group_name: Option<String>,
-    /// ISO-8601 timestamp of when this filter was created.
-    pub creation_time: Option<String>,
+    /// When this filter was created.
+    pub creation_time: Option<DateTime<Utc>>,
     /// The CloudWatch metrics this filter writes to (usually one).
     pub metric_transformations: Vec<MetricTransformation>,
 }
@@ -451,7 +454,7 @@ impl From<aws_sdk_cloudwatchlogs::types::MetricFilter> for MetricFilter {
             filter_name: f.filter_name().unwrap_or("").to_string(),
             filter_pattern: f.filter_pattern().unwrap_or("").to_string(),
             log_group_name: f.log_group_name().map(|s| s.to_string()),
-            creation_time: f.creation_time().map(ms_to_iso8601),
+            creation_time: f.creation_time().and_then(ms_to_datetime),
             metric_transformations: f
                 .metric_transformations()
                 .iter()
@@ -687,6 +690,8 @@ mod tests {
             .actions_enabled(true)
             .alarm_actions("arn:aws:sns:us-east-1:123:my-topic")
             .ok_actions("arn:aws:sns:us-east-1:123:ok-topic")
+            .state_updated_timestamp(aws_smithy_types::DateTime::from_secs(0))
+            .alarm_configuration_updated_timestamp(aws_smithy_types::DateTime::from_secs(0))
             .build();
 
         let alarm = Alarm::from(sdk);
@@ -713,6 +718,8 @@ mod tests {
         assert!(alarm.actions_enabled);
         assert_eq!(alarm.alarm_actions, vec!["arn:aws:sns:us-east-1:123:my-topic"]);
         assert_eq!(alarm.ok_actions, vec!["arn:aws:sns:us-east-1:123:ok-topic"]);
+        assert_eq!(alarm.state_updated_timestamp, Some(DateTime::<Utc>::UNIX_EPOCH));
+        assert_eq!(alarm.updated_timestamp, Some(DateTime::<Utc>::UNIX_EPOCH));
     }
 
     #[test]
@@ -727,6 +734,8 @@ mod tests {
         assert!(alarm.actions_enabled);
         assert!(alarm.alarm_actions.is_empty());
         assert!(alarm.ok_actions.is_empty());
+        assert!(alarm.state_updated_timestamp.is_none());
+        assert!(alarm.updated_timestamp.is_none());
     }
 
     // --- LogGroup ---
@@ -747,9 +756,8 @@ mod tests {
             lg.arn,
             Some("arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/my-function".to_string())
         );
-        // creation_time should now be an ISO-8601 string, not i64
         let ct = lg.creation_time.expect("creation_time should be Some");
-        assert!(ct.contains("2021"), "Expected ISO-8601 string, got: {ct}");
+        assert!(ct.to_rfc3339().starts_with("2021"), "got: {ct}");
         assert_eq!(lg.retention_in_days, Some(30));
         assert_eq!(lg.stored_bytes, Some(1024i64));
         assert_eq!(lg.kms_key_id, None);
@@ -787,15 +795,14 @@ mod tests {
         assert_eq!(ls.name, "2024/01/15/[$LATEST]abc123");
         assert!(ls.arn.is_some());
 
-        // All timestamps should be ISO-8601 strings now
         let ct = ls.creation_time.expect("creation_time should be Some");
-        assert!(ct.contains("2024"), "creation_time should be ISO-8601: {ct}");
+        assert!(ct.to_rfc3339().starts_with("2024"), "got: {ct}");
 
         let let_ = ls.last_event_time.expect("last_event_time should be Some");
-        assert!(let_.contains("2024"), "last_event_time should be ISO-8601: {let_}");
+        assert!(let_.to_rfc3339().starts_with("2024"), "got: {let_}");
 
         let lit = ls.last_ingestion_time.expect("last_ingestion_time should be Some");
-        assert!(lit.contains("2024"), "last_ingestion_time should be ISO-8601: {lit}");
+        assert!(lit.to_rfc3339().starts_with("2024"), "got: {lit}");
 
         assert_eq!(ls.stored_bytes, Some(512i64));
     }
@@ -812,25 +819,33 @@ mod tests {
 
         let ev = LogEvent::from(sdk);
 
-        assert!(ev.timestamp.contains("2024"), "timestamp should be ISO-8601: {}", ev.timestamp);
+        assert!(ev.timestamp.to_rfc3339().starts_with("2024"), "got: {}", ev.timestamp);
 
         assert_eq!(ev.message, "ERROR: Something went wrong");
 
         let it = ev.ingestion_time.expect("ingestion_time should be Some");
-        assert!(it.contains("2024"), "ingestion_time should be ISO-8601: {it}");
+        assert!(it.to_rfc3339().starts_with("2024"), "got: {it}");
     }
 
-    // --- ms_to_iso8601 ---
+    #[test]
+    fn test_log_event_missing_timestamp_falls_back_to_epoch() {
+        let sdk = aws_sdk_cloudwatchlogs::types::FilteredLogEvent::builder()
+            .message("no timestamp")
+            .build();
+
+        let ev = LogEvent::from(sdk);
+        assert_eq!(ev.timestamp, DateTime::<Utc>::UNIX_EPOCH);
+    }
+
+    // --- ms_to_datetime ---
 
     #[test]
-    fn test_ms_to_iso8601() {
-        // Unix epoch
-        let s = ms_to_iso8601(0);
-        assert_eq!(s, "1970-01-01T00:00:00+00:00");
+    fn test_ms_to_datetime() {
+        assert_eq!(ms_to_datetime(0), Some(DateTime::<Utc>::UNIX_EPOCH));
 
         // 2021-05-03T00:00:00Z = 1620000000000 ms
-        let s = ms_to_iso8601(1_620_000_000_000);
-        assert!(s.starts_with("2021-05-03"), "got: {s}");
+        let dt = ms_to_datetime(1_620_000_000_000).expect("should convert");
+        assert!(dt.to_rfc3339().starts_with("2021-05-03"), "got: {dt}");
     }
 
     // --- resolve_time_range ---
@@ -947,7 +962,7 @@ mod tests {
             Some("/aws/cloudtrail/logs".to_string())
         );
         let ct = f.creation_time.expect("creation_time should be Some");
-        assert!(ct.contains("2021"), "Expected ISO-8601 string, got: {ct}");
+        assert!(ct.to_rfc3339().starts_with("2021"), "got: {ct}");
         assert_eq!(f.metric_transformations.len(), 1);
         assert_eq!(f.metric_transformations[0].metric_name, "RootAccountUsage");
     }
@@ -998,5 +1013,90 @@ mod tests {
         let diff = end - start;
         // Should be 15 minutes, not 1 hour
         assert_eq!(diff.num_minutes(), 15);
+    }
+
+    #[test]
+    fn test_resolve_time_range_negative_hours() {
+        let tr = TimeRange {
+            last_minutes: None,
+            last_hours: Some(-2),
+            start_time: None,
+            end_time: None,
+        };
+        let err = resolve_time_range(&tr).expect_err("should fail");
+        assert!(matches!(err, VaporError::InvalidInput(_)));
+    }
+
+    #[test]
+    fn test_alarm_state_from_sdk_unknown_defaults_to_insufficient_data() {
+        let unknown = aws_sdk_cloudwatch::types::StateValue::from("SomeFutureState");
+        assert_eq!(AlarmState::from_sdk(&unknown), AlarmState::InsufficientData);
+    }
+
+    #[test]
+    fn test_comparison_operator_from_sdk_unknown_defaults_to_greater_than_threshold() {
+        let unknown = aws_sdk_cloudwatch::types::ComparisonOperator::from("SomeFutureOperator");
+        assert_eq!(
+            ComparisonOperator::from_sdk(&unknown),
+            ComparisonOperator::GreaterThanThreshold
+        );
+    }
+
+    #[test]
+    fn test_dimension_filter_to_sdk() {
+        let filter = DimensionFilter {
+            name: "InstanceId".to_string(),
+            value: Some("i-1".to_string()),
+        };
+        let sdk = filter.to_sdk();
+        assert_eq!(sdk.name(), Some("InstanceId"));
+        assert_eq!(sdk.value(), Some("i-1"));
+    }
+
+    #[test]
+    fn test_metric_data_query_to_sdk_with_full_metric_stat() {
+        let query = MetricDataQuery {
+            id: "q1".to_string(),
+            namespace: Some("AWS/EC2".to_string()),
+            metric_name: Some("CPUUtilization".to_string()),
+            dimensions: Some(vec![DimensionFilter {
+                name: "InstanceId".to_string(),
+                value: Some("i-1".to_string()),
+            }]),
+            period: Some(300),
+            stat: Some("Average".to_string()),
+            unit: None,
+            label: Some("cpu".to_string()),
+        };
+
+        let sdk = query.to_sdk();
+        assert_eq!(sdk.id(), Some("q1"));
+        assert_eq!(sdk.label(), Some("cpu"));
+        let metric_stat = sdk.metric_stat().expect("metric_stat should be set");
+        assert_eq!(metric_stat.period(), Some(300));
+        assert_eq!(metric_stat.stat(), Some("Average"));
+        let metric = metric_stat.metric().expect("metric should be set");
+        assert_eq!(metric.namespace(), Some("AWS/EC2"));
+        assert_eq!(metric.metric_name(), Some("CPUUtilization"));
+        assert_eq!(metric.dimensions().len(), 1);
+    }
+
+    #[test]
+    fn test_metric_data_query_to_sdk_without_metric_stat_fields() {
+        // No namespace/metric_name/period/stat — metric_stat stays unset.
+        let query = MetricDataQuery {
+            id: "q1".to_string(),
+            namespace: None,
+            metric_name: None,
+            dimensions: None,
+            period: None,
+            stat: None,
+            unit: None,
+            label: None,
+        };
+
+        let sdk = query.to_sdk();
+        assert_eq!(sdk.id(), Some("q1"));
+        assert!(sdk.metric_stat().is_none());
     }
 }

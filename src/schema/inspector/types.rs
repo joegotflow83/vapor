@@ -1,5 +1,8 @@
 use async_graphql::SimpleObject;
 use aws_sdk_inspector2::types::{CoveredResource, Finding};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct InspectorFinding {
@@ -11,8 +14,8 @@ pub struct InspectorFinding {
     pub finding_type: Option<String>,
     pub resource_type: Option<String>,
     pub resource_id: Option<String>,
-    pub first_observed_at: Option<String>,
-    pub last_observed_at: Option<String>,
+    pub first_observed_at: Option<DateTime<Utc>>,
+    pub last_observed_at: Option<DateTime<Utc>>,
     pub fix_available: Option<String>,
 }
 
@@ -28,8 +31,8 @@ impl From<Finding> for InspectorFinding {
             finding_type: Some(f.r#type().as_str().to_string()),
             resource_type: resource.map(|r| r.r#type().as_str().to_string()),
             resource_id: resource.map(|r| r.id().to_string()),
-            first_observed_at: Some(f.first_observed_at().to_string()),
-            last_observed_at: Some(f.last_observed_at().to_string()),
+            first_observed_at: to_utc(Some(f.first_observed_at())),
+            last_observed_at: to_utc(Some(f.last_observed_at())),
             fix_available: f.fix_available().map(|v| v.as_str().to_string()),
         }
     }
@@ -70,8 +73,8 @@ mod tests {
             finding_type: Some("PACKAGE_VULNERABILITY".to_string()),
             resource_type: Some("AWS_EC2_INSTANCE".to_string()),
             resource_id: Some("i-0123456789abcdef0".to_string()),
-            first_observed_at: Some("2024-01-15T10:00:00Z".to_string()),
-            last_observed_at: Some("2024-01-20T12:00:00Z".to_string()),
+            first_observed_at: Some("2024-01-15T10:00:00Z".parse().unwrap()),
+            last_observed_at: Some("2024-01-20T12:00:00Z".parse().unwrap()),
             fix_available: Some("YES".to_string()),
         };
         assert_eq!(

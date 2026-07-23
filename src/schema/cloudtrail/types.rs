@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct Trail {
@@ -36,7 +39,7 @@ pub struct CloudTrailEvent {
     pub event_id: Option<String>,
     pub event_name: Option<String>,
     pub event_source: Option<String>,
-    pub event_time: Option<String>,
+    pub event_time: Option<DateTime<Utc>>,
     pub username: Option<String>,
     pub access_key_id: Option<String>,
     pub read_only: Option<String>,
@@ -58,7 +61,7 @@ impl From<aws_sdk_cloudtrail::types::Event> for CloudTrailEvent {
             event_id: e.event_id().map(|s| s.to_string()),
             event_name: e.event_name().map(|s| s.to_string()),
             event_source: e.event_source().map(|s| s.to_string()),
-            event_time: e.event_time().map(|t| t.to_string()),
+            event_time: to_utc(e.event_time()),
             username: e.username().map(|s| s.to_string()),
             access_key_id: e.access_key_id().map(|s| s.to_string()),
             read_only: e.read_only().map(|s| s.to_string()),
@@ -131,6 +134,7 @@ mod tests {
             .access_key_id("AKIA1234")
             .read_only("false")
             .resources(resource)
+            .event_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = CloudTrailEvent::from(event);
         assert_eq!(result.event_id, Some("evt-123".to_string()));
@@ -139,6 +143,10 @@ mod tests {
         assert_eq!(result.username, Some("admin".to_string()));
         assert_eq!(result.access_key_id, Some("AKIA1234".to_string()));
         assert_eq!(result.read_only, Some("false".to_string()));
+        assert_eq!(
+            result.event_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
         assert_eq!(result.resources.len(), 1);
         assert_eq!(
             result.resources[0].resource_type,
