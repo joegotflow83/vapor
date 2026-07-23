@@ -69,865 +69,48 @@ Exit code is non-zero if the GraphQL response contains errors.
 Start a GraphQL HTTP server. The GraphiQL interactive playground is available at `http://localhost:<port>/`. The GraphQL endpoint is at `/graphql`.
 
 ```
-vapor serve [--port <PORT>] [--region <REGION>]
+vapor serve [--port <PORT>] [--region <REGION>] [--bind <ADDRESS>] [--auth-token <TOKEN>]
 ```
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--port` | `4000` | TCP port to listen on |
 | `--region` | AWS default | AWS region to target |
+| `--bind` | `127.0.0.1` | Address to bind to. Non-loopback binds require `--auth-token` (see below) |
+| `--auth-token` | none | Bearer token required on every request. Also settable via `VAPOR_AUTH_TOKEN` (not shown in `--help`/errors) |
+
+#### Authentication policy
+
+The server executes AWS-mutating GraphQL operations (e.g. `terminateInstances`, `runInstances`) with its own AWS credentials, so binding it off-loopback without a token is refused at startup:
+
+| Bind | Token set | Behavior |
+|------|-----------|----------|
+| loopback (`127.0.0.1`, `::1`, `localhost`, ...) | no | Serves openly (default, unchanged local-dev behavior) |
+| loopback | yes | Every request must present the token |
+| non-loopback (e.g. `0.0.0.0`) | no | Refuses to start (`exit 1`) |
+| non-loopback | yes | Every request must present the token |
+
+When a token is set, requests must send it as `Authorization: Bearer <token>` (case-insensitive scheme). Missing or incorrect tokens get a `401` with a `WWW-Authenticate: Bearer` header; the request never reaches the GraphQL executor. Bearer tokens are sent in plaintext over HTTP, so for non-loopback binds put a TLS-terminating reverse proxy in front.
+
+```bash
+VAPOR_AUTH_TOKEN=changeme vapor serve --bind 0.0.0.0
+curl -H "Authorization: Bearer $VAPOR_AUTH_TOKEN" http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ s3Buckets { items { name } nextToken } }"}'
+```
 
 ## GraphQL Schema
 
-### ACM (Certificate Manager)
-
-```graphql
-acmCertificates(statuses: [String]): [AcmCertificate!]!
-acmCertificate(arn: String!): AcmCertificate
-```
-
-### ACM Private CA
-
-```graphql
-privateCertificateAuthorities: [PrivateCa!]!
-privateCertificateAuthority(certificateAuthorityArn: String!): PrivateCa
-```
-
-### API Gateway (REST)
-
-```graphql
-apigwRestApis: [ApigwRestApi!]!
-apigwRestStages(apiId: String!): [ApigwRestStage!]!
-apigwRestResources(apiId: String!): [ApigwResource!]!
-apigwRestDeployments(apiId: String!): [ApigwDeployment!]!
-```
-
-### API Gateway v2 (HTTP & WebSocket)
-
-```graphql
-apiV2Apis: [ApiV2!]!
-apiV2Stages(apiId: String!): [ApiV2Stage!]!
-apiV2Routes(apiId: String!): [ApiV2Route!]!
-apiV2DomainNames: [ApiV2DomainName!]!
-apiV2VpcLinks: [ApiV2VpcLink!]!
-```
-
-### AppConfig
-
-```graphql
-appconfigApplications: [AppConfigApplication!]!
-appconfigEnvironments(applicationId: String!): [AppConfigEnvironment!]!
-appconfigProfiles(applicationId: String!): [AppConfigProfile!]!
-```
-
-### App Runner
-
-```graphql
-appRunnerServices: [AppRunnerService!]!
-appRunnerService(serviceArn: String!): AppRunnerService
-appRunnerVpcConnectors: [AppRunnerVpcConnector!]!
-```
-
-### AppSync
-
-```graphql
-appsyncApis: [AppSyncApi!]!
-appsyncDataSources(apiId: String!): [AppSyncDataSource!]!
-```
-
-### Athena
-
-```graphql
-athenaWorkgroups: [AthenaWorkgroup!]!
-athenaNamedQueries(workgroup: String): [AthenaNamedQuery!]!
-athenaQueryExecutions(workgroup: String, maxResults: Int): [AthenaQueryExecution!]!
-```
-
-### Audit Manager
-
-```graphql
-auditManagerAssessments: [AuditManagerAssessment!]!
-auditManagerFrameworks(frameworkType: String): [AuditManagerFramework!]!
-auditManagerControls(controlType: String): [AuditManagerControl!]!
-```
-
-### Auto Scaling
-
-```graphql
-autoScalingGroups(names: [String]): [AutoScalingGroup!]!
-scalingActivities(autoScalingGroupName: String): [ScalingActivity!]!
-```
-
-### Backup
-
-```graphql
-backupVaults: [BackupVault!]!
-backupPlans: [BackupPlan!]!
-backupRecoveryPoints(vaultName: String!): [RecoveryPoint!]!
-```
-
-### Batch
-
-```graphql
-batchJobQueues: [BatchJobQueue!]!
-batchComputeEnvironments: [BatchComputeEnvironment!]!
-batchJobDefinitions(status: String): [BatchJobDefinition!]!
-```
-
-### Bedrock
-
-```graphql
-bedrockFoundationModels(provider: String, byOutputModality: String, byInferenceType: String): [BedrockFoundationModel!]!
-bedrockCustomModels: [BedrockCustomModel!]!
-bedrockGuardrails: [BedrockGuardrail!]!
-bedrockModelInvocationLoggingConfig: BedrockModelInvocationLoggingConfig
-```
-
-### Budgets
-
-```graphql
-budgets(accountId: String!): [Budget!]!
-budgetNotifications(accountId: String!, budgetName: String!): [BudgetNotification!]!
-```
-
-### CloudFormation
-
-```graphql
-cfnStacks(names: [String], statusFilter: [String]): [CfnStack!]!
-cfnStackResources(stackName: String!): [CfnStackResource!]!
-cfnExports: [CfnExport!]!
-```
-
-### CloudFront
-
-```graphql
-cloudfrontDistributions: [CfDistribution!]!
-cloudfrontDistribution(id: String!): CfDistribution
-```
-
-### CloudTrail
-
-```graphql
-cloudtrailTrails: [Trail!]!
-cloudtrailEvents(startTime: String!, endTime: String!, eventName: String, username: String): [CloudTrailEvent!]!
-```
-
-### CloudWatch & Logs
-
-```graphql
-metrics(namespace: String, metricName: String, dimensions: [DimensionFilter]): [Metric!]!
-metricData(queries: [MetricDataQuery!]!, timeRange: TimeRange!): [MetricResult!]!
-alarms(names: [String], namePrefix: String, state: AlarmState): [Alarm!]!
-logGroups(prefix: String): [LogGroup!]!
-logStreams(logGroupName: String!, prefix: String, orderBy: String): [LogStream!]!
-metricFilters(logGroupName: String): [MetricFilter!]!
-logEvents(logGroupName: String!, logStreamName: String, filterPattern: String, timeRange: TimeRange, limit: Int): [LogEvent!]!
-```
-
-### CodeArtifact
-
-```graphql
-codeArtifactDomains: [CodeArtifactDomain!]!
-codeArtifactRepositories(domain: String!, domainOwner: String): [CodeArtifactRepository!]!
-codeArtifactPackages(domain: String!, repository: String!, format: String): [CodeArtifactPackage!]!
-```
-
-### CodeBuild
-
-```graphql
-buildProjects(names: [String]): [BuildProject!]!
-builds(projectName: String!): [Build!]!
-```
-
-### CodeCommit
-
-```graphql
-codeCommitRepositories: [CodeCommitRepository!]!
-codeCommitRepository(repositoryName: String!): CodeCommitRepository
-codeCommitBranches(repositoryName: String!): [CodeCommitBranch!]!
-codeCommitPullRequests(repositoryName: String!, pullRequestStatus: String): [CodeCommitPullRequest!]!
-```
-
-### CodeDeploy
-
-```graphql
-deployApplications: [DeployApplication!]!
-deploymentGroups(applicationName: String!): [DeploymentGroup!]!
-deployments(applicationName: String, deploymentGroupName: String): [Deployment!]!
-```
-
-### CodePipeline
-
-```graphql
-pipelines: [Pipeline!]!
-pipelineExecutions(pipelineName: String!): [PipelineExecution!]!
-pipelineState(pipelineName: String!): [StageState!]!
-```
-
-### Cognito
-
-```graphql
-cognitoUserPools: [UserPool!]!
-cognitoUserPoolClients(userPoolId: String!): [UserPoolClient!]!
-```
-
-### Comprehend
-
-```graphql
-comprehendEntityRecognizers(statusFilter: String): [ComprehendEntityRecognizer!]!
-comprehendDocumentClassifiers(statusFilter: String): [ComprehendDocumentClassifier!]!
-comprehendEndpoints: [ComprehendEndpoint!]!
-```
-
-### Config
-
-```graphql
-configRules(names: [String]): [ConfigRule!]!
-complianceByRule(ruleNames: [String], complianceTypes: [String]): [ComplianceSummary!]!
-complianceByResource(resourceType: String, complianceTypes: [String]): [ComplianceByResource!]!
-```
-
-### Connect
-
-```graphql
-connectInstances: [ConnectInstance!]!
-connectQueues(instanceId: String!, queueTypes: [String]): [ConnectQueue!]!
-connectContactFlows(instanceId: String!, contactFlowTypes: [String]): [ConnectContactFlow!]!
-connectUsers(instanceId: String!): [ConnectUser!]!
-```
-
-### Control Tower
-
-```graphql
-controlTowerLandingZones: [ControlTowerLandingZone!]!
-controlTowerEnabledControls(targetIdentifier: String): [EnabledControl!]!
-```
-
-### Cost Explorer
-
-```graphql
-costAndUsage(start: String!, end: String!, granularity: String!, groupBy: [String]): [CostAndUsageResult!]!
-costForecast(start: String!, end: String!, granularity: String!): [ForecastResult!]!
-```
-
-### DataSync
-
-```graphql
-dataSyncAgents: [DataSyncAgent!]!
-dataSyncLocations: [DataSyncLocation!]!
-dataSyncTasks: [DataSyncTask!]!
-dataSyncTaskExecutions(taskArn: String!): [DataSyncTaskExecution!]!
-```
-
-### Detective
-
-```graphql
-detectiveGraphs: [DetectiveGraph!]!
-detectiveMembers(graphArn: String!): [DetectiveMember!]!
-detectiveDatasourcePackages(graphArn: String!): [DetectiveDatasourcePackage!]!
-```
-
-### Direct Connect
-
-```graphql
-dxConnections: [DxConnection!]!
-dxVirtualInterfaces(connectionId: String): [DxVirtualInterface!]!
-```
-
-### DMS (Database Migration Service)
-
-```graphql
-dmsReplicationInstances: [DmsReplicationInstance!]!
-dmsEndpoints(endpointType: String): [DmsEndpoint!]!
-dmsReplicationTasks: [DmsReplicationTask!]!
-```
-
-### DocumentDB
-
-```graphql
-docdbClusters: [DocDbCluster!]!
-docdbInstances(clusterId: String): [DocDbInstance!]!
-```
-
-### DynamoDB
-
-```graphql
-dynamoTables: [String!]!
-dynamoTable(name: String!): DynamoTable
-dynamoScan(table: String!, filterExpression: String, limit: Int): DynamoScanResult!
-```
-
-### EC2
-
-```graphql
-instances(ids: [String], state: InstanceState, vpcId: String, subnetId: String, tags: [TagFilter]): [Instance!]!
-securityGroups(ids: [String], vpcId: String, name: String): [SecurityGroup!]!
-vpcs(ids: [String]): [Vpc!]!
-subnets(ids: [String], vpcId: String, az: String): [Subnet!]!
-volumes(ids: [String], state: String): [Volume!]!
-keyPairs(ids: [String], name: String, fingerprint: String): [KeyPair!]!
-elasticIps(allocationIds: [String], publicIps: [String], instanceId: String): [ElasticIp!]!
-images(ids: [String], owners: [String], name: String, state: String, tags: [TagFilter]): [Image!]!
-launchTemplates(ids: [String], names: [String]): [LaunchTemplate!]!
-launchTemplateVersions(launchTemplateId: String!, versions: [String]): [LaunchTemplateVersion!]!
-snapshots(ids: [String], volumeId: String, state: String): [Snapshot!]!
-```
-
-**Mutations:**
-```graphql
-startInstances(ids: [String!]!): [InstanceStateChange!]!
-stopInstances(ids: [String!]!, force: Boolean): [InstanceStateChange!]!
-terminateInstances(ids: [String!]!): [InstanceStateChange!]!
-rebootInstances(ids: [String!]!): Boolean!
-runInstances(input: RunInstancesInput!): [Instance!]!
-```
-
-`InstanceState` enum: `PENDING`, `RUNNING`, `SHUTTING_DOWN`, `TERMINATED`, `STOPPING`, `STOPPED`
-
-### ECR
-
-```graphql
-ecrRepositories(names: [String]): [EcrRepository!]!
-ecrImages(repositoryName: String!, imageTags: [String], imageDigests: [String]): [EcrImage!]!
-ecrImageScanFindings(repositoryName: String!, imageDigest: String!): EcrImageScanFindings!
-```
-
-### ECS
-
-```graphql
-ecsClusters(clusterArns: [String]): [Cluster!]!
-ecsServices(cluster: String!, serviceArns: [String]): [Service!]!
-ecsTasks(cluster: String!, serviceArn: String, desiredStatus: String): [Task!]!
-ecsTaskDefinition(taskDefinition: String!): TaskDefinition
-ecsTaskDefinitions(familyPrefix: String, status: String): [String!]!
-```
-
-### EFS
-
-```graphql
-efsFileSystems: [EfsFileSystem!]!
-efsMountTargets(fileSystemId: String!): [EfsMountTarget!]!
-efsAccessPoints(fileSystemId: String): [EfsAccessPoint!]!
-```
-
-### EKS
-
-```graphql
-eksCluster(name: String!): EksCluster
-eksClusters(clusterNames: [String]): [EksCluster!]!
-eksNodegroups(cluster: String!, nodegroupNames: [String]): [EksNodegroup!]!
-eksFargateProfiles(cluster: String!): [EksFargateProfile!]!
-eksAddons(cluster: String!): [EksAddon!]!
-```
-
-### ElastiCache
-
-```graphql
-elasticacheClusters(clusterId: String): [ElastiCacheCluster!]!
-elasticacheReplicationGroups(replicationGroupId: String): [ElastiCacheReplicationGroup!]!
-elasticacheSubnetGroups: [ElastiCacheSubnetGroup!]!
-```
-
-### Elastic Beanstalk
-
-```graphql
-beanstalkApplications(applicationNames: [String]): [BeanstalkApplication!]!
-beanstalkEnvironments(applicationName: String, environmentNames: [String], includedDeletedBackTo: String): [BeanstalkEnvironment!]!
-beanstalkApplicationVersions(applicationName: String, versionLabels: [String]): [BeanstalkApplicationVersion!]!
-```
-
-### ELB (v2)
-
-```graphql
-loadBalancers(arns: [String], names: [String]): [LoadBalancer!]!
-targetGroups(arns: [String], loadBalancerArn: String): [TargetGroup!]!
-targetHealth(targetGroupArn: String!): [TargetHealthInfo!]!
-listeners(loadBalancerArn: String!): [Listener!]!
-listenerRules(listenerArn: String!): [ListenerRule!]!
-```
-
-### EMR
-
-```graphql
-emrClusters(states: [String]): [EmrCluster!]!
-emrSteps(clusterId: String!): [EmrStep!]!
-```
-
-### EventBridge
-
-```graphql
-eventBridgeBuses: [EbEventBus!]!
-eventBridgeRules(eventBusName: String): [EbRule!]!
-eventBridgeTargets(ruleName: String!, eventBusName: String): [EbTarget!]!
-```
-
-### Firehose
-
-```graphql
-firehoseDeliveryStreams: [FirehoseDeliveryStream!]!
-firehoseDeliveryStream(name: String!): FirehoseDeliveryStream
-```
-
-### FMS (Firewall Manager)
-
-```graphql
-fmsPolicies: [FmsPolicy!]!
-fmsPolicyComplianceStatuses(policyId: String!): [FmsPolicyComplianceStatus!]!
-fmsMemberAccounts: [String!]!
-```
-
-### FSx
-
-```graphql
-fsxFileSystems(fileSystemIds: [String]): [FsxFileSystem!]!
-fsxBackups(backupIds: [String], fileSystemId: String): [FsxBackup!]!
-fsxStorageVirtualMachines(fileSystemId: String): [FsxStorageVirtualMachine!]!
-```
-
-### Global Accelerator
-
-```graphql
-globalAccelerators: [Accelerator!]!
-globalAcceleratorListeners(acceleratorArn: String!): [GaListener!]!
-globalAcceleratorEndpointGroups(listenerArn: String!): [GaEndpointGroup!]!
-```
-
-### Glue
-
-```graphql
-glueDatabases: [GlueDatabase!]!
-glueTables(databaseName: String!): [GlueTable!]!
-glueCrawlers: [GlueCrawler!]!
-glueJobs: [GlueJob!]!
-```
-
-### GuardDuty
-
-```graphql
-guarddutyDetectors: [Detector!]!
-guarddutyFindings(detectorId: String!, minSeverity: Float, findingType: String, archived: Boolean): [Finding!]!
-```
-
-### Health
-
-```graphql
-healthEvents(statusCodes: [String], services: [String]): [HealthEvent!]!
-```
-
-### IAM
-
-```graphql
-iamRoles(pathPrefix: String): [IamRole!]!
-iamPolicies(scope: String, pathPrefix: String): [IamPolicy!]!
-iamUsers(pathPrefix: String): [IamUser!]!
-iamGroups(pathPrefix: String): [IamGroup!]!
-iamAttachedRolePolicies(roleName: String!): [IamAttachedPolicy!]!
-iamPolicyDocument(policyArn: String!, versionId: String): IamPolicyDocument!
-iamRoleInlinePolicies(roleName: String!): [IamInlinePolicy!]!
-iamPasswordPolicy: IamPasswordPolicy
-iamMfaDevices: [IamMfaDevice!]!
-iamAccessKeys: [IamAccessKey!]!
-```
-
-`iamPolicies` defaults `scope` to `"Local"` (customer-managed only). Use `"All"` for AWS-managed policies too.
-
-### Inspector
-
-```graphql
-inspectorFindings(severity: String, resourceType: String): [InspectorFinding!]!
-inspectorCoverage: [InspectorCoverage!]!
-```
-
-### IoT
-
-```graphql
-iotThings(thingTypeName: String, attributeName: String, attributeValue: String): [IotThing!]!
-iotThingGroups(parentGroup: String): [IotThingGroup!]!
-iotPolicies: [IotPolicy!]!
-iotCertificates(ascendingOrder: Boolean): [IotCertificate!]!
-iotTopicRules(topicRuleDisabled: Boolean): [IotTopicRule!]!
-```
-
-### Keyspaces (Amazon Keyspaces for Apache Cassandra)
-
-```graphql
-keyspacesKeyspaces: [KeyspacesKeyspace!]!
-keyspacesTables(keyspaceName: String!): [KeyspacesTable!]!
-keyspacesTable(keyspaceName: String!, tableName: String!): KeyspacesTable
-```
-
-### Kinesis
-
-```graphql
-kinesisStreams: [DataStream!]!
-kinesisShards(streamName: String!): [Shard!]!
-```
-
-### KMS
-
-```graphql
-kmsKeys: [KmsKey!]!
-kmsAliases(keyId: String): [KmsAlias!]!
-kmsKeyPolicyNames(keyId: String!): [String!]!
-kmsKeyPolicy(keyId: String!, policyName: String!): KmsKeyPolicy
-```
-
-### Lake Formation
-
-```graphql
-lakeFormationResources: [LakeFormationResource!]!
-lakeFormationPermissions(principal: String, resourceType: String): [LakeFormationPermission!]!
-lakeFormationSettings: LakeFormationSettings
-```
-
-### Lambda
-
-```graphql
-lambdaFunctions: [LambdaFunction!]!
-lambdaAliases(functionName: String!): [LambdaAlias!]!
-lambdaEventSourceMappings(functionName: String): [LambdaEventSourceMapping!]!
-lambdaLayers: [LambdaLayer!]!
-lambdaFunctionPolicy(functionName: String!): String
-```
-
-### License Manager
-
-```graphql
-licenseConfigurations: [LicenseConfiguration!]!
-licenses: [License!]!
-licenseGrants: [LicenseGrant!]!
-```
-
-### Lightsail
-
-```graphql
-lightsailInstances: [LightsailInstance!]!
-lightsailDatabases: [LightsailDatabase!]!
-lightsailLoadBalancers: [LightsailLoadBalancer!]!
-lightsailStaticIps: [LightsailStaticIp!]!
-```
-
-### Macie
-
-```graphql
-macieFindings(severity: String, findingType: String): [MacieFinding!]!
-macieBucketSummaries: [MacieBucketSummary!]!
-```
-
-### MemoryDB
-
-```graphql
-memorydbClusters: [MemoryDbCluster!]!
-memorydbSubnetGroups: [MemoryDbSubnetGroup!]!
-```
-
-### MQ (Amazon MQ)
-
-```graphql
-mqBrokers: [MqBroker!]!
-mqBroker(brokerId: String!): MqBroker
-mqConfigurations: [MqConfiguration!]!
-```
-
-### MSK (Managed Streaming for Kafka)
-
-```graphql
-mskClusters: [MskCluster!]!
-mskBrokerNodes(clusterArn: String!): [BrokerNode!]!
-```
-
-### Neptune
-
-```graphql
-neptuneClusters: [NeptuneCluster!]!
-neptuneInstances(clusterId: String): [NeptuneInstance!]!
-```
-
-### Network Firewall
-
-```graphql
-networkFirewalls: [Firewall!]!
-networkFirewallPolicies: [FirewallPolicy!]!
-networkFirewallRuleGroups(ruleGroupType: String): [RuleGroup!]!
-```
-
-### OpenSearch
-
-```graphql
-opensearchDomains: [OpenSearchDomain!]!
-opensearchDomain(domainName: String!): OpenSearchDomain
-opensearchDomainTags(arn: String!): [Tag!]!
-```
-
-### Organizations
-
-```graphql
-orgAccounts: [OrgAccount!]!
-orgOrganizationalUnits(parentId: String!): [OrganizationalUnit!]!
-orgPolicies(policyType: String!): [OrgPolicy!]!
-```
-
-### Pinpoint
-
-```graphql
-pinpointApps: [PinpointApp!]!
-pinpointCampaigns(applicationId: String!): [PinpointCampaign!]!
-pinpointSegments(applicationId: String!): [PinpointSegment!]!
-```
-
-### Polly
-
-```graphql
-pollyVoices(languageCode: String, engine: String): [PollyVoice!]!
-pollyLexicons: [PollyLexicon!]!
-pollySpeechSynthesisTasks(status: String): [PollySpeechSynthesisTask!]!
-```
-
-### QLDB (Quantum Ledger Database)
-
-```graphql
-qldbLedgers: [QldbLedger!]!
-qldbLedger(name: String!): QldbLedger
-qldbJournalExports(ledgerName: String!): [QldbJournalExport!]!
-```
-
-### QuickSight
-
-```graphql
-quickSightUsers(awsAccountId: String!, namespace: String): [QuickSightUser!]!
-quickSightDashboards(awsAccountId: String!): [QuickSightDashboard!]!
-quickSightDataSets(awsAccountId: String!): [QuickSightDataSet!]!
-quickSightDataSources(awsAccountId: String!): [QuickSightDataSource!]!
-```
-
-### RAM (Resource Access Manager)
-
-```graphql
-ramResourceShares(resourceOwner: String): [RamResourceShare!]!
-ramResources(resourceOwner: String!, resourceShareArns: [String], resourceType: String): [RamResource!]!
-ramPrincipals(resourceOwner: String!, resourceShareArns: [String]): [RamPrincipal!]!
-```
-
-### RDS
-
-```graphql
-dbInstances(ids: [String]): [DbInstance!]!
-dbClusters(ids: [String]): [DbCluster!]!
-dbSnapshots(dbInstanceId: String, snapshotType: String): [DbSnapshot!]!
-rdsParameterGroups: [DbParameterGroup!]!
-rdsSubnetGroups: [DbSubnetGroup!]!
-```
-
-### Redshift
-
-```graphql
-redshiftClusters: [RedshiftCluster!]!
-redshiftSnapshots(clusterIdentifier: String, snapshotType: String): [RedshiftSnapshot!]!
-```
-
-### Redshift Serverless
-
-```graphql
-redshiftServerlessNamespaces: [RedshiftServerlessNamespace!]!
-redshiftServerlessWorkgroups: [RedshiftServerlessWorkgroup!]!
-```
-
-### Rekognition
-
-```graphql
-rekognitionCollections: [RekognitionCollection!]!
-rekognitionProjects: [RekognitionProject!]!
-rekognitionStreamProcessors: [RekognitionStreamProcessor!]!
-```
-
-### Route 53
-
-```graphql
-r53HostedZones: [R53HostedZone!]!
-r53Records(hostedZoneId: String!): [R53ResourceRecordSet!]!
-r53HealthChecks: [R53HealthCheck!]!
-```
-
-### S3
-
-```graphql
-s3Buckets: [S3Bucket!]!
-s3Bucket(name: String!): S3Bucket
-s3BucketPolicy(name: String!): String
-```
-
-### SageMaker
-
-```graphql
-sagemakerEndpoints(statusFilter: String): [SageMakerEndpoint!]!
-sagemakerTrainingJobs(statusFilter: String, maxResults: Int): [SageMakerTrainingJob!]!
-sagemakerModels: [SageMakerModel!]!
-```
-
-### Secrets Manager
-
-```graphql
-secretsList: [Secret!]!
-secretDescribe(secretId: String!): Secret
-secretValue(secretId: String!): SecretValue
-secretResourcePolicy(secretId: String!): String
-```
-
-### Security Hub
-
-```graphql
-securityHubFindings(severityLabel: String, workflowStatus: String, recordState: String, maxResults: Int): [SecurityHubFinding!]!
-```
-
-### Service Quotas
-
-```graphql
-serviceQuotas(serviceCode: String!): [ServiceQuota!]!
-serviceQuotaServices: [String!]!
-```
-
-### SES (Simple Email Service v2)
-
-```graphql
-sesIdentities(pageSize: Int): [SesIdentity!]!
-sesIdentity(identity: String!): SesIdentity
-sesConfigurationSets: [SesConfigurationSet!]!
-sesEmailTemplates: [SesEmailTemplate!]!
-sesSuppressedDestinations(reasons: [String], startDate: String, endDate: String): [SesSuppressedDestination!]!
-sesAccountDetails: SesAccountDetails
-```
-
-### Shield
-
-```graphql
-shieldSubscription: ShieldSubscription
-shieldProtections(resourceArn: String): [ShieldProtection!]!
-shieldProtectionGroups: [ProtectionGroup!]!
-shieldAttacks(resourceArns: [String], startTime: String, endTime: String): [AttackSummary!]!
-```
-
-### SNS
-
-```graphql
-snsTopics: [SnsTopic!]!
-snsTopic(topicArn: String!): SnsTopic
-snsSubscriptions(topicArn: String): [SnsSubscription!]!
-```
-
-### SQS
-
-```graphql
-sqsQueues(prefix: String): [String!]!
-sqsQueue(queueUrl: String!): SqsQueue
-```
-
-### SSM
-
-```graphql
-managedInstances(instanceIds: [String], pingStatus: PingStatus, platformType: PlatformType): [ManagedInstance!]!
-parameters(names: [String!]!, withDecryption: Boolean): [Parameter!]!
-parametersByPath(path: String!, recursive: Boolean, withDecryption: Boolean): [Parameter!]!
-parameterMetadata(filters: [ParameterFilter]): [ParameterMeta!]!
-documents(owner: String, documentType: String, name: String): [SsmDocument!]!
-```
-
-### SSO Admin
-
-```graphql
-ssoInstances: [SsoInstance!]!
-ssoPermissionSets(instanceArn: String!): [SsoPermissionSet!]!
-ssoAccountAssignments(instanceArn: String!, accountId: String!, permissionSetArn: String!): [SsoAccountAssignment!]!
-```
-
-### Step Functions
-
-```graphql
-stateMachines: [StateMachine!]!
-executions(stateMachineArn: String!, statusFilter: String): [Execution!]!
-executionDetail(executionArn: String!): ExecutionDetail!
-```
-
-### Storage Gateway
-
-```graphql
-storageGateways: [StorageGatewayGateway!]!
-storageGatewayVolumes(gatewayArn: String!): [StorageGatewayVolume!]!
-storageGatewayFileShares(gatewayArn: String!): [StorageGatewayFileShare!]!
-```
-
-### STS
-
-```graphql
-stsCallerIdentity: CallerIdentity!
-```
-
-### Timestream
-
-```graphql
-timestreamDatabases: [TimestreamDatabase!]!
-timestreamTables(databaseName: String!): [TimestreamTable!]!
-```
-
-### Transcribe
-
-```graphql
-transcribeJobs(statusEquals: String, jobNameContains: String): [TranscriptionJob!]!
-transcribeVocabularies(stateEquals: String): [TranscribeVocabulary!]!
-transcribeLanguageModels(statusEquals: String): [TranscribeLanguageModel!]!
-```
-
-### Transfer Family
-
-```graphql
-transferServers: [TransferServer!]!
-transferUsers(serverId: String!): [TransferUser!]!
-```
-
-### Translate
-
-```graphql
-translateTerminologies: [TranslateTerminology!]!
-translateParallelData: [TranslateParallelData!]!
-translateTextTranslationJobs(filter: TranslateJobFilterInput): [TranslateTextTranslationJob!]!
-```
-
-### VPC Resources
-
-```graphql
-routeTables(vpcId: String, ids: [String]): [RouteTable!]!
-networkAcls(vpcId: String, ids: [String]): [NetworkAcl!]!
-internetGateways(vpcId: String, ids: [String]): [InternetGateway!]!
-natGateways(vpcId: String, ids: [String], state: String): [NatGateway!]!
-vpcEndpoints(vpcId: String, ids: [String], serviceName: String): [VpcEndpoint!]!
-transitGateways(ids: [String]): [TransitGateway!]!
-vpcFlowLogs(resourceId: String): [VpcFlowLog!]!
-```
-
-### WAF v2
-
-```graphql
-wafWebAcls(scope: WafScope!): [WebAcl!]!
-wafIpSets(scope: WafScope!): [WafIpSet!]!
-wafRuleGroups(scope: WafScope!): [WafRuleGroup!]!
-```
-
-`WafScope` enum: `REGIONAL`, `CLOUDFRONT`
-
-### WorkSpaces
-
-```graphql
-workspaces(directoryId: String, userName: String, bundleId: String): [Workspace!]!
-workspaceDirectories: [WorkspaceDirectory!]!
-workspaceBundles(owner: String): [WorkspaceBundle!]!
-```
-
-### X-Ray
-
-```graphql
-xrayGroups: [XRayGroup!]!
-xraySamplingRules: [XRaySamplingRule!]!
-xrayEncryptionConfig: XRayEncryptionConfig
-```
+The full GraphQL query reference for all 107 services — one page per
+service, field names, arguments, and types — is generated directly from the
+live schema (so it can never drift the way hand-written docs do) and
+published at **https://joegotflow83.github.io/vapor/**. It's rebuilt by
+`.github/workflows/docs.yml` on every push to `master` via
+`cargo run --all-features --bin gen-docs` (see `src/bin/gen_docs.rs`).
+
+> Upgrading from 0.2.x? Every list query now returns a page (`items` +
+> `nextToken`) instead of a bare list, and date/time fields are now the
+> `DateTime` scalar instead of `String` — see [MIGRATION.md](MIGRATION.md).
 
 ## Examples
 
@@ -935,63 +118,63 @@ xrayEncryptionConfig: XRayEncryptionConfig
 
 **List all running instances:**
 ```bash
-vapor query '{ instances(state: RUNNING) { id instanceType privateIp tags { key value } } }'
+vapor query '{ instances(state: RUNNING) { items { id instanceType privateIp tags { key value } } nextToken } }'
 ```
 
 **List Lambda functions:**
 ```bash
-vapor query '{ lambdaFunctions { functionName runtime memorySize state } }'
+vapor query '{ lambdaFunctions { items { functionName runtime memorySize state } nextToken } }'
 ```
 
 **List EKS clusters:**
 ```bash
-vapor query '{ eksClusters { name status version endpoint } }'
+vapor query '{ eksClusters { items { name status version endpoint } nextToken } }'
 ```
 
 **List S3 buckets:**
 ```bash
-vapor query '{ s3Buckets { name region versioning } }'
+vapor query '{ s3Buckets { items { name region versioning } nextToken } }'
 ```
 
 **List RDS instances:**
 ```bash
-vapor query '{ dbInstances { dbInstanceIdentifier engine dbInstanceStatus multiAz } }'
+vapor query '{ dbInstances { items { dbInstanceIdentifier engine dbInstanceStatus multiAz } nextToken } }'
 ```
 
 **Get CloudWatch alarms in ALARM state:**
 ```bash
-vapor query '{ alarms(state: ALARM) { alarmName stateValue metricName } }'
+vapor query '{ alarms(state: ALARM) { items { alarmName stateValue metricName } nextToken } }'
 ```
 
 **List CloudWatch log groups:**
 ```bash
-vapor query '{ logGroups(prefix: "/aws/lambda") { name retentionInDays } }'
+vapor query '{ logGroups(prefix: "/aws/lambda") { items { name retentionInDays } nextToken } }'
 ```
 
 **List IAM roles:**
 ```bash
-vapor query '{ iamRoles { roleName arn createDate } }'
+vapor query '{ iamRoles { items { roleName arn createDate } nextToken } }'
 ```
 
 **List ACM certificates:**
 ```bash
-vapor query '{ acmCertificates(statuses: ["ISSUED"]) { domainName status notAfter } }'
+vapor query '{ acmCertificates(statuses: ["ISSUED"]) { items { domainName status notAfter } nextToken } }'
 ```
 
 **List SQS queues:**
 ```bash
-vapor query '{ sqsQueues }'
+vapor query '{ sqsQueues { items nextToken } }'
 ```
 
 **List ECS clusters and services:**
 ```bash
-vapor query '{ ecsClusters { clusterName status activeServicesCount } }'
+vapor query '{ ecsClusters { items { clusterName status activeServicesCount } nextToken } }'
 ```
 
 **Get GuardDuty findings:**
 ```bash
-vapor query '{ guarddutyDetectors { detectorId } }' # get a detector ID first
-vapor query '{ guarddutyFindings(detectorId: "abc123", minSeverity: 7.0) { id title severity } }'
+vapor query '{ guarddutyDetectors { items { detectorId } nextToken } }' # get a detector ID first
+vapor query '{ guarddutyFindings(detectorId: "abc123", minSeverity: 7.0) { items { id title severity } nextToken } }'
 ```
 
 **Inspect Bedrock foundation models:**
@@ -1001,18 +184,18 @@ vapor query '{ bedrockFoundationModels { modelId modelName providerName inputMod
 
 **Check AWS cost and usage:**
 ```bash
-vapor query '{ costAndUsage(start: "2024-01-01", end: "2024-02-01", granularity: "MONTHLY") { timePeriodStart timePeriodEnd total { amount unit } } }'
+vapor query '{ costAndUsage(start: "2024-01-01", end: "2024-02-01", granularity: "MONTHLY") { items { timePeriodStart timePeriodEnd total { amount unit } } nextToken } }'
 ```
 
 **List Step Functions state machines:**
 ```bash
-vapor query '{ stateMachines { name stateMachineArn type status } }'
+vapor query '{ stateMachines { items { name stateMachineArn type status } nextToken } }'
 ```
 
 **List Glue databases and tables:**
 ```bash
-vapor query '{ glueDatabases { name description } }'
-vapor query '{ glueTables(databaseName: "my-db") { name tableType } }'
+vapor query '{ glueDatabases { items { name description } nextToken } }'
+vapor query '{ glueTables(databaseName: "my-db") { items { name tableType } nextToken } }'
 ```
 
 **Get caller identity:**
@@ -1022,12 +205,12 @@ vapor query '{ stsCallerIdentity { account userId arn } }'
 
 **Target a specific region:**
 ```bash
-vapor query '{ instances(state: RUNNING) { id privateIp } }' --region eu-west-1
+vapor query '{ instances(state: RUNNING) { items { id privateIp } nextToken } }' --region eu-west-1
 ```
 
 **Compact output for piping to jq:**
 ```bash
-vapor query '{ lambdaFunctions { functionName runtime } }' --format compact | jq '.data.lambdaFunctions[].functionName'
+vapor query '{ lambdaFunctions { items { functionName runtime } nextToken } }' --format compact | jq '.data.lambdaFunctions.items[].functionName'
 ```
 
 ### Mutation examples
@@ -1083,7 +266,7 @@ vapor serve --port 8080 --region us-west-2
 ```bash
 curl -s http://localhost:4000/graphql \
   -H 'Content-Type: application/json' \
-  -d '{"query":"{ instances(state: RUNNING) { id instanceType privateIp } }"}' \
+  -d '{"query":"{ instances(state: RUNNING) { items { id instanceType privateIp } nextToken } }"}' \
   | jq .
 ```
 
@@ -1249,5 +432,5 @@ AWS_PROFILE=my-profile vapor serve
 
 To use explicit credentials:
 ```bash
-AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... vapor query '{ s3Buckets { name } }'
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... vapor query '{ s3Buckets { items { name } nextToken } }'
 ```

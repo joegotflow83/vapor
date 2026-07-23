@@ -8,3 +8,4 @@ pub mod aws;
 pub mod error;
 pub mod schema;
 pub mod server;
+pub mod telemetry;

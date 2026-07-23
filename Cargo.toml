@@ -1,6 +1,6 @@
 [package]
 name = "vapor"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [[bin]]
@@ -15,8 +15,13 @@ path = "src/bin/gen_docs.rs"
 async-graphql = { version = "7", features = ["chrono"] }
 async-graphql-axum = "7"
 axum = "0.8"
+tower-http = { version = "0.6", features = ["timeout"] }
 tokio = { version = "1", features = ["full"] }
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-trait = "0.1"
+subtle = "2"
 aws-sdk-ec2 = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-ssm = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-cloudwatch = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
@@ -106,7 +111,6 @@ aws-sdk-keyspaces = { version = "1", optional = true, default-features = false, 
 aws-sdk-bedrock = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-xray = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-timestreamwrite = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
-aws-sdk-timestreamquery = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-lakeformation = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-quicksight = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
 aws-sdk-comprehend = { version = "1", optional = true, default-features = false, features = ["default-https-client", "rt-tokio"] }
@@ -125,9 +129,18 @@ futures = "0.3"
 base64 = "0.22"
 chrono = "0.4"
 serde_json = "1"
+aws-smithy-types = "1"
+aws-smithy-runtime-api = "1"
+aws-smithy-types-convert = { version = "0.61", features = ["convert-chrono"] }
 
 [dev-dependencies]
-aws-smithy-types = "1"
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+http = "1"
+aws-smithy-http-client = { version = "1", features = ["test-util"] }
+aws-credential-types = { version = "1", features = ["test-util"] }
+aws-smithy-cbor = "0.61"
+aws-smithy-async = { version = "1", features = ["rt-tokio"] }
 
 [features]
 default = ["ec2", "s3", "lambda"]
@@ -218,7 +231,7 @@ qldb = ["dep:aws-sdk-qldb"]
 keyspaces = ["dep:aws-sdk-keyspaces"]
 bedrock = ["dep:aws-sdk-bedrock"]
 xray = ["dep:aws-sdk-xray"]
-timestream = ["dep:aws-sdk-timestreamwrite", "dep:aws-sdk-timestreamquery"]
+timestream = ["dep:aws-sdk-timestreamwrite"]
 lakeformation = ["dep:aws-sdk-lakeformation"]
 quicksight = ["dep:aws-sdk-quicksight"]
 comprehend = ["dep:aws-sdk-comprehend"]
@@ -258,3 +271,4 @@ release = [
 [profile.release]
 codegen-units = 1
 strip = true
+lto = true

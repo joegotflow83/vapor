@@ -35,3 +35,53 @@ jobs:
       uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+    - name: Free disk space
+      # --all-features builds all ~102 AWS SDK crates, then instruments and
+      # rebuilds them for coverage; see docs.yml for the same tradeoff with
+      # the runner's default free space.
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force
+        df -h /
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      with:
+        toolchain: stable
+        components: llvm-tools-preview
+
+    - name: Cache Rust build artifacts
+      uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
+      with:
+        tool: cargo-llvm-cov
+
+    - name: Run instrumented tests
+      # Collect profile data once, then generate both reports from it below
+      # rather than re-running the (expensive, --all-features) test suite
+      # per report format.
+      run: cargo llvm-cov --all-features --no-report
+
+    - name: Generate coverage summary
+      # Priority 4 test sweep is complete; baseline measured at 98.15%
+      # (2026-07-23). Gate set at 98 to leave a small margin below that.
+      run: cargo llvm-cov report --summary-only --json --output-path coverage.json --fail-under-lines 98
+
+    - name: Generate HTML report
+      run: cargo llvm-cov report --html
+
+    - name: Upload HTML report
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: coverage-html
+        path: target/llvm-cov/html
