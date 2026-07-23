@@ -1,6 +1,9 @@
 use async_graphql::SimpleObject;
 use aws_sdk_sfn::operation::describe_execution::DescribeExecutionOutput as SdkExecutionDetail;
 use aws_sdk_sfn::types::ExecutionListItem as SdkExecution;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "StepFunctionsTag")]
@@ -15,7 +18,7 @@ pub struct StateMachine {
     pub name: String,
     pub machine_type: Option<String>,
     pub status: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -29,7 +32,7 @@ impl StateMachine {
             name: output.name().to_string(),
             machine_type: Some(output.r#type().as_str().to_string()),
             status: output.status().map(|s| s.as_str().to_string()),
-            created_at: Some(output.creation_date().to_string()),
+            created_at: to_utc(Some(output.creation_date())),
             tags: sdk_tags
                 .iter()
                 .filter_map(|t| {
@@ -49,8 +52,8 @@ pub struct Execution {
     pub state_machine_arn: String,
     pub name: String,
     pub status: String,
-    pub started_at: Option<String>,
-    pub stopped_at: Option<String>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub stopped_at: Option<DateTime<Utc>>,
 }
 
 impl From<SdkExecution> for Execution {
@@ -60,8 +63,8 @@ impl From<SdkExecution> for Execution {
             state_machine_arn: e.state_machine_arn().to_string(),
             name: e.name().to_string(),
             status: e.status().as_str().to_string(),
-            started_at: Some(e.start_date().to_string()),
-            stopped_at: e.stop_date().map(|d| d.to_string()),
+            started_at: to_utc(Some(e.start_date())),
+            stopped_at: to_utc(e.stop_date()),
         }
     }
 }
@@ -72,8 +75,8 @@ pub struct ExecutionDetail {
     pub state_machine_arn: String,
     pub name: Option<String>,
     pub status: String,
-    pub started_at: Option<String>,
-    pub stopped_at: Option<String>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub stopped_at: Option<DateTime<Utc>>,
     pub input: Option<String>,
     pub output: Option<String>,
     pub error: Option<String>,
@@ -87,8 +90,8 @@ impl From<SdkExecutionDetail> for ExecutionDetail {
             state_machine_arn: d.state_machine_arn().to_string(),
             name: d.name().map(|s| s.to_string()),
             status: d.status().as_str().to_string(),
-            started_at: Some(d.start_date().to_string()),
-            stopped_at: d.stop_date().map(|t| t.to_string()),
+            started_at: to_utc(Some(d.start_date())),
+            stopped_at: to_utc(d.stop_date()),
             input: d.input().map(|s| s.to_string()),
             output: d.output().map(|s| s.to_string()),
             error: d.error().map(|s| s.to_string()),
@@ -234,7 +237,11 @@ mod tests {
             name: "Test".to_string(),
             machine_type: Some("STANDARD".to_string()),
             status: Some("ACTIVE".to_string()),
-            created_at: Some("2023-11-14T22:13:20Z".to_string()),
+            created_at: Some(
+                DateTime::parse_from_rfc3339("2023-11-14T22:13:20Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
             tags: vec![Tag {
                 key: "env".to_string(),
                 value: "prod".to_string(),

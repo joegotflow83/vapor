@@ -1,15 +1,17 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::lake_formation::{
     LakeFormationPermissionInfo, LakeFormationResourceInfo, LakeFormationSettingsInfo,
     LfDefaultPermissionInfo, LfResourceIdentifierInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct LakeFormationResource {
     pub resource_arn: String,
     pub role_arn: Option<String>,
-    pub last_modified: Option<String>,
+    pub last_modified: Option<DateTime<Utc>>,
     pub with_federation: Option<bool>,
 }
 
@@ -18,7 +20,7 @@ impl From<LakeFormationResourceInfo> for LakeFormationResource {
         Self {
             resource_arn: r.resource_arn,
             role_arn: r.role_arn,
-            last_modified: r.last_modified,
+            last_modified: to_utc(r.last_modified.as_ref()),
             with_federation: r.with_federation,
         }
     }
@@ -115,7 +117,7 @@ mod tests {
         let info = LakeFormationResourceInfo {
             resource_arn: "arn:aws:s3:::my-data-lake".to_string(),
             role_arn: Some("arn:aws:iam::123456789012:role/LakeFormationRole".to_string()),
-            last_modified: Some("2024-01-15T10:30:00Z".to_string()),
+            last_modified: Some(aws_smithy_types::DateTime::from_secs(1_705_314_600)),
             with_federation: Some(false),
         };
         let result = LakeFormationResource::from(info);

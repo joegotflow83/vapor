@@ -1,5 +1,8 @@
 use async_graphql::SimpleObject;
 use aws_sdk_redshiftserverless::types::{Namespace, Workgroup};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct RedshiftServerlessNamespace {
@@ -12,7 +15,7 @@ pub struct RedshiftServerlessNamespace {
     pub kms_key_id: Option<String>,
     pub log_exports: Vec<String>,
     pub status: Option<String>,
-    pub creation_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
 }
 
 impl From<Namespace> for RedshiftServerlessNamespace {
@@ -27,7 +30,7 @@ impl From<Namespace> for RedshiftServerlessNamespace {
             kms_key_id: n.kms_key_id().map(|v| v.to_string()),
             log_exports: n.log_exports().iter().map(|e| e.as_str().to_string()).collect(),
             status: n.status().map(|s| s.as_str().to_string()),
-            creation_date: n.creation_date().map(|t| t.to_string()),
+            creation_date: to_utc(n.creation_date()),
         }
     }
 }
@@ -47,7 +50,7 @@ pub struct RedshiftServerlessWorkgroup {
     pub endpoint_port: Option<i32>,
     pub security_group_ids: Vec<String>,
     pub subnet_ids: Vec<String>,
-    pub creation_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
 }
 
 impl From<Workgroup> for RedshiftServerlessWorkgroup {
@@ -66,7 +69,7 @@ impl From<Workgroup> for RedshiftServerlessWorkgroup {
             endpoint_port: w.endpoint().and_then(|e| e.port()),
             security_group_ids: w.security_group_ids().to_vec(),
             subnet_ids: w.subnet_ids().to_vec(),
-            creation_date: w.creation_date().map(|t| t.to_string()),
+            creation_date: to_utc(w.creation_date()),
         }
     }
 }
@@ -84,6 +87,7 @@ mod tests {
             .status(aws_sdk_redshiftserverless::types::NamespaceStatus::Available)
             .db_name("dev")
             .admin_username("admin")
+            .creation_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = RedshiftServerlessNamespace::from(ns);
         assert_eq!(result.namespace_name, Some("my-ns".to_string()));
@@ -94,6 +98,10 @@ mod tests {
         assert_eq!(result.admin_username, Some("admin".to_string()));
         assert!(result.iam_roles.is_empty());
         assert!(result.log_exports.is_empty());
+        assert_eq!(
+            result.creation_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -117,6 +125,7 @@ mod tests {
             .namespace_name("my-ns")
             .base_capacity(128)
             .publicly_accessible(false)
+            .creation_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = RedshiftServerlessWorkgroup::from(wg);
         assert_eq!(result.workgroup_name, Some("my-wg".to_string()));
@@ -128,6 +137,10 @@ mod tests {
         assert_eq!(result.publicly_accessible, Some(false));
         assert!(result.security_group_ids.is_empty());
         assert!(result.subnet_ids.is_empty());
+        assert_eq!(
+            result.creation_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]

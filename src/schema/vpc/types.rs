@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct RouteTable {
@@ -240,7 +242,7 @@ pub struct VpcFlowLog {
     pub log_format: Option<String>,
     pub deliver_logs_status: Option<String>,
     pub deliver_logs_error_message: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -261,7 +263,7 @@ impl From<aws_sdk_ec2::types::FlowLog> for VpcFlowLog {
             log_format: fl.log_format().map(|s| s.to_string()),
             deliver_logs_status: fl.deliver_logs_status().map(|s| s.to_string()),
             deliver_logs_error_message: fl.deliver_logs_error_message().map(|s| s.to_string()),
-            creation_time: fl.creation_time().map(|t| t.to_string()),
+            creation_time: to_utc(fl.creation_time()),
             tags,
         }
     }
@@ -447,6 +449,7 @@ mod tests {
             .log_group_name("my-log-group")
             .log_format("${version} ${account-id} ${interface-id}")
             .deliver_logs_status("SUCCESS")
+            .creation_time(aws_smithy_types::DateTime::from_secs(0))
             .tags(aws_sdk_ec2::types::Tag::builder().key("Name").value("my-flow-log").build())
             .build();
         let fl: VpcFlowLog = sdk.into();
@@ -458,6 +461,7 @@ mod tests {
         assert_eq!(fl.log_destination, Some("arn:aws:s3:::my-bucket/flow-logs/".to_string()));
         assert_eq!(fl.log_group_name, Some("my-log-group".to_string()));
         assert_eq!(fl.deliver_logs_status, Some("SUCCESS".to_string()));
+        assert_eq!(fl.creation_time, Some(DateTime::<Utc>::UNIX_EPOCH));
         assert_eq!(fl.tags.len(), 1);
         assert_eq!(fl.tags[0].key, "Name");
         assert_eq!(fl.tags[0].value, "my-flow-log");
@@ -473,6 +477,7 @@ mod tests {
         assert_eq!(fl.traffic_type, None);
         assert_eq!(fl.log_destination, None);
         assert_eq!(fl.deliver_logs_error_message, None);
+        assert_eq!(fl.creation_time, None);
         assert!(fl.tags.is_empty());
     }
 }

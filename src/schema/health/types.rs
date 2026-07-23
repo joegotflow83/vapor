@@ -1,5 +1,8 @@
 use async_graphql::SimpleObject;
 use aws_sdk_health::types::Event;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct HealthEvent {
@@ -9,9 +12,9 @@ pub struct HealthEvent {
     pub event_type_category: Option<String>,
     pub region: Option<String>,
     pub status: Option<String>,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
-    pub last_updated_time: Option<String>,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
 }
 
 impl From<Event> for HealthEvent {
@@ -23,9 +26,9 @@ impl From<Event> for HealthEvent {
             event_type_category: e.event_type_category().map(|c| c.as_str().to_string()),
             region: e.region().map(|s| s.to_string()),
             status: e.status_code().map(|s| s.as_str().to_string()),
-            start_time: e.start_time().map(|t| t.to_string()),
-            end_time: e.end_time().map(|t| t.to_string()),
-            last_updated_time: e.last_updated_time().map(|t| t.to_string()),
+            start_time: to_utc(e.start_time()),
+            end_time: to_utc(e.end_time()),
+            last_updated_time: to_utc(e.last_updated_time()),
         }
     }
 }
@@ -43,9 +46,9 @@ mod tests {
             event_type_category: Some("issue".to_string()),
             region: Some("us-east-1".to_string()),
             status: Some("open".to_string()),
-            start_time: Some("2024-01-15T10:00:00Z".to_string()),
+            start_time: Some("2024-01-15T10:00:00Z".parse().unwrap()),
             end_time: None,
-            last_updated_time: Some("2024-01-15T11:00:00Z".to_string()),
+            last_updated_time: Some("2024-01-15T11:00:00Z".parse().unwrap()),
         };
         assert_eq!(
             event.arn,
@@ -85,6 +88,7 @@ mod tests {
             .event_type_category(aws_sdk_health::types::EventTypeCategory::ScheduledChange)
             .region("us-east-1")
             .status_code(aws_sdk_health::types::EventStatusCode::Upcoming)
+            .start_time(aws_smithy_types::DateTime::from_secs(1700000000))
             .build();
         let result = HealthEvent::from(sdk_event);
         assert_eq!(
@@ -95,7 +99,11 @@ mod tests {
         assert_eq!(result.event_type_code, Some("AWS_RDS_MAINTENANCE".to_string()));
         assert_eq!(result.region, Some("us-east-1".to_string()));
         assert_eq!(result.status, Some("upcoming".to_string()));
-        assert!(result.start_time.is_none());
+        assert_eq!(
+            result.start_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1700000000))
+        );
+        assert!(result.end_time.is_none());
     }
 
     #[test]

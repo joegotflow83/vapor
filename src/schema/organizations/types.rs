@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct OrgAccount {
@@ -8,7 +11,7 @@ pub struct OrgAccount {
     pub email: Option<String>,
     pub status: Option<String>,
     pub joined_method: Option<String>,
-    pub joined_timestamp: Option<String>,
+    pub joined_timestamp: Option<DateTime<Utc>>,
 }
 
 impl From<&aws_sdk_organizations::types::Account> for OrgAccount {
@@ -20,7 +23,7 @@ impl From<&aws_sdk_organizations::types::Account> for OrgAccount {
             email: a.email().map(|s| s.to_string()),
             status: a.status().map(|s| s.as_str().to_string()),
             joined_method: a.joined_method().map(|m| m.as_str().to_string()),
-            joined_timestamp: a.joined_timestamp().map(|t| t.to_string()),
+            joined_timestamp: to_utc(a.joined_timestamp()),
         }
     }
 }

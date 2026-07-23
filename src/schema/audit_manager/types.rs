@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct AuditManagerAssessment {
@@ -6,8 +9,8 @@ pub struct AuditManagerAssessment {
     pub arn: Option<String>,
     pub name: Option<String>,
     pub status: Option<String>,
-    pub creation_time: Option<String>,
-    pub last_updated: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub last_updated: Option<DateTime<Utc>>,
     pub compliance_type: Option<String>,
 }
 
@@ -19,8 +22,8 @@ impl From<aws_sdk_auditmanager::types::AssessmentMetadataItem> for AuditManagerA
             arn: None,
             name: a.name().map(|v| v.to_string()),
             status: a.status().map(|v| v.as_str().to_string()),
-            creation_time: a.creation_time().map(|t| t.to_string()),
-            last_updated: a.last_updated().map(|t| t.to_string()),
+            creation_time: to_utc(a.creation_time()),
+            last_updated: to_utc(a.last_updated()),
             compliance_type: a.compliance_type().map(|v| v.to_string()),
         }
     }
@@ -34,8 +37,8 @@ pub struct AuditManagerFramework {
     pub type_: Option<String>,
     pub compliance_type: Option<String>,
     pub controls_count: Option<i32>,
-    pub created_at: Option<String>,
-    pub last_updated_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub last_updated_at: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_auditmanager::types::AssessmentFrameworkMetadata> for AuditManagerFramework {
@@ -47,8 +50,8 @@ impl From<aws_sdk_auditmanager::types::AssessmentFrameworkMetadata> for AuditMan
             type_: f.r#type().map(|v| v.as_str().to_string()),
             compliance_type: f.compliance_type().map(|v| v.to_string()),
             controls_count: Some(f.controls_count()),
-            created_at: f.created_at().map(|t| t.to_string()),
-            last_updated_at: f.last_updated_at().map(|t| t.to_string()),
+            created_at: to_utc(f.created_at()),
+            last_updated_at: to_utc(f.last_updated_at()),
         }
     }
 }

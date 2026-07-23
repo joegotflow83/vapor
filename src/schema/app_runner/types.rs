@@ -1,8 +1,10 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::app_runner::{
-    AppRunnerCodeRepoInfo, AppRunnerImageRepoInfo, AppRunnerInstanceConfigInfo,
-    AppRunnerServiceInfo, AppRunnerSourceConfigInfo, AppRunnerVpcConnectorInfo,
+    AppRunnerCodeRepoInfo, AppRunnerConnectionInfo, AppRunnerImageRepoInfo,
+    AppRunnerInstanceConfigInfo, AppRunnerObservabilityConfigurationInfo, AppRunnerServiceInfo,
+    AppRunnerSourceConfigInfo, AppRunnerVpcConnectorInfo,
 };
 
 #[derive(SimpleObject, Clone)]
@@ -74,8 +76,8 @@ pub struct AppRunnerService {
     pub service_arn: String,
     pub service_url: Option<String>,
     pub status: String,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
     pub source_configuration: Option<AppRunnerSourceConfig>,
     pub instance_configuration: Option<AppRunnerInstanceConfig>,
 }
@@ -121,12 +123,57 @@ impl From<AppRunnerVpcConnectorInfo> for AppRunnerVpcConnector {
     }
 }
 
+#[derive(SimpleObject, Clone)]
+pub struct AppRunnerConnection {
+    pub connection_name: Option<String>,
+    pub connection_arn: Option<String>,
+    pub provider_type: Option<String>,
+    pub status: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+}
+
+impl From<AppRunnerConnectionInfo> for AppRunnerConnection {
+    fn from(c: AppRunnerConnectionInfo) -> Self {
+        Self {
+            connection_name: c.connection_name,
+            connection_arn: c.connection_arn,
+            provider_type: c.provider_type,
+            status: c.status,
+            created_at: c.created_at,
+        }
+    }
+}
+
+#[derive(SimpleObject, Clone)]
+pub struct AppRunnerObservabilityConfiguration {
+    pub observability_configuration_arn: Option<String>,
+    pub observability_configuration_name: Option<String>,
+    pub observability_configuration_revision: i32,
+    pub tracing_vendor: Option<String>,
+    pub latest: bool,
+    pub status: Option<String>,
+}
+
+impl From<AppRunnerObservabilityConfigurationInfo> for AppRunnerObservabilityConfiguration {
+    fn from(c: AppRunnerObservabilityConfigurationInfo) -> Self {
+        Self {
+            observability_configuration_arn: c.observability_configuration_arn,
+            observability_configuration_name: c.observability_configuration_name,
+            observability_configuration_revision: c.observability_configuration_revision,
+            tracing_vendor: c.tracing_vendor,
+            latest: c.latest,
+            status: c.status,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::aws::app_runner::{
-        AppRunnerCodeRepoInfo, AppRunnerImageRepoInfo, AppRunnerInstanceConfigInfo,
-        AppRunnerServiceInfo, AppRunnerSourceConfigInfo, AppRunnerVpcConnectorInfo,
+        AppRunnerCodeRepoInfo, AppRunnerConnectionInfo, AppRunnerImageRepoInfo,
+        AppRunnerInstanceConfigInfo, AppRunnerObservabilityConfigurationInfo, AppRunnerServiceInfo,
+        AppRunnerSourceConfigInfo, AppRunnerVpcConnectorInfo,
     };
 
     #[test]
@@ -158,8 +205,8 @@ mod tests {
             service_arn: "arn:aws:apprunner:us-east-1:123456789012:service/my-api/abc123".to_string(),
             service_url: Some("abc123.us-east-1.awsapprunner.com".to_string()),
             status: "RUNNING".to_string(),
-            created_at: Some("2024-01-01T00:00:00Z".to_string()),
-            updated_at: Some("2024-06-01T00:00:00Z".to_string()),
+            created_at: Some("2024-01-01T00:00:00Z".parse().unwrap()),
+            updated_at: Some("2024-06-01T00:00:00Z".parse().unwrap()),
             source_configuration: Some(AppRunnerSourceConfigInfo {
                 image_repository: Some(AppRunnerImageRepoInfo {
                     image_identifier: "public.ecr.aws/my-org/my-image:latest".to_string(),
@@ -251,5 +298,55 @@ mod tests {
         assert!(result.subnets.is_empty());
         assert!(result.security_groups.is_empty());
         assert_eq!(result.vpc_connector_revision, 2);
+    }
+
+    #[test]
+    fn test_app_runner_connection_from() {
+        let info = AppRunnerConnectionInfo {
+            connection_name: Some("my-connection".to_string()),
+            connection_arn: Some("arn:aws:apprunner:us-east-1:123456789012:connection/my-connection/abc123".to_string()),
+            provider_type: Some("GITHUB".to_string()),
+            status: Some("AVAILABLE".to_string()),
+            created_at: Some("2024-01-01T00:00:00Z".parse().unwrap()),
+        };
+        let result = AppRunnerConnection::from(info);
+        assert_eq!(result.connection_name, Some("my-connection".to_string()));
+        assert_eq!(result.provider_type, Some("GITHUB".to_string()));
+        assert_eq!(result.status, Some("AVAILABLE".to_string()));
+    }
+
+    #[test]
+    fn test_app_runner_observability_configuration_from() {
+        let info = AppRunnerObservabilityConfigurationInfo {
+            observability_configuration_arn: Some(
+                "arn:aws:apprunner:us-east-1:123456789012:observabilityconfiguration/my-config/1/abc123".to_string(),
+            ),
+            observability_configuration_name: Some("my-config".to_string()),
+            observability_configuration_revision: 1,
+            tracing_vendor: Some("AWSXRAY".to_string()),
+            latest: true,
+            status: Some("ACTIVE".to_string()),
+        };
+        let result = AppRunnerObservabilityConfiguration::from(info);
+        assert_eq!(result.observability_configuration_name, Some("my-config".to_string()));
+        assert_eq!(result.observability_configuration_revision, 1);
+        assert_eq!(result.tracing_vendor, Some("AWSXRAY".to_string()));
+        assert!(result.latest);
+        assert_eq!(result.status, Some("ACTIVE".to_string()));
+    }
+
+    #[test]
+    fn test_app_runner_observability_configuration_from_minimal() {
+        let info = AppRunnerObservabilityConfigurationInfo {
+            observability_configuration_arn: None,
+            observability_configuration_name: None,
+            observability_configuration_revision: 0,
+            tracing_vendor: None,
+            latest: false,
+            status: None,
+        };
+        let result = AppRunnerObservabilityConfiguration::from(info);
+        assert!(result.tracing_vendor.is_none());
+        assert!(!result.latest);
     }
 }

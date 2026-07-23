@@ -1,15 +1,17 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::datasync::{
     DataSyncAgentInfo, DataSyncLocationInfo, DataSyncTaskExecutionInfo, DataSyncTaskInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct DataSyncAgent {
     pub agent_arn: String,
     pub name: Option<String>,
     pub status: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
 }
 
 impl From<DataSyncAgentInfo> for DataSyncAgent {
@@ -18,7 +20,7 @@ impl From<DataSyncAgentInfo> for DataSyncAgent {
             agent_arn: a.agent_arn,
             name: a.name,
             status: a.status,
-            creation_time: a.creation_time,
+            creation_time: to_utc(a.creation_time.as_ref()),
         }
     }
 }
@@ -47,7 +49,7 @@ pub struct DataSyncTask {
     pub status: Option<String>,
     pub source_location_arn: Option<String>,
     pub destination_location_arn: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
 }
 
 impl From<DataSyncTaskInfo> for DataSyncTask {
@@ -58,7 +60,7 @@ impl From<DataSyncTaskInfo> for DataSyncTask {
             status: t.status,
             source_location_arn: t.source_location_arn,
             destination_location_arn: t.destination_location_arn,
-            creation_time: t.creation_time,
+            creation_time: to_utc(t.creation_time.as_ref()),
         }
     }
 }
@@ -67,7 +69,7 @@ impl From<DataSyncTaskInfo> for DataSyncTask {
 pub struct DataSyncTaskExecution {
     pub task_execution_arn: String,
     pub status: Option<String>,
-    pub start_time: Option<String>,
+    pub start_time: Option<DateTime<Utc>>,
     pub estimated_files_to_transfer: Option<i64>,
     pub files_transferred: Option<i64>,
     pub bytes_transferred: Option<i64>,
@@ -78,7 +80,7 @@ impl From<DataSyncTaskExecutionInfo> for DataSyncTaskExecution {
         Self {
             task_execution_arn: e.task_execution_arn,
             status: e.status,
-            start_time: e.start_time,
+            start_time: to_utc(e.start_time.as_ref()),
             estimated_files_to_transfer: e.estimated_files_to_transfer,
             files_transferred: e.files_transferred,
             bytes_transferred: e.bytes_transferred,
@@ -184,13 +186,17 @@ mod tests {
             task_execution_arn: "arn:aws:datasync:us-east-1:123:task/task-01/execution/exec-01"
                 .to_string(),
             status: Some("SUCCESS".to_string()),
-            start_time: Some("2024-01-01T00:00:00Z".to_string()),
+            start_time: Some(aws_smithy_types::DateTime::from_secs(1_704_067_200)),
             estimated_files_to_transfer: Some(1000),
             files_transferred: Some(1000),
             bytes_transferred: Some(1_000_000),
         };
         let result = DataSyncTaskExecution::from(info);
         assert_eq!(result.status, Some("SUCCESS".to_string()));
+        assert_eq!(
+            result.start_time.map(|t| t.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
         assert_eq!(result.estimated_files_to_transfer, Some(1000));
         assert_eq!(result.files_transferred, Some(1000));
         assert_eq!(result.bytes_transferred, Some(1_000_000));

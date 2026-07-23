@@ -7,6 +7,9 @@ use aws_sdk_apigatewayv2::types::{
     Stage as SdkStage,
     VpcLink as SdkVpcLink,
 };
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 fn tags_from_map(map: Option<&std::collections::HashMap<String, String>>) -> Vec<ApiV2Tag> {
     map.map(|m| {
@@ -56,7 +59,7 @@ pub struct ApiV2 {
     pub cors_allow_origins: Vec<String>,
     pub cors_allow_methods: Vec<String>,
     pub disable_execute_api_endpoint: Option<bool>,
-    pub created_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
     pub tags: Vec<ApiV2Tag>,
 }
 
@@ -81,7 +84,7 @@ impl From<aws_sdk_apigatewayv2::types::Api> for ApiV2 {
             cors_allow_origins,
             cors_allow_methods,
             disable_execute_api_endpoint: a.disable_execute_api_endpoint(),
-            created_date: a.created_date().map(|t| t.to_string()),
+            created_date: to_utc(a.created_date()),
             tags,
         }
     }
@@ -93,7 +96,7 @@ pub struct ApiV2Stage {
     pub description: Option<String>,
     pub auto_deploy: Option<bool>,
     pub deployment_id: Option<String>,
-    pub last_updated: Option<String>,
+    pub last_updated: Option<DateTime<Utc>>,
     /// Key names only — values omitted to avoid exposing sensitive configuration.
     pub stage_variables: Vec<String>,
     pub default_route_settings: Option<ApiV2RouteSettings>,
@@ -112,7 +115,7 @@ impl From<SdkStage> for ApiV2Stage {
             description: s.description().map(|v| v.to_string()),
             auto_deploy: s.auto_deploy(),
             deployment_id: s.deployment_id().map(|v| v.to_string()),
-            last_updated: s.last_updated_date().map(|t| t.to_string()),
+            last_updated: to_utc(s.last_updated_date()),
             stage_variables,
             default_route_settings: s.default_route_settings().map(ApiV2RouteSettings::from),
             tags,
@@ -205,7 +208,7 @@ pub struct ApiV2VpcLink {
     pub vpc_link_status: Option<String>,
     pub security_group_ids: Vec<String>,
     pub subnet_ids: Vec<String>,
-    pub created_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
     pub tags: Vec<ApiV2Tag>,
 }
 
@@ -218,7 +221,7 @@ impl From<SdkVpcLink> for ApiV2VpcLink {
             vpc_link_status: v.vpc_link_status().map(|s| s.as_str().to_string()),
             security_group_ids: v.security_group_ids().to_vec(),
             subnet_ids: v.subnet_ids().to_vec(),
-            created_date: v.created_date().map(|t| t.to_string()),
+            created_date: to_utc(v.created_date()),
             tags,
         }
     }
@@ -261,6 +264,7 @@ mod tests {
             .cors_configuration(cors)
             .disable_execute_api_endpoint(false)
             .set_tags(Some(tags))
+            .created_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = ApiV2::from(api);
         assert_eq!(result.api_id, Some("api-123".to_string()));
@@ -271,6 +275,10 @@ mod tests {
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "env");
         assert_eq!(result.tags[0].value, "prod");
+        assert_eq!(
+            result.created_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -312,6 +320,7 @@ mod tests {
             .auto_deploy(true)
             .deployment_id("dep-abc")
             .default_route_settings(route_settings)
+            .last_updated_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = ApiV2Stage::from(stage);
         assert_eq!(result.stage_name, Some("prod".to_string()));
@@ -322,6 +331,10 @@ mod tests {
         let settings = result.default_route_settings.unwrap();
         assert_eq!(settings.throttling_burst_limit, Some(200));
         assert_eq!(settings.throttling_rate_limit, Some(100.0));
+        assert_eq!(
+            result.last_updated,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -415,6 +428,7 @@ mod tests {
             .subnet_ids("subnet-aaa")
             .subnet_ids("subnet-bbb")
             .set_tags(Some(tags))
+            .created_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = ApiV2VpcLink::from(vl);
         assert_eq!(result.vpc_link_id, Some("vl-abc123".to_string()));
@@ -425,6 +439,10 @@ mod tests {
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "team");
         assert_eq!(result.tags[0].value, "platform");
+        assert_eq!(
+            result.created_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]

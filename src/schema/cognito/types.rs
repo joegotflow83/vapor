@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct UserPool {
@@ -6,8 +9,8 @@ pub struct UserPool {
     pub name: Option<String>,
     pub arn: Option<String>,
     pub status: Option<String>,
-    pub creation_date: Option<String>,
-    pub last_modified_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub last_modified_date: Option<DateTime<Utc>>,
     pub mfa_configuration: Option<String>,
     pub estimated_number_of_users: i32,
     pub deletion_protection: Option<String>,
@@ -20,8 +23,8 @@ impl UserPool {
             name: pool.name().map(|s| s.to_string()),
             arn: pool.arn().map(|s| s.to_string()),
             status: pool.status().map(|s| s.as_str().to_string()),
-            creation_date: pool.creation_date().map(|t| t.to_string()),
-            last_modified_date: pool.last_modified_date().map(|t| t.to_string()),
+            creation_date: to_utc(pool.creation_date()),
+            last_modified_date: to_utc(pool.last_modified_date()),
             mfa_configuration: pool.mfa_configuration().map(|m| m.as_str().to_string()),
             estimated_number_of_users: pool.estimated_number_of_users(),
             deletion_protection: pool.deletion_protection().map(|d| d.as_str().to_string()),
@@ -93,6 +96,8 @@ mod tests {
             .name("MyPool")
             .arn("arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_abc123")
             .estimated_number_of_users(42)
+            .creation_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_modified_date(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build();
         let result = UserPool::from_sdk(&pool);
         assert_eq!(result.id, "us-east-1_abc123");
@@ -102,6 +107,14 @@ mod tests {
             Some("arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_abc123".to_string())
         );
         assert_eq!(result.estimated_number_of_users, 42);
+        assert_eq!(
+            result.creation_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.last_modified_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]

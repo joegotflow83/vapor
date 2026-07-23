@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct BackupVault {
@@ -6,7 +9,7 @@ pub struct BackupVault {
     pub arn: Option<String>,
     pub recovery_points: i64,
     pub encryption_key_arn: Option<String>,
-    pub creation_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
     pub locked: bool,
 }
 
@@ -16,8 +19,8 @@ pub struct BackupPlan {
     pub plan_name: Option<String>,
     pub arn: Option<String>,
     pub version_id: Option<String>,
-    pub creation_date: Option<String>,
-    pub last_execution_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub last_execution_date: Option<DateTime<Utc>>,
 }
 
 #[derive(SimpleObject, Clone)]
@@ -26,8 +29,8 @@ pub struct RecoveryPoint {
     pub resource_arn: Option<String>,
     pub resource_type: Option<String>,
     pub status: Option<String>,
-    pub creation_date: Option<String>,
-    pub completion_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub completion_date: Option<DateTime<Utc>>,
     pub backup_size_bytes: Option<i64>,
     pub encrypted: bool,
 }
@@ -39,7 +42,7 @@ impl From<aws_sdk_backup::types::BackupVaultListMember> for BackupVault {
             arn: v.backup_vault_arn().map(|s| s.to_string()),
             recovery_points: v.number_of_recovery_points(),
             encryption_key_arn: v.encryption_key_arn().map(|s| s.to_string()),
-            creation_date: v.creation_date().map(|t| t.to_string()),
+            creation_date: to_utc(v.creation_date()),
             locked: v.locked().unwrap_or(false),
         }
     }
@@ -52,8 +55,8 @@ impl From<aws_sdk_backup::types::BackupPlansListMember> for BackupPlan {
             plan_name: p.backup_plan_name().map(|s| s.to_string()),
             arn: p.backup_plan_arn().map(|s| s.to_string()),
             version_id: p.version_id().map(|s| s.to_string()),
-            creation_date: p.creation_date().map(|t| t.to_string()),
-            last_execution_date: p.last_execution_date().map(|t| t.to_string()),
+            creation_date: to_utc(p.creation_date()),
+            last_execution_date: to_utc(p.last_execution_date()),
         }
     }
 }
@@ -65,8 +68,8 @@ impl From<aws_sdk_backup::types::RecoveryPointByBackupVault> for RecoveryPoint {
             resource_arn: rp.resource_arn().map(|s| s.to_string()),
             resource_type: rp.resource_type().map(|s| s.to_string()),
             status: rp.status().map(|s| s.as_str().to_string()),
-            creation_date: rp.creation_date().map(|t| t.to_string()),
-            completion_date: rp.completion_date().map(|t| t.to_string()),
+            creation_date: to_utc(rp.creation_date()),
+            completion_date: to_utc(rp.completion_date()),
             backup_size_bytes: rp.backup_size_in_bytes(),
             encrypted: rp.is_encrypted(),
         }

@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::fsx::{FsxBackupInfo, FsxFileSystemInfo, FsxStorageVirtualMachineInfo};
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct FsxFileSystem {
@@ -14,7 +16,7 @@ pub struct FsxFileSystem {
     pub subnet_ids: Vec<String>,
     pub dns_name: Option<String>,
     pub kms_key_id: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -30,7 +32,7 @@ impl From<FsxFileSystemInfo> for FsxFileSystem {
             subnet_ids: info.subnet_ids,
             dns_name: info.dns_name,
             kms_key_id: info.kms_key_id,
-            creation_time: info.creation_time,
+            creation_time: to_utc(info.creation_time.as_ref()),
             tags: info.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
         }
     }
@@ -41,7 +43,7 @@ pub struct FsxBackup {
     pub backup_id: String,
     pub lifecycle: String,
     pub backup_type: String,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub file_system_id: Option<String>,
     pub resource_arn: Option<String>,
     pub tags: Vec<Tag>,
@@ -53,7 +55,7 @@ impl From<FsxBackupInfo> for FsxBackup {
             backup_id: info.backup_id,
             lifecycle: info.lifecycle,
             backup_type: info.backup_type,
-            creation_time: info.creation_time,
+            creation_time: to_utc(info.creation_time.as_ref()),
             file_system_id: info.file_system_id,
             resource_arn: info.resource_arn,
             tags: info.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
@@ -68,7 +70,7 @@ pub struct FsxStorageVirtualMachine {
     pub file_system_id: String,
     pub lifecycle: String,
     pub subtype: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -80,7 +82,7 @@ impl From<FsxStorageVirtualMachineInfo> for FsxStorageVirtualMachine {
             file_system_id: info.file_system_id,
             lifecycle: info.lifecycle,
             subtype: info.subtype,
-            creation_time: info.creation_time,
+            creation_time: to_utc(info.creation_time.as_ref()),
             tags: info.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
         }
     }
@@ -90,6 +92,7 @@ impl From<FsxStorageVirtualMachineInfo> for FsxStorageVirtualMachine {
 mod tests {
     use super::*;
     use crate::aws::fsx::{FsxBackupInfo, FsxFileSystemInfo, FsxStorageVirtualMachineInfo};
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_fsx_file_system_from_minimal() {
@@ -127,7 +130,7 @@ mod tests {
             subnet_ids: vec!["subnet-aaa".to_string()],
             dns_name: Some("fs-abc123.fsx.us-east-1.amazonaws.com".to_string()),
             kms_key_id: Some("arn:aws:kms:us-east-1:123456789012:key/key-id".to_string()),
-            creation_time: Some("2024-01-01T00:00:00Z".to_string()),
+            creation_time: Some(SmithyDateTime::from_secs(1_704_067_200)),
             tags: vec![("Name".to_string(), "my-fsx".to_string())],
         };
         let result = FsxFileSystem::from(info);
@@ -136,6 +139,10 @@ mod tests {
         assert_eq!(result.vpc_id, Some("vpc-12345678".to_string()));
         assert_eq!(result.subnet_ids, vec!["subnet-aaa"]);
         assert_eq!(result.dns_name, Some("fs-abc123.fsx.us-east-1.amazonaws.com".to_string()));
+        assert_eq!(
+            result.creation_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Name");
         assert_eq!(result.tags[0].value, "my-fsx");
@@ -167,13 +174,16 @@ mod tests {
             backup_id: "backup-abc123".to_string(),
             lifecycle: "AVAILABLE".to_string(),
             backup_type: "USER_INITIATED".to_string(),
-            creation_time: Some("2024-06-01T00:00:00Z".to_string()),
+            creation_time: Some(SmithyDateTime::from_secs(1_717_200_000)),
             file_system_id: Some("fs-abc123".to_string()),
             resource_arn: Some("arn:aws:fsx:us-east-1:123456789012:backup/backup-abc123".to_string()),
             tags: vec![("Env".to_string(), "prod".to_string())],
         };
         let result = FsxBackup::from(info);
-        assert_eq!(result.creation_time, Some("2024-06-01T00:00:00Z".to_string()));
+        assert_eq!(
+            result.creation_time.map(|d| d.to_rfc3339()),
+            Some("2024-06-01T00:00:00+00:00".to_string())
+        );
         assert_eq!(result.file_system_id, Some("fs-abc123".to_string()));
         assert_eq!(result.resource_arn, Some("arn:aws:fsx:us-east-1:123456789012:backup/backup-abc123".to_string()));
         assert_eq!(result.tags.len(), 1);
@@ -188,7 +198,7 @@ mod tests {
             file_system_id: "fs-abc123".to_string(),
             lifecycle: "CREATED".to_string(),
             subtype: Some("DEFAULT".to_string()),
-            creation_time: Some("2024-01-01T00:00:00Z".to_string()),
+            creation_time: Some(SmithyDateTime::from_secs(1_704_067_200)),
             tags: vec![("Project".to_string(), "vapor".to_string())],
         };
         let result = FsxStorageVirtualMachine::from(info);
@@ -197,6 +207,10 @@ mod tests {
         assert_eq!(result.file_system_id, "fs-abc123");
         assert_eq!(result.lifecycle, "CREATED");
         assert_eq!(result.subtype, Some("DEFAULT".to_string()));
+        assert_eq!(
+            result.creation_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Project");
         assert_eq!(result.tags[0].value, "vapor");

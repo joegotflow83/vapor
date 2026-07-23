@@ -1,10 +1,12 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::lightsail::{
     LightsailDatabaseInfo, LightsailEndpointInfo, LightsailInstanceHealthInfo,
     LightsailInstanceInfo, LightsailLoadBalancerInfo, LightsailStaticIpInfo,
 };
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct LightsailInstance {
@@ -16,7 +18,7 @@ pub struct LightsailInstance {
     pub public_ip_address: Option<String>,
     pub private_ip_address: Option<String>,
     pub location: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -31,7 +33,7 @@ impl From<LightsailInstanceInfo> for LightsailInstance {
             public_ip_address: i.public_ip_address,
             private_ip_address: i.private_ip_address,
             location: i.location,
-            created_at: i.created_at,
+            created_at: to_utc(i.created_at.as_ref()),
             tags: i.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
         }
     }
@@ -61,7 +63,7 @@ pub struct LightsailDatabase {
     pub state: Option<String>,
     pub master_username: Option<String>,
     pub master_endpoint: Option<LightsailEndpoint>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -75,7 +77,7 @@ impl From<LightsailDatabaseInfo> for LightsailDatabase {
             state: d.state,
             master_username: d.master_username,
             master_endpoint: d.master_endpoint.map(LightsailEndpoint::from),
-            created_at: d.created_at,
+            created_at: to_utc(d.created_at.as_ref()),
             tags: d.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
         }
     }
@@ -105,7 +107,7 @@ pub struct LightsailLoadBalancer {
     pub protocol: Option<String>,
     pub instance_port: Option<i32>,
     pub instance_health_summary: Vec<LightsailInstanceHealth>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 impl From<LightsailLoadBalancerInfo> for LightsailLoadBalancer {
@@ -122,7 +124,7 @@ impl From<LightsailLoadBalancerInfo> for LightsailLoadBalancer {
                 .into_iter()
                 .map(LightsailInstanceHealth::from)
                 .collect(),
-            created_at: lb.created_at,
+            created_at: to_utc(lb.created_at.as_ref()),
         }
     }
 }
@@ -151,6 +153,7 @@ impl From<LightsailStaticIpInfo> for LightsailStaticIp {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aws_smithy_types::DateTime as SmithyDateTime;
     use crate::aws::lightsail::{
         LightsailDatabaseInfo, LightsailEndpointInfo, LightsailInstanceHealthInfo,
         LightsailInstanceInfo, LightsailLoadBalancerInfo, LightsailStaticIpInfo,
@@ -167,7 +170,7 @@ mod tests {
             public_ip_address: Some("1.2.3.4".to_string()),
             private_ip_address: Some("10.0.0.5".to_string()),
             location: Some("us-east-1a".to_string()),
-            created_at: Some("2024-01-01T00:00:00Z".to_string()),
+            created_at: Some(SmithyDateTime::from_secs(0)),
             tags: vec![("Env".to_string(), "prod".to_string())],
         };
         let result = LightsailInstance::from(info);
@@ -175,6 +178,7 @@ mod tests {
         assert_eq!(result.state, Some("running".to_string()));
         assert_eq!(result.public_ip_address, Some("1.2.3.4".to_string()));
         assert_eq!(result.location, Some("us-east-1a".to_string()));
+        assert_eq!(result.created_at, Some(DateTime::<Utc>::UNIX_EPOCH));
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Env");
         assert_eq!(result.tags[0].value, "prod");
@@ -197,6 +201,7 @@ mod tests {
         let result = LightsailInstance::from(info);
         assert!(result.name.is_none());
         assert!(result.state.is_none());
+        assert!(result.created_at.is_none());
         assert!(result.tags.is_empty());
     }
 
@@ -213,13 +218,14 @@ mod tests {
                 port: 3306,
                 address: "my-db.abc123.us-east-1.rds.amazonaws.com".to_string(),
             }),
-            created_at: Some("2024-01-01T00:00:00Z".to_string()),
+            created_at: Some(SmithyDateTime::from_secs(0)),
             tags: vec![],
         };
         let result = LightsailDatabase::from(info);
         assert_eq!(result.name, Some("my-db".to_string()));
         assert_eq!(result.engine, Some("mysql".to_string()));
         assert_eq!(result.state, Some("available".to_string()));
+        assert_eq!(result.created_at, Some(DateTime::<Utc>::UNIX_EPOCH));
         let ep = result.master_endpoint.unwrap();
         assert_eq!(ep.port, 3306);
         assert_eq!(ep.address, "my-db.abc123.us-east-1.rds.amazonaws.com");
@@ -240,6 +246,7 @@ mod tests {
         };
         let result = LightsailDatabase::from(info);
         assert!(result.master_endpoint.is_none());
+        assert!(result.created_at.is_none());
     }
 
     #[test]
@@ -255,11 +262,12 @@ mod tests {
                 instance_name: Some("my-instance".to_string()),
                 instance_health: Some("healthy".to_string()),
             }],
-            created_at: Some("2024-01-01T00:00:00Z".to_string()),
+            created_at: Some(SmithyDateTime::from_secs(0)),
         };
         let result = LightsailLoadBalancer::from(info);
         assert_eq!(result.name, Some("my-lb".to_string()));
         assert_eq!(result.instance_port, Some(80));
+        assert_eq!(result.created_at, Some(DateTime::<Utc>::UNIX_EPOCH));
         assert_eq!(result.instance_health_summary.len(), 1);
         assert_eq!(
             result.instance_health_summary[0].instance_name,

@@ -1,19 +1,21 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::acm_pca::PrivateCaInfo;
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct PrivateCa {
     pub arn: Option<String>,
     pub type_: Option<String>,
     pub status: Option<String>,
-    pub not_before: Option<String>,
-    pub not_after: Option<String>,
+    pub not_before: Option<DateTime<Utc>>,
+    pub not_after: Option<DateTime<Utc>>,
     pub serial: Option<String>,
     pub subject: Option<PcaSubject>,
-    pub created_at: Option<String>,
-    pub last_state_change_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub last_state_change_at: Option<DateTime<Utc>>,
     pub revocation_configuration: Option<PcaRevocationConfig>,
     pub tags: Vec<Tag>,
 }
@@ -25,15 +27,15 @@ impl From<PrivateCaInfo> for PrivateCa {
             arn: ca.arn().map(|s| s.to_string()),
             type_: ca.r#type().map(|t| t.as_str().to_string()),
             status: ca.status().map(|s| s.as_str().to_string()),
-            not_before: ca.not_before().map(|d| d.to_string()),
-            not_after: ca.not_after().map(|d| d.to_string()),
+            not_before: to_utc(ca.not_before()),
+            not_after: to_utc(ca.not_after()),
             serial: ca.serial().map(|s| s.to_string()),
             subject: ca
                 .certificate_authority_configuration()
                 .and_then(|c| c.subject().cloned())
                 .map(PcaSubject::from),
-            created_at: ca.created_at().map(|d| d.to_string()),
-            last_state_change_at: ca.last_state_change_at().map(|d| d.to_string()),
+            created_at: to_utc(ca.created_at()),
+            last_state_change_at: to_utc(ca.last_state_change_at()),
             revocation_configuration: ca
                 .revocation_configuration()
                 .cloned()
@@ -127,6 +129,37 @@ mod tests {
         assert_eq!(result.status, Some("ACTIVE".to_string()));
         assert_eq!(result.type_, Some("ROOT".to_string()));
         assert_eq!(result.serial, Some("01:23:45:67:89".to_string()));
+    }
+
+    #[test]
+    fn test_private_ca_from_timestamps() {
+        let not_before = aws_smithy_types::DateTime::from_secs(1_700_000_000);
+        let not_after = aws_smithy_types::DateTime::from_secs(1_800_000_000);
+        let created_at = aws_smithy_types::DateTime::from_secs(1_690_000_000);
+        let last_state_change_at = aws_smithy_types::DateTime::from_secs(1_695_000_000);
+        let ca = aws_sdk_acmpca::types::CertificateAuthority::builder()
+            .not_before(not_before)
+            .not_after(not_after)
+            .created_at(created_at)
+            .last_state_change_at(last_state_change_at)
+            .build();
+        let result = PrivateCa::from(make_ca_info(ca));
+        assert_eq!(
+            result.not_before,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.not_after,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_800_000_000))
+        );
+        assert_eq!(
+            result.created_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_690_000_000))
+        );
+        assert_eq!(
+            result.last_state_change_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_695_000_000))
+        );
     }
 
     #[test]

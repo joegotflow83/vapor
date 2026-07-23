@@ -1,12 +1,8 @@
 use async_graphql::SimpleObject;
-use aws_sdk_macie2::primitives::DateTime;
 use aws_sdk_macie2::types::{BucketMetadata, Finding};
+use chrono::{DateTime, Utc};
 
-fn format_datetime(dt: &DateTime) -> String {
-    chrono::DateTime::from_timestamp(dt.secs(), dt.subsec_nanos())
-        .map(|d: chrono::DateTime<chrono::Utc>| d.to_rfc3339())
-        .unwrap_or_default()
-}
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct MacieFinding {
@@ -18,8 +14,8 @@ pub struct MacieFinding {
     pub category: Option<String>,
     pub resource_type: Option<String>,
     pub bucket_name: Option<String>,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
     pub archived: bool,
 }
 
@@ -59,8 +55,8 @@ impl From<Finding> for MacieFinding {
             category: f.category().map(|c| c.as_str().to_string()),
             resource_type,
             bucket_name,
-            created_at: f.created_at().map(format_datetime),
-            updated_at: f.updated_at().map(format_datetime),
+            created_at: to_utc(f.created_at()),
+            updated_at: to_utc(f.updated_at()),
             archived: f.archived().unwrap_or(false),
         }
     }
@@ -114,8 +110,8 @@ mod tests {
             category: Some("CLASSIFICATION".to_string()),
             resource_type: Some("S3Object".to_string()),
             bucket_name: Some("my-bucket".to_string()),
-            created_at: Some("2024-01-01T00:00:00+00:00".to_string()),
-            updated_at: Some("2024-01-02T00:00:00+00:00".to_string()),
+            created_at: Some("2024-01-01T00:00:00+00:00".parse().unwrap()),
+            updated_at: Some("2024-01-02T00:00:00+00:00".parse().unwrap()),
             archived: false,
         };
         assert_eq!(finding.id, "abc123");
@@ -123,6 +119,7 @@ mod tests {
         assert_eq!(finding.finding_type, Some("SensitiveData:S3Object/Personal".to_string()));
         assert_eq!(finding.category, Some("CLASSIFICATION".to_string()));
         assert_eq!(finding.bucket_name, Some("my-bucket".to_string()));
+        assert_eq!(finding.created_at.unwrap().to_rfc3339(), "2024-01-01T00:00:00+00:00");
         assert!(!finding.archived);
     }
 

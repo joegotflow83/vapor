@@ -526,5 +526,45 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
         builder = builder.data(crate::aws::pinpoint::PinpointClient::new(config));
     }
 
+    builder = builder
+        .limit_depth(16)
+        .limit_complexity(4096)
+        .extension(crate::telemetry::AuditLog)
+        .extension(crate::error::ErrorCode);
+
     builder.finish()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_schema;
+    use crate::aws::test_util::{sdk_config, StaticReplayClient};
+
+    /// `build_schema` registers an AWS client per enabled feature via a long
+    /// run of `#[cfg(feature = "...")]`-gated `.data(...)` calls with no
+    /// runtime branching — under `--all-features` this straight-line
+    /// registration is otherwise never exercised by any test (every
+    /// resolver test builds a single-service schema directly via
+    /// `build_query_schema`, never the composed `build_schema`). Same deep
+    /// `MergedObject` stack-depth caveat as `test_composition`'s
+    /// `test_schema_composition_builds`, so build on a thread with a
+    /// roomier stack. Client construction does no network I/O, so a
+    /// zero-event replay client is enough.
+    #[test]
+    fn build_schema_registers_all_feature_gated_clients() {
+        let handle = std::thread::Builder::new()
+            .stack_size(64 * 1024 * 1024)
+            .spawn(|| {
+                let config = sdk_config(StaticReplayClient::new(vec![]));
+                let schema = build_schema(&config);
+
+                let rt = tokio::runtime::Builder::new_current_thread()
+                    .build()
+                    .expect("build tokio runtime");
+                rt.block_on(async { schema.execute("{ placeholder }").await.is_ok() })
+            })
+            .expect("spawn schema-build thread");
+
+        assert!(handle.join().expect("schema-build thread panicked"));
+    }
 }

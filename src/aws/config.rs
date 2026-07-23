@@ -8,6 +8,7 @@ pub async fn load_aws_config(region: Option<&str>) -> aws_config::SdkConfig {
     let retry_config = RetryConfig::standard().with_max_attempts(3);
     let timeout_config = TimeoutConfig::builder()
         .operation_attempt_timeout(Duration::from_secs(30))
+        .operation_timeout(Duration::from_secs(60))
         .build();
 
     let mut loader = aws_config::defaults(BehaviorVersion::latest())

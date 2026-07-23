@@ -1,5 +1,8 @@
 use async_graphql::SimpleObject;
 use aws_sdk_codebuild::types::{Build as SdkBuild, Project as SdkProject};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "CodeBuildTag")]
@@ -19,8 +22,8 @@ pub struct BuildProject {
     pub compute_type: Option<String>,
     pub image: Option<String>,
     pub service_role: Option<String>,
-    pub created: Option<String>,
-    pub last_modified: Option<String>,
+    pub created: Option<DateTime<Utc>>,
+    pub last_modified: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -51,8 +54,8 @@ impl From<SdkProject> for BuildProject {
             compute_type,
             image,
             service_role: p.service_role().map(|v| v.to_string()),
-            created: p.created().map(|t| t.to_string()),
-            last_modified: p.last_modified().map(|t| t.to_string()),
+            created: to_utc(p.created()),
+            last_modified: to_utc(p.last_modified()),
             tags: p.tags().iter().map(|t| Tag {
                 key: t.key().unwrap_or_default().to_string(),
                 value: t.value().unwrap_or_default().to_string(),
@@ -68,8 +71,8 @@ pub struct Build {
     pub project_name: Option<String>,
     pub build_status: Option<String>,
     pub initiator: Option<String>,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
     pub duration_in_seconds: Option<f64>,
     pub current_phase: Option<String>,
     pub source_version: Option<String>,
@@ -99,8 +102,8 @@ impl From<SdkBuild> for Build {
             project_name: b.project_name().map(|v| v.to_string()),
             build_status: b.build_status().map(|s| s.as_str().to_string()),
             initiator: b.initiator().map(|v| v.to_string()),
-            start_time: b.start_time().map(|t| t.to_string()),
-            end_time: b.end_time().map(|t| t.to_string()),
+            start_time: to_utc(b.start_time()),
+            end_time: to_utc(b.end_time()),
             duration_in_seconds,
             current_phase: b.current_phase().map(|v| v.to_string()),
             source_version: b.source_version().map(|v| v.to_string()),
@@ -116,13 +119,26 @@ mod tests {
 
     #[test]
     fn test_build_project_from_sdk() {
-        let project = SdkProject::builder().name("my-project").description("A test project").build();
+        let project = SdkProject::builder()
+            .name("my-project")
+            .description("A test project")
+            .created(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_modified(aws_smithy_types::DateTime::from_secs(1_710_000_000))
+            .build();
         let bp = BuildProject::from(project);
         assert_eq!(bp.name, "my-project");
         assert_eq!(bp.description, Some("A test project".to_string()));
         assert!(bp.arn.is_none());
         assert!(bp.source_type.is_none());
         assert!(bp.tags.is_empty());
+        assert_eq!(
+            bp.created,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            bp.last_modified,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]
@@ -143,15 +159,23 @@ mod tests {
             .project_name("my-project")
             .build_status(aws_sdk_codebuild::types::StatusType::Succeeded)
             .initiator("user/dev")
+            .start_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .end_time(aws_smithy_types::DateTime::from_secs(1_700_000_600))
             .build();
         let b = Build::from(build);
         assert_eq!(b.id, "my-project:build-1");
         assert_eq!(b.project_name, Some("my-project".to_string()));
         assert_eq!(b.build_status, Some("SUCCEEDED".to_string()));
         assert_eq!(b.initiator, Some("user/dev".to_string()));
-        assert!(b.start_time.is_none());
-        assert!(b.end_time.is_none());
-        assert!(b.duration_in_seconds.is_none());
+        assert_eq!(
+            b.start_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            b.end_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_600))
+        );
+        assert_eq!(b.duration_in_seconds, Some(600.0));
     }
 
     #[test]

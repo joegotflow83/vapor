@@ -1,8 +1,10 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::transcribe::{
     TranscribeLanguageModelInfo, TranscribeVocabularyInfo, TranscriptionJobInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct TranscriptionJob {
@@ -11,9 +13,9 @@ pub struct TranscriptionJob {
     pub language_code: Option<String>,
     pub media_sample_rate_hertz: Option<i32>,
     pub media_format: Option<String>,
-    pub creation_time: Option<String>,
-    pub start_time: Option<String>,
-    pub completion_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub start_time: Option<DateTime<Utc>>,
+    pub completion_time: Option<DateTime<Utc>>,
     pub failure_reason: Option<String>,
     pub output_location_type: Option<String>,
 }
@@ -26,9 +28,9 @@ impl From<TranscriptionJobInfo> for TranscriptionJob {
             language_code: job.language_code,
             media_sample_rate_hertz: job.media_sample_rate_hertz,
             media_format: job.media_format,
-            creation_time: job.creation_time,
-            start_time: job.start_time,
-            completion_time: job.completion_time,
+            creation_time: to_utc(job.creation_time.as_ref()),
+            start_time: to_utc(job.start_time.as_ref()),
+            completion_time: to_utc(job.completion_time.as_ref()),
             failure_reason: job.failure_reason,
             output_location_type: job.output_location_type,
         }
@@ -40,7 +42,7 @@ pub struct TranscribeVocabulary {
     pub vocabulary_name: Option<String>,
     pub language_code: Option<String>,
     pub vocabulary_state: Option<String>,
-    pub last_modified_time: Option<String>,
+    pub last_modified_time: Option<DateTime<Utc>>,
     pub failure_reason: Option<String>,
 }
 
@@ -50,7 +52,7 @@ impl From<TranscribeVocabularyInfo> for TranscribeVocabulary {
             vocabulary_name: vocab.vocabulary_name,
             language_code: vocab.language_code,
             vocabulary_state: vocab.vocabulary_state,
-            last_modified_time: vocab.last_modified_time,
+            last_modified_time: to_utc(vocab.last_modified_time.as_ref()),
             failure_reason: vocab.failure_reason,
         }
     }
@@ -62,8 +64,8 @@ pub struct TranscribeLanguageModel {
     pub language_code: Option<String>,
     pub base_model_name: Option<String>,
     pub model_status: Option<String>,
-    pub create_time: Option<String>,
-    pub last_modified_time: Option<String>,
+    pub create_time: Option<DateTime<Utc>>,
+    pub last_modified_time: Option<DateTime<Utc>>,
 }
 
 impl From<TranscribeLanguageModelInfo> for TranscribeLanguageModel {
@@ -73,8 +75,8 @@ impl From<TranscribeLanguageModelInfo> for TranscribeLanguageModel {
             language_code: model.language_code,
             base_model_name: model.base_model_name,
             model_status: model.model_status,
-            create_time: model.create_time,
-            last_modified_time: model.last_modified_time,
+            create_time: to_utc(model.create_time.as_ref()),
+            last_modified_time: to_utc(model.last_modified_time.as_ref()),
         }
     }
 }
@@ -85,6 +87,7 @@ mod tests {
     use crate::aws::transcribe::{
         TranscribeLanguageModelInfo, TranscribeVocabularyInfo, TranscriptionJobInfo,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_transcription_job_from_full() {
@@ -94,9 +97,9 @@ mod tests {
             language_code: Some("en-US".to_string()),
             media_sample_rate_hertz: Some(16000),
             media_format: Some("wav".to_string()),
-            creation_time: Some("2024-01-15T10:00:00Z".to_string()),
-            start_time: Some("2024-01-15T10:01:00Z".to_string()),
-            completion_time: Some("2024-01-15T10:05:00Z".to_string()),
+            creation_time: Some(SmithyDateTime::from_secs(1_705_312_800)),
+            start_time: Some(SmithyDateTime::from_secs(1_705_312_860)),
+            completion_time: Some(SmithyDateTime::from_secs(1_705_313_100)),
             failure_reason: None,
             output_location_type: Some("SERVICE_BUCKET".to_string()),
         };
@@ -109,8 +112,14 @@ mod tests {
         assert_eq!(result.language_code, Some("en-US".to_string()));
         assert_eq!(result.media_sample_rate_hertz, Some(16000));
         assert_eq!(result.media_format, Some("wav".to_string()));
-        assert!(result.creation_time.is_some());
-        assert!(result.completion_time.is_some());
+        assert_eq!(
+            result.creation_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-15T10:00:00+00:00".to_string())
+        );
+        assert_eq!(
+            result.completion_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-15T10:05:00+00:00".to_string())
+        );
         assert!(result.failure_reason.is_none());
         assert_eq!(
             result.output_location_type,
@@ -136,6 +145,7 @@ mod tests {
         assert!(result.transcription_job_name.is_none());
         assert!(result.transcription_job_status.is_none());
         assert!(result.media_sample_rate_hertz.is_none());
+        assert!(result.creation_time.is_none());
     }
 
     #[test]
@@ -146,7 +156,7 @@ mod tests {
             language_code: Some("en-US".to_string()),
             media_sample_rate_hertz: None,
             media_format: None,
-            creation_time: Some("2024-01-15T10:00:00Z".to_string()),
+            creation_time: Some(SmithyDateTime::from_secs(1_705_312_800)),
             start_time: None,
             completion_time: None,
             failure_reason: Some("Audio file too short".to_string()),
@@ -167,14 +177,17 @@ mod tests {
             vocabulary_name: Some("my-vocab".to_string()),
             language_code: Some("en-US".to_string()),
             vocabulary_state: Some("READY".to_string()),
-            last_modified_time: Some("2024-01-15T10:00:00Z".to_string()),
+            last_modified_time: Some(SmithyDateTime::from_secs(1_705_312_800)),
             failure_reason: None,
         };
         let result = TranscribeVocabulary::from(info);
         assert_eq!(result.vocabulary_name, Some("my-vocab".to_string()));
         assert_eq!(result.language_code, Some("en-US".to_string()));
         assert_eq!(result.vocabulary_state, Some("READY".to_string()));
-        assert!(result.last_modified_time.is_some());
+        assert_eq!(
+            result.last_modified_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-15T10:00:00+00:00".to_string())
+        );
         assert!(result.failure_reason.is_none());
     }
 
@@ -193,6 +206,7 @@ mod tests {
             result.failure_reason,
             Some("Invalid file format".to_string())
         );
+        assert!(result.last_modified_time.is_none());
     }
 
     #[test]
@@ -202,16 +216,22 @@ mod tests {
             language_code: Some("en-US".to_string()),
             base_model_name: Some("WideBand".to_string()),
             model_status: Some("COMPLETED".to_string()),
-            create_time: Some("2024-01-15T10:00:00Z".to_string()),
-            last_modified_time: Some("2024-01-16T10:00:00Z".to_string()),
+            create_time: Some(SmithyDateTime::from_secs(1_705_312_800)),
+            last_modified_time: Some(SmithyDateTime::from_secs(1_705_399_200)),
         };
         let result = TranscribeLanguageModel::from(info);
         assert_eq!(result.model_name, Some("my-model".to_string()));
         assert_eq!(result.language_code, Some("en-US".to_string()));
         assert_eq!(result.base_model_name, Some("WideBand".to_string()));
         assert_eq!(result.model_status, Some("COMPLETED".to_string()));
-        assert!(result.create_time.is_some());
-        assert!(result.last_modified_time.is_some());
+        assert_eq!(
+            result.create_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-15T10:00:00+00:00".to_string())
+        );
+        assert_eq!(
+            result.last_modified_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-16T10:00:00+00:00".to_string())
+        );
     }
 
     #[test]
@@ -228,5 +248,6 @@ mod tests {
         assert!(result.model_name.is_none());
         assert!(result.base_model_name.is_none());
         assert!(result.model_status.is_none());
+        assert!(result.create_time.is_none());
     }
 }

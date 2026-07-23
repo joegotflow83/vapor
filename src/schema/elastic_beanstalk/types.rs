@@ -1,16 +1,18 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::elastic_beanstalk::{
     ElasticBeanstalkApplication, ElasticBeanstalkApplicationVersion, ElasticBeanstalkEnvironment,
     ElasticBeanstalkS3Location,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct BeanstalkApplication {
     pub application_name: String,
     pub description: Option<String>,
-    pub date_created: Option<String>,
-    pub date_updated: Option<String>,
+    pub date_created: Option<DateTime<Utc>>,
+    pub date_updated: Option<DateTime<Utc>>,
     pub versions: Vec<String>,
     pub configuration_templates: Vec<String>,
 }
@@ -20,8 +22,8 @@ impl From<ElasticBeanstalkApplication> for BeanstalkApplication {
         Self {
             application_name: a.application_name,
             description: a.description,
-            date_created: a.date_created,
-            date_updated: a.date_updated,
+            date_created: to_utc(a.date_created.as_ref()),
+            date_updated: to_utc(a.date_updated.as_ref()),
             versions: a.versions,
             configuration_templates: a.configuration_templates,
         }
@@ -40,8 +42,8 @@ pub struct BeanstalkEnvironment {
     pub health_status: Option<String>,
     pub cname: Option<String>,
     pub endpoint_url: Option<String>,
-    pub date_created: Option<String>,
-    pub date_updated: Option<String>,
+    pub date_created: Option<DateTime<Utc>>,
+    pub date_updated: Option<DateTime<Utc>>,
 }
 
 impl From<ElasticBeanstalkEnvironment> for BeanstalkEnvironment {
@@ -57,8 +59,8 @@ impl From<ElasticBeanstalkEnvironment> for BeanstalkEnvironment {
             health_status: e.health_status,
             cname: e.cname,
             endpoint_url: e.endpoint_url,
-            date_created: e.date_created,
-            date_updated: e.date_updated,
+            date_created: to_utc(e.date_created.as_ref()),
+            date_updated: to_utc(e.date_updated.as_ref()),
         }
     }
 }
@@ -85,8 +87,8 @@ pub struct BeanstalkApplicationVersion {
     pub description: Option<String>,
     pub source_bundle: Option<BeanstalkS3Location>,
     pub status: Option<String>,
-    pub date_created: Option<String>,
-    pub date_updated: Option<String>,
+    pub date_created: Option<DateTime<Utc>>,
+    pub date_updated: Option<DateTime<Utc>>,
 }
 
 impl From<ElasticBeanstalkApplicationVersion> for BeanstalkApplicationVersion {
@@ -97,8 +99,8 @@ impl From<ElasticBeanstalkApplicationVersion> for BeanstalkApplicationVersion {
             description: v.description,
             source_bundle: v.source_bundle.map(BeanstalkS3Location::from),
             status: v.status,
-            date_created: v.date_created,
-            date_updated: v.date_updated,
+            date_created: to_utc(v.date_created.as_ref()),
+            date_updated: to_utc(v.date_updated.as_ref()),
         }
     }
 }
@@ -110,6 +112,7 @@ mod tests {
         ElasticBeanstalkApplication, ElasticBeanstalkApplicationVersion,
         ElasticBeanstalkEnvironment, ElasticBeanstalkS3Location,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_beanstalk_application_from_minimal() {
@@ -133,14 +136,18 @@ mod tests {
         let app = ElasticBeanstalkApplication {
             application_name: "web-app".to_string(),
             description: Some("My web application".to_string()),
-            date_created: Some("2024-01-01T00:00:00Z".to_string()),
-            date_updated: Some("2024-06-01T00:00:00Z".to_string()),
+            date_created: Some(SmithyDateTime::from_secs(1_704_067_200)),
+            date_updated: Some(SmithyDateTime::from_secs(1_717_200_000)),
             versions: vec!["v1".to_string(), "v2".to_string()],
             configuration_templates: vec!["prod-template".to_string()],
         };
         let result = BeanstalkApplication::from(app);
         assert_eq!(result.application_name, "web-app");
         assert_eq!(result.description, Some("My web application".to_string()));
+        assert_eq!(
+            result.date_created.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
         assert_eq!(result.versions, vec!["v1", "v2"]);
         assert_eq!(result.configuration_templates, vec!["prod-template"]);
     }
@@ -180,14 +187,18 @@ mod tests {
             health_status: Some("Ok".to_string()),
             cname: Some("my-env.elasticbeanstalk.com".to_string()),
             endpoint_url: Some("awseb-myelb-123.us-east-1.elb.amazonaws.com".to_string()),
-            date_created: Some("2024-01-01T00:00:00Z".to_string()),
-            date_updated: Some("2024-06-01T00:00:00Z".to_string()),
+            date_created: Some(SmithyDateTime::from_secs(1_704_067_200)),
+            date_updated: Some(SmithyDateTime::from_secs(1_717_200_000)),
         };
         let result = BeanstalkEnvironment::from(env);
         assert_eq!(result.environment_id, Some("e-abc123".to_string()));
         assert_eq!(result.status, Some("Ready".to_string()));
         assert_eq!(result.health, Some("Green".to_string()));
         assert_eq!(result.cname, Some("my-env.elasticbeanstalk.com".to_string()));
+        assert_eq!(
+            result.date_created.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
     }
 
     #[test]
@@ -228,13 +239,17 @@ mod tests {
                 s3_key: Some("my-app/v1.2.3.zip".to_string()),
             }),
             status: Some("Processed".to_string()),
-            date_created: Some("2024-03-01T00:00:00Z".to_string()),
-            date_updated: Some("2024-03-01T00:05:00Z".to_string()),
+            date_created: Some(SmithyDateTime::from_secs(1_709_251_200)),
+            date_updated: Some(SmithyDateTime::from_secs(1_709_251_500)),
         };
         let result = BeanstalkApplicationVersion::from(ver);
         assert_eq!(result.application_name, Some("my-app".to_string()));
         assert_eq!(result.version_label, Some("v1.2.3".to_string()));
         assert_eq!(result.status, Some("Processed".to_string()));
+        assert_eq!(
+            result.date_created.map(|d| d.to_rfc3339()),
+            Some("2024-03-01T00:00:00+00:00".to_string())
+        );
         let bundle = result.source_bundle.unwrap();
         assert_eq!(bundle.s3_bucket, Some("my-bucket".to_string()));
         assert_eq!(bundle.s3_key, Some("my-app/v1.2.3.zip".to_string()));

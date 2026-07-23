@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 /// OpenSearch cluster hardware and availability configuration.
 #[derive(SimpleObject, Clone)]
@@ -124,8 +126,8 @@ pub struct OpenSearchServiceSoftwareOptions {
     pub cancellable: Option<bool>,
     pub update_status: Option<String>,
     pub description: Option<String>,
-    /// ISO 8601 timestamp of the next scheduled automated update.
-    pub automated_update_date: Option<String>,
+    /// Timestamp of the next scheduled automated update.
+    pub automated_update_date: Option<DateTime<Utc>>,
     pub optional_deployment: Option<bool>,
 }
 
@@ -140,7 +142,7 @@ impl From<&aws_sdk_opensearch::types::ServiceSoftwareOptions>
             cancellable: sso.cancellable(),
             update_status: sso.update_status().map(|s| s.as_str().to_string()),
             description: sso.description().map(|s| s.to_string()),
-            automated_update_date: sso.automated_update_date().map(|d| d.to_string()),
+            automated_update_date: to_utc(sso.automated_update_date()),
             optional_deployment: sso.optional_deployment(),
         }
     }
@@ -325,6 +327,7 @@ mod tests {
             .cancellable(false)
             .description("Software update available")
             .optional_deployment(false)
+            .automated_update_date(aws_smithy_types::DateTime::from_secs(0))
             .build();
         let result = OpenSearchServiceSoftwareOptions::from(&sso);
         assert_eq!(result.current_version, Some("OpenSearch_1.0".to_string()));
@@ -336,6 +339,10 @@ mod tests {
             Some("Software update available".to_string())
         );
         assert_eq!(result.optional_deployment, Some(false));
+        assert_eq!(
+            result.automated_update_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH)
+        );
     }
 
     #[test]

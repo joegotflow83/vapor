@@ -1,5 +1,8 @@
 use async_graphql::SimpleObject;
 use aws_sdk_redshift::types::{Cluster as SdkCluster, Snapshot as SdkSnapshot};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "RedshiftTag")]
@@ -21,7 +24,7 @@ pub struct RedshiftCluster {
     pub vpc_id: Option<String>,
     pub encrypted: bool,
     pub publicly_accessible: bool,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -48,7 +51,7 @@ impl From<SdkCluster> for RedshiftCluster {
             vpc_id: c.vpc_id().map(|v| v.to_string()),
             encrypted: c.encrypted().unwrap_or(false),
             publicly_accessible: c.publicly_accessible().unwrap_or(false),
-            created_at: c.cluster_create_time().map(|t| t.to_string()),
+            created_at: to_utc(c.cluster_create_time()),
             tags,
         }
     }
@@ -67,7 +70,7 @@ pub struct RedshiftSnapshot {
     pub total_backup_size_in_mega_bytes: f64,
     pub encrypted: bool,
     pub master_username: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -94,7 +97,7 @@ impl From<SdkSnapshot> for RedshiftSnapshot {
             total_backup_size_in_mega_bytes: s.total_backup_size_in_mega_bytes().unwrap_or_default(),
             encrypted: s.encrypted().unwrap_or(false),
             master_username: s.master_username().map(|v| v.to_string()),
-            created_at: s.snapshot_create_time().map(|t| t.to_string()),
+            created_at: to_utc(s.snapshot_create_time()),
             tags,
         }
     }

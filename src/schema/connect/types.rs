@@ -1,4 +1,5 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::connect::{ConnectContactFlowInfo, ConnectInstanceInfo, ConnectQueueInfo, ConnectUserInfo};
 
@@ -8,7 +9,7 @@ pub struct ConnectInstance {
     pub arn: Option<String>,
     pub identity_management_type: Option<String>,
     pub instance_alias: Option<String>,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
     pub service_role: Option<String>,
     pub instance_status: Option<String>,
     pub inbound_calls_enabled: Option<bool>,
@@ -110,7 +111,7 @@ mod tests {
             arn: Some("arn:aws:connect:us-east-1:123456789:instance/inst-123".to_string()),
             identity_management_type: Some("CONNECT_MANAGED".to_string()),
             instance_alias: Some("my-contact-center".to_string()),
-            created_time: Some("2024-01-01T00:00:00Z".to_string()),
+            created_time: Some("2024-01-01T00:00:00Z".parse().unwrap()),
             service_role: Some("arn:aws:iam::123456789:role/aws-service-role/connect.amazonaws.com/AWSServiceRoleForAmazonConnect".to_string()),
             instance_status: Some("ACTIVE".to_string()),
             inbound_calls_enabled: Some(true),

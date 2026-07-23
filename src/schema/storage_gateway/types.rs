@@ -138,6 +138,23 @@ mod tests {
     }
 
     #[test]
+    fn test_volume_from_vtl_tape() {
+        let info = StorageGatewayVolumeInfo {
+            volume_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:tape/TAPE12345".to_string()),
+            volume_id: Some("TAPE12345".to_string()),
+            gateway_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-87654321".to_string()),
+            volume_type: Some("VTL_TAPE".to_string()),
+            volume_size_in_bytes: Some(2199023255552),
+            volume_status: Some("AVAILABLE".to_string()),
+        };
+        let result = StorageGatewayVolume::from(info);
+        assert_eq!(result.volume_id, Some("TAPE12345".to_string()));
+        assert_eq!(result.volume_type, Some("VTL_TAPE".to_string()));
+        assert_eq!(result.volume_size_in_bytes, Some(2199023255552));
+        assert_eq!(result.volume_status, Some("AVAILABLE".to_string()));
+    }
+
+    #[test]
     fn test_volume_minimal() {
         let info = StorageGatewayVolumeInfo {
             volume_arn: None,

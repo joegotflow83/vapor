@@ -4,6 +4,9 @@ use aws_sdk_kinesis::types::{
     StreamDescriptionSummary as SdkStreamSummary,
     Tag as SdkKinesisTag,
 };
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "KinesisTag")]
@@ -31,7 +34,7 @@ pub struct DataStream {
     pub retention_period_hours: Option<i32>,
     pub encryption_type: Option<String>,
     pub key_id: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -46,7 +49,7 @@ impl DataStream {
             retention_period_hours: Some(s.retention_period_hours() as i32),
             encryption_type: s.encryption_type().map(|e| e.as_str().to_string()),
             key_id: s.key_id().map(|k| k.to_string()),
-            created_at: Some(s.stream_creation_timestamp().to_string()),
+            created_at: to_utc(Some(s.stream_creation_timestamp())),
             tags,
         }
     }
@@ -170,6 +173,7 @@ mod tests {
         assert_eq!(ds.status, Some("ACTIVE".to_string()));
         assert_eq!(ds.shard_count, Some(4));
         assert_eq!(ds.retention_period_hours, Some(24));
+        assert_eq!(ds.created_at, Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1700000000)));
         assert!(ds.tags.is_empty());
     }
 

@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct SsoInstance {
@@ -26,7 +29,7 @@ pub struct SsoPermissionSet {
     pub permission_set_arn: Option<String>,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub created_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
     pub session_duration: Option<String>,
     pub relay_state: Option<String>,
 }
@@ -37,7 +40,7 @@ impl From<aws_sdk_ssoadmin::types::PermissionSet> for SsoPermissionSet {
             permission_set_arn: p.permission_set_arn().map(|s| s.to_string()),
             name: p.name().map(|s| s.to_string()),
             description: p.description().map(|s| s.to_string()),
-            created_date: p.created_date().map(|d| d.to_string()),
+            created_date: to_utc(p.created_date()),
             session_duration: p.session_duration().map(|s| s.to_string()),
             relay_state: p.relay_state().map(|s| s.to_string()),
         }
@@ -115,6 +118,7 @@ mod tests {
             .description("Full admin access")
             .session_duration("PT8H")
             .relay_state("https://console.aws.amazon.com/")
+            .created_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = SsoPermissionSet::from(ps);
         assert_eq!(
@@ -127,6 +131,10 @@ mod tests {
         assert_eq!(
             result.relay_state,
             Some("https://console.aws.amazon.com/".to_string())
+        );
+        assert_eq!(
+            result.created_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
         );
     }
 

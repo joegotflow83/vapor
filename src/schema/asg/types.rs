@@ -1,6 +1,8 @@
 use async_graphql::{Enum, SimpleObject};
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 // === Enums ===
 
@@ -120,7 +122,7 @@ pub struct AutoScalingGroup {
     pub launch_configuration_name: Option<String>,
     pub instances: Vec<AsgInstance>,
     pub tags: Vec<Tag>,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_autoscaling::types::AutoScalingGroup> for AutoScalingGroup {
@@ -151,7 +153,7 @@ impl From<aws_sdk_autoscaling::types::AutoScalingGroup> for AutoScalingGroup {
                     value: t.value().unwrap_or_default().to_string(),
                 })
                 .collect(),
-            created_time: asg.created_time().map(|d| d.to_string()),
+            created_time: to_utc(asg.created_time()),
         }
     }
 }
@@ -164,8 +166,8 @@ pub struct ScalingActivity {
     pub status_code: ScalingActivityStatus,
     pub status_message: Option<String>,
     pub cause: Option<String>,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
     pub progress: Option<i32>,
 }
 
@@ -184,8 +186,8 @@ impl From<aws_sdk_autoscaling::types::Activity> for ScalingActivity {
                 .unwrap_or(ScalingActivityStatus::InProgress),
             status_message: a.status_message().map(|s| s.to_string()),
             cause: a.cause().map(|s| s.to_string()),
-            start_time: a.start_time().map(|d| d.to_string()),
-            end_time: a.end_time().map(|d| d.to_string()),
+            start_time: to_utc(a.start_time()),
+            end_time: to_utc(a.end_time()),
             progress: a.progress(),
         }
     }
@@ -327,6 +329,7 @@ mod tests {
             .default_cooldown(300)
             .health_check_type("EC2")
             .launch_template(lt)
+            .created_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = AutoScalingGroup::from(asg);
         assert_eq!(result.name, "my-asg");
@@ -338,6 +341,10 @@ mod tests {
         assert_eq!(result.health_check_type, "EC2");
         assert!(result.launch_template.is_some());
         assert_eq!(result.launch_template.unwrap().id, Some("lt-abc".to_string()));
+        assert_eq!(
+            result.created_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]

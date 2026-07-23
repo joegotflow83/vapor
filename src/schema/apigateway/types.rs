@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 fn tags_from_map(map: Option<&std::collections::HashMap<String, String>>) -> Vec<Tag> {
     map.map(|m| m.iter().map(|(k, v)| Tag { key: k.clone(), value: v.clone() }).collect())
@@ -31,7 +33,7 @@ pub struct ApigwRestApi {
     pub id: Option<String>,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub created_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
     pub version: Option<String>,
     pub binary_media_types: Vec<String>,
     pub minimum_compression_size: Option<i32>,
@@ -49,7 +51,7 @@ impl From<aws_sdk_apigateway::types::RestApi> for ApigwRestApi {
             id: api.id().map(|s| s.to_string()),
             name: api.name().map(|s| s.to_string()),
             description: api.description().map(|s| s.to_string()),
-            created_date: api.created_date().map(|d| d.to_string()),
+            created_date: to_utc(api.created_date()),
             version: api.version().map(|s| s.to_string()),
             binary_media_types: api.binary_media_types().iter().map(|s| s.to_string()).collect(),
             minimum_compression_size: api.minimum_compression_size(),
@@ -61,14 +63,6 @@ impl From<aws_sdk_apigateway::types::RestApi> for ApigwRestApi {
             tags: tags_from_map(api.tags()),
         }
     }
-}
-
-/// Throttling settings extracted from a REST stage's method_settings[\"*/*\"].
-/// Defined for future per-method exposure; not currently returned from queries.
-#[derive(SimpleObject, Clone)]
-pub struct ApigwMethodThrottlingSettings {
-    pub burst_limit: Option<i32>,
-    pub rate_limit: Option<f64>,
 }
 
 /// Access log destination and format for a REST stage.
@@ -96,8 +90,8 @@ pub struct ApigwRestStage {
     pub stage_name: Option<String>,
     pub deployment_id: Option<String>,
     pub description: Option<String>,
-    pub created_date: Option<String>,
-    pub last_updated_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
+    pub last_updated_date: Option<DateTime<Utc>>,
     pub throttling_burst_limit: Option<i32>,
     pub throttling_rate_limit: Option<f64>,
     pub tracing_enabled: Option<bool>,
@@ -123,8 +117,8 @@ impl From<aws_sdk_apigateway::types::Stage> for ApigwRestStage {
             stage_name: stage.stage_name().map(|s| s.to_string()),
             deployment_id: stage.deployment_id().map(|s| s.to_string()),
             description: stage.description().map(|s| s.to_string()),
-            created_date: stage.created_date().map(|d| d.to_string()),
-            last_updated_date: stage.last_updated_date().map(|d| d.to_string()),
+            created_date: to_utc(stage.created_date()),
+            last_updated_date: to_utc(stage.last_updated_date()),
             throttling_burst_limit,
             throttling_rate_limit,
             tracing_enabled: Some(stage.tracing_enabled()),
@@ -170,7 +164,7 @@ impl From<aws_sdk_apigateway::types::Resource> for ApigwResource {
 pub struct ApigwDeployment {
     pub id: Option<String>,
     pub description: Option<String>,
-    pub created_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_apigateway::types::Deployment> for ApigwDeployment {
@@ -178,7 +172,7 @@ impl From<aws_sdk_apigateway::types::Deployment> for ApigwDeployment {
         Self {
             id: dep.id().map(|s| s.to_string()),
             description: dep.description().map(|s| s.to_string()),
-            created_date: dep.created_date().map(|d| d.to_string()),
+            created_date: to_utc(dep.created_date()),
         }
     }
 }
@@ -214,6 +208,7 @@ mod tests {
             .minimum_compression_size(1024)
             .api_key_source(aws_sdk_apigateway::types::ApiKeySourceType::Header)
             .policy("{}")
+            .created_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = ApigwRestApi::from(api);
         assert_eq!(result.id, Some("abc123".to_string()));
@@ -226,6 +221,10 @@ mod tests {
         assert_eq!(result.policy, Some("{}".to_string()));
         assert!(result.tags.is_empty());
         assert!(result.endpoint_configuration.is_none());
+        assert_eq!(
+            result.created_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -263,6 +262,8 @@ mod tests {
             .description("Production stage")
             .tracing_enabled(true)
             .cache_cluster_enabled(false)
+            .created_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_updated_date(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build();
         let result = ApigwRestStage::from(stage);
         assert_eq!(result.stage_name, Some("prod".to_string()));
@@ -273,6 +274,14 @@ mod tests {
         assert!(result.throttling_burst_limit.is_none());
         assert!(result.throttling_rate_limit.is_none());
         assert!(result.tags.is_empty());
+        assert_eq!(
+            result.created_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.last_updated_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]
@@ -338,10 +347,14 @@ mod tests {
         let dep = aws_sdk_apigateway::types::Deployment::builder()
             .id("dep-abc")
             .description("Initial deployment")
+            .created_date(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let result = ApigwDeployment::from(dep);
         assert_eq!(result.id, Some("dep-abc".to_string()));
         assert_eq!(result.description, Some("Initial deployment".to_string()));
-        assert!(result.created_date.is_none());
+        assert_eq!(
+            result.created_date,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 }

@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::ses::{SesAccountInfo, SesConfigSetDetail, SesIdentityInfo};
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct SesIdentity {
@@ -61,14 +63,14 @@ impl From<SesConfigSetDetail> for SesConfigurationSet {
 #[derive(SimpleObject, Clone)]
 pub struct SesEmailTemplate {
     pub template_name: String,
-    pub created_timestamp: Option<String>,
+    pub created_timestamp: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_sesv2::types::EmailTemplateMetadata> for SesEmailTemplate {
     fn from(t: aws_sdk_sesv2::types::EmailTemplateMetadata) -> Self {
         Self {
             template_name: t.template_name().unwrap_or_default().to_string(),
-            created_timestamp: t.created_timestamp().map(|dt| dt.to_string()),
+            created_timestamp: to_utc(t.created_timestamp()),
         }
     }
 }
@@ -77,7 +79,7 @@ impl From<aws_sdk_sesv2::types::EmailTemplateMetadata> for SesEmailTemplate {
 pub struct SesSuppressedDestination {
     pub email_address: String,
     pub reason: String,
-    pub last_update_time: Option<String>,
+    pub last_update_time: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_sesv2::types::SuppressedDestinationSummary> for SesSuppressedDestination {
@@ -85,7 +87,7 @@ impl From<aws_sdk_sesv2::types::SuppressedDestinationSummary> for SesSuppressedD
         Self {
             email_address: s.email_address().to_string(),
             reason: s.reason().as_str().to_string(),
-            last_update_time: Some(s.last_update_time().to_string()),
+            last_update_time: to_utc(Some(s.last_update_time())),
         }
     }
 }

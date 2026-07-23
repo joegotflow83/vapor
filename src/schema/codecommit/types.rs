@@ -1,9 +1,11 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::codecommit::{
     CodeCommitBranchInfo, CodeCommitPullRequestInfo, CodeCommitPullRequestTargetInfo,
     CodeCommitRepositoryInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct CodeCommitRepository {
@@ -11,8 +13,8 @@ pub struct CodeCommitRepository {
     pub repository_name: Option<String>,
     pub repository_description: Option<String>,
     pub default_branch: Option<String>,
-    pub last_modified_date: Option<String>,
-    pub creation_date: Option<String>,
+    pub last_modified_date: Option<DateTime<Utc>>,
+    pub creation_date: Option<DateTime<Utc>>,
     pub clone_url_http: Option<String>,
     pub clone_url_ssh: Option<String>,
     pub arn: Option<String>,
@@ -25,8 +27,8 @@ impl From<CodeCommitRepositoryInfo> for CodeCommitRepository {
             repository_name: r.repository_name,
             repository_description: r.repository_description,
             default_branch: r.default_branch,
-            last_modified_date: r.last_modified_date,
-            creation_date: r.creation_date,
+            last_modified_date: to_utc(r.last_modified_date.as_ref()),
+            creation_date: to_utc(r.creation_date.as_ref()),
             clone_url_http: r.clone_url_http,
             clone_url_ssh: r.clone_url_ssh,
             arn: r.arn,
@@ -75,8 +77,8 @@ pub struct CodeCommitPullRequest {
     pub description: Option<String>,
     pub pull_request_status: Option<String>,
     pub author_arn: Option<String>,
-    pub creation_date: Option<String>,
-    pub last_activity_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub last_activity_date: Option<DateTime<Utc>>,
     pub targets: Vec<CodeCommitPullRequestTarget>,
 }
 
@@ -88,8 +90,8 @@ impl From<CodeCommitPullRequestInfo> for CodeCommitPullRequest {
             description: p.description,
             pull_request_status: p.pull_request_status,
             author_arn: p.author_arn,
-            creation_date: p.creation_date,
-            last_activity_date: p.last_activity_date,
+            creation_date: to_utc(p.creation_date.as_ref()),
+            last_activity_date: to_utc(p.last_activity_date.as_ref()),
             targets: p
                 .targets
                 .into_iter()
@@ -106,6 +108,7 @@ mod tests {
         CodeCommitBranchInfo, CodeCommitPullRequestInfo, CodeCommitPullRequestTargetInfo,
         CodeCommitRepositoryInfo,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_repository_from_full() {
@@ -114,8 +117,8 @@ mod tests {
             repository_name: Some("my-repo".to_string()),
             repository_description: Some("Test repo".to_string()),
             default_branch: Some("main".to_string()),
-            last_modified_date: Some("2024-01-15T10:00:00Z".to_string()),
-            creation_date: Some("2024-01-01T00:00:00Z".to_string()),
+            last_modified_date: Some(SmithyDateTime::from_secs(1_705_312_800)),
+            creation_date: Some(SmithyDateTime::from_secs(1_704_067_200)),
             clone_url_http: Some("https://git-codecommit.us-east-1.amazonaws.com/v1/repos/my-repo".to_string()),
             clone_url_ssh: Some("ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/my-repo".to_string()),
             arn: Some("arn:aws:codecommit:us-east-1:123456789012:my-repo".to_string()),
@@ -126,6 +129,8 @@ mod tests {
         assert_eq!(result.default_branch, Some("main".to_string()));
         assert!(result.clone_url_http.is_some());
         assert!(result.arn.is_some());
+        assert!(result.last_modified_date.is_some());
+        assert!(result.creation_date.is_some());
     }
 
     #[test]
@@ -192,8 +197,8 @@ mod tests {
             description: Some("This PR adds feature X".to_string()),
             pull_request_status: Some("OPEN".to_string()),
             author_arn: Some("arn:aws:iam::123456789012:user/jdoe".to_string()),
-            creation_date: Some("2024-01-15T10:00:00Z".to_string()),
-            last_activity_date: Some("2024-01-16T12:00:00Z".to_string()),
+            creation_date: Some(SmithyDateTime::from_secs(1_705_312_800)),
+            last_activity_date: Some(SmithyDateTime::from_secs(1_705_406_400)),
             targets: vec![CodeCommitPullRequestTargetInfo {
                 repository_name: Some("my-repo".to_string()),
                 source_reference: Some("refs/heads/feature/x".to_string()),
@@ -206,6 +211,8 @@ mod tests {
         assert_eq!(result.pull_request_status, Some("OPEN".to_string()));
         assert_eq!(result.targets.len(), 1);
         assert_eq!(result.targets[0].repository_name, Some("my-repo".to_string()));
+        assert!(result.creation_date.is_some());
+        assert!(result.last_activity_date.is_some());
     }
 
     #[test]

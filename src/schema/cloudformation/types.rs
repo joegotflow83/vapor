@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
 use aws_sdk_cloudformation::types::{Export, Stack, StackResourceSummary};
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct CfnParameter {
@@ -20,7 +22,7 @@ pub struct CfnOutput {
 #[derive(SimpleObject, Clone)]
 pub struct CfnDriftInfo {
     pub stack_drift_status: Option<String>,
-    pub last_check_timestamp: Option<String>,
+    pub last_check_timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(SimpleObject, Clone)]
@@ -29,9 +31,9 @@ pub struct CfnStack {
     pub stack_name: Option<String>,
     pub description: Option<String>,
     pub stack_status: Option<String>,
-    pub creation_time: Option<String>,
-    pub last_updated_time: Option<String>,
-    pub deletion_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
+    pub deletion_time: Option<DateTime<Utc>>,
     pub role_arn: Option<String>,
     pub capabilities: Vec<String>,
     pub parameters: Vec<CfnParameter>,
@@ -64,7 +66,7 @@ impl From<&Stack> for CfnStack {
 
         let drift_information = s.drift_information().map(|d| CfnDriftInfo {
             stack_drift_status: d.stack_drift_status().map(|v| v.as_str().to_string()),
-            last_check_timestamp: d.last_check_timestamp().map(|t| t.to_string()),
+            last_check_timestamp: to_utc(d.last_check_timestamp()),
         });
 
         let capabilities = s
@@ -87,9 +89,9 @@ impl From<&Stack> for CfnStack {
             stack_name: s.stack_name().map(|v| v.to_string()),
             description: s.description().map(|v| v.to_string()),
             stack_status: s.stack_status().map(|v| v.as_str().to_string()),
-            creation_time: s.creation_time().map(|t| t.to_string()),
-            last_updated_time: s.last_updated_time().map(|t| t.to_string()),
-            deletion_time: s.deletion_time().map(|t| t.to_string()),
+            creation_time: to_utc(s.creation_time()),
+            last_updated_time: to_utc(s.last_updated_time()),
+            deletion_time: to_utc(s.deletion_time()),
             role_arn: s.role_arn().map(|v| v.to_string()),
             capabilities,
             parameters,
@@ -106,7 +108,7 @@ pub struct CfnStackResource {
     pub physical_resource_id: Option<String>,
     pub resource_type: Option<String>,
     pub resource_status: Option<String>,
-    pub last_updated_timestamp: Option<String>,
+    pub last_updated_timestamp: Option<DateTime<Utc>>,
     pub drift_status: Option<String>,
 }
 
@@ -117,7 +119,7 @@ impl From<&StackResourceSummary> for CfnStackResource {
             physical_resource_id: r.physical_resource_id().map(|v| v.to_string()),
             resource_type: r.resource_type().map(|v| v.to_string()),
             resource_status: r.resource_status().map(|v| v.as_str().to_string()),
-            last_updated_timestamp: r.last_updated_timestamp().map(|t| t.to_string()),
+            last_updated_timestamp: to_utc(r.last_updated_timestamp()),
             drift_status: r
                 .drift_information()
                 .and_then(|d| d.stack_resource_drift_status())
@@ -207,6 +209,54 @@ mod tests {
         assert_eq!(
             e.exporting_stack_id,
             Some("arn:aws:cloudformation:us-east-1:123456789012:stack/network/abc".to_string())
+        );
+    }
+
+    #[test]
+    fn test_cfn_stack_from_sdk() {
+        let drift = aws_sdk_cloudformation::types::StackDriftInformation::builder()
+            .stack_drift_status(aws_sdk_cloudformation::types::StackDriftStatus::InSync)
+            .last_check_timestamp(aws_smithy_types::DateTime::from_secs(1_690_000_000))
+            .build();
+        let stack = Stack::builder()
+            .stack_name("my-stack")
+            .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_updated_time(aws_smithy_types::DateTime::from_secs(1_710_000_000))
+            .deletion_time(aws_smithy_types::DateTime::from_secs(1_720_000_000))
+            .drift_information(drift)
+            .build();
+        let result = CfnStack::from(&stack);
+        assert_eq!(result.stack_name, Some("my-stack".to_string()));
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.last_updated_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
+        assert_eq!(
+            result.deletion_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_720_000_000))
+        );
+        let drift_info = result.drift_information.unwrap();
+        assert_eq!(
+            drift_info.last_check_timestamp,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_690_000_000))
+        );
+    }
+
+    #[test]
+    fn test_cfn_stack_resource_from_sdk() {
+        let resource = StackResourceSummary::builder()
+            .logical_resource_id("MyBucket")
+            .last_updated_timestamp(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .build();
+        let result = CfnStackResource::from(&resource);
+        assert_eq!(result.logical_resource_id, Some("MyBucket".to_string()));
+        assert_eq!(
+            result.last_updated_timestamp,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
         );
     }
 

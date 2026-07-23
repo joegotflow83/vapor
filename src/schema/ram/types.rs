@@ -1,4 +1,7 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "RamTag")]
@@ -14,8 +17,8 @@ pub struct RamResourceShare {
     pub owner_id: Option<String>,
     pub status: Option<String>,
     pub allow_external_principals: Option<bool>,
-    pub creation_time: Option<String>,
-    pub last_updated_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -27,8 +30,8 @@ impl From<aws_sdk_ram::types::ResourceShare> for RamResourceShare {
             owner_id: s.owning_account_id().map(|v| v.to_string()),
             status: s.status().map(|v| v.as_str().to_string()),
             allow_external_principals: s.allow_external_principals(),
-            creation_time: s.creation_time().map(|d| d.to_string()),
-            last_updated_time: s.last_updated_time().map(|d| d.to_string()),
+            creation_time: to_utc(s.creation_time()),
+            last_updated_time: to_utc(s.last_updated_time()),
             tags: s
                 .tags()
                 .iter()
@@ -47,8 +50,8 @@ pub struct RamResource {
     pub type_: Option<String>,
     pub resource_share_arn: Option<String>,
     pub status: Option<String>,
-    pub creation_time: Option<String>,
-    pub last_updated_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_ram::types::Resource> for RamResource {
@@ -58,8 +61,8 @@ impl From<aws_sdk_ram::types::Resource> for RamResource {
             type_: r.r#type().map(|v| v.to_string()),
             resource_share_arn: r.resource_share_arn().map(|v| v.to_string()),
             status: r.status().map(|v| v.as_str().to_string()),
-            creation_time: r.creation_time().map(|d| d.to_string()),
-            last_updated_time: r.last_updated_time().map(|d| d.to_string()),
+            creation_time: to_utc(r.creation_time()),
+            last_updated_time: to_utc(r.last_updated_time()),
         }
     }
 }
@@ -68,8 +71,8 @@ impl From<aws_sdk_ram::types::Resource> for RamResource {
 pub struct RamPrincipal {
     pub id: Option<String>,
     pub resource_share_arn: Option<String>,
-    pub creation_time: Option<String>,
-    pub last_updated_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
     pub external: Option<bool>,
 }
 
@@ -78,8 +81,8 @@ impl From<aws_sdk_ram::types::Principal> for RamPrincipal {
         Self {
             id: p.id().map(|v| v.to_string()),
             resource_share_arn: p.resource_share_arn().map(|v| v.to_string()),
-            creation_time: p.creation_time().map(|d| d.to_string()),
-            last_updated_time: p.last_updated_time().map(|d| d.to_string()),
+            creation_time: to_utc(p.creation_time()),
+            last_updated_time: to_utc(p.last_updated_time()),
             external: p.external(),
         }
     }
@@ -109,6 +112,8 @@ mod tests {
             .owning_account_id("123456789012")
             .status(aws_sdk_ram::types::ResourceShareStatus::Active)
             .allow_external_principals(true)
+            .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_updated_time(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build();
         let result = RamResourceShare::from(share);
         assert_eq!(
@@ -119,6 +124,14 @@ mod tests {
         assert_eq!(result.owner_id, Some("123456789012".to_string()));
         assert_eq!(result.status, Some("ACTIVE".to_string()));
         assert_eq!(result.allow_external_principals, Some(true));
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.last_updated_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]
@@ -153,6 +166,8 @@ mod tests {
             .r#type("ec2:Subnet")
             .resource_share_arn("arn:aws:ram:us-east-1:123456789012:resource-share/abc123")
             .status(aws_sdk_ram::types::ResourceStatus::Available)
+            .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_updated_time(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build();
         let result = RamResource::from(resource);
         assert_eq!(
@@ -161,6 +176,14 @@ mod tests {
         );
         assert_eq!(result.type_, Some("ec2:Subnet".to_string()));
         assert_eq!(result.status, Some("AVAILABLE".to_string()));
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.last_updated_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]
@@ -178,6 +201,8 @@ mod tests {
             .id("123456789012")
             .resource_share_arn("arn:aws:ram:us-east-1:123456789012:resource-share/abc123")
             .external(false)
+            .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_updated_time(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build();
         let result = RamPrincipal::from(principal);
         assert_eq!(result.id, Some("123456789012".to_string()));
@@ -186,5 +211,13 @@ mod tests {
             Some("arn:aws:ram:us-east-1:123456789012:resource-share/abc123".to_string())
         );
         assert_eq!(result.external, Some(false));
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            result.last_updated_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 }

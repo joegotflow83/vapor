@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
 use base64::{Engine as _, engine::general_purpose};
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 /// An AWS Secrets Manager secret with its metadata.
 #[derive(SimpleObject, Clone)]
@@ -12,10 +14,10 @@ pub struct Secret {
     pub kms_key_id: Option<String>,
     pub rotation_enabled: Option<bool>,
     pub rotation_lambda_arn: Option<String>,
-    pub last_rotated_date: Option<String>,
-    pub last_changed_date: Option<String>,
-    pub last_accessed_date: Option<String>,
-    pub next_rotation_date: Option<String>,
+    pub last_rotated_date: Option<DateTime<Utc>>,
+    pub last_changed_date: Option<DateTime<Utc>>,
+    pub last_accessed_date: Option<DateTime<Utc>>,
+    pub next_rotation_date: Option<DateTime<Utc>>,
     pub primary_region: Option<String>,
     pub tags: Vec<Tag>,
 }
@@ -29,10 +31,10 @@ impl From<aws_sdk_secretsmanager::types::SecretListEntry> for Secret {
             kms_key_id: e.kms_key_id().map(|s| s.to_string()),
             rotation_enabled: e.rotation_enabled(),
             rotation_lambda_arn: e.rotation_lambda_arn().map(|s| s.to_string()),
-            last_rotated_date: e.last_rotated_date().map(|d| d.to_string()),
-            last_changed_date: e.last_changed_date().map(|d| d.to_string()),
-            last_accessed_date: e.last_accessed_date().map(|d| d.to_string()),
-            next_rotation_date: e.next_rotation_date().map(|d| d.to_string()),
+            last_rotated_date: to_utc(e.last_rotated_date()),
+            last_changed_date: to_utc(e.last_changed_date()),
+            last_accessed_date: to_utc(e.last_accessed_date()),
+            next_rotation_date: to_utc(e.next_rotation_date()),
             primary_region: e.primary_region().map(|s| s.to_string()),
             tags: e
                 .tags()
@@ -57,10 +59,10 @@ impl From<aws_sdk_secretsmanager::operation::describe_secret::DescribeSecretOutp
             kms_key_id: o.kms_key_id().map(|s| s.to_string()),
             rotation_enabled: o.rotation_enabled(),
             rotation_lambda_arn: o.rotation_lambda_arn().map(|s| s.to_string()),
-            last_rotated_date: o.last_rotated_date().map(|d| d.to_string()),
-            last_changed_date: o.last_changed_date().map(|d| d.to_string()),
-            last_accessed_date: o.last_accessed_date().map(|d| d.to_string()),
-            next_rotation_date: o.next_rotation_date().map(|d| d.to_string()),
+            last_rotated_date: to_utc(o.last_rotated_date()),
+            last_changed_date: to_utc(o.last_changed_date()),
+            last_accessed_date: to_utc(o.last_accessed_date()),
+            next_rotation_date: to_utc(o.next_rotation_date()),
             primary_region: o.primary_region().map(|s| s.to_string()),
             tags: o
                 .tags()
@@ -84,7 +86,7 @@ pub struct SecretValue {
     /// Base64-encoded binary secret value, if present.
     pub secret_binary: Option<String>,
     pub version_stages: Vec<String>,
-    pub created_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOutput>
@@ -108,7 +110,7 @@ impl From<aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOut
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            created_date: o.created_date().map(|d| d.to_string()),
+            created_date: to_utc(o.created_date()),
         }
     }
 }

@@ -1,9 +1,12 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct ShieldSubscription {
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
     pub auto_renew: Option<String>,
     pub proactive_engagement_status: Option<String>,
 }
@@ -31,16 +34,16 @@ pub struct ProtectionGroup {
 pub struct AttackSummary {
     pub attack_id: Option<String>,
     pub resource_arn: Option<String>,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
     pub attack_vectors: Vec<String>,
 }
 
 impl From<aws_sdk_shield::types::Subscription> for ShieldSubscription {
     fn from(sub: aws_sdk_shield::types::Subscription) -> Self {
         Self {
-            start_time: sub.start_time().map(|dt| dt.to_string()),
-            end_time: sub.end_time().map(|dt| dt.to_string()),
+            start_time: to_utc(sub.start_time()),
+            end_time: to_utc(sub.end_time()),
             auto_renew: sub.auto_renew().map(|ar| ar.as_str().to_string()),
             proactive_engagement_status: sub
                 .proactive_engagement_status()
@@ -79,8 +82,8 @@ impl From<aws_sdk_shield::types::AttackSummary> for AttackSummary {
         Self {
             attack_id: a.attack_id().map(|s| s.to_string()),
             resource_arn: a.resource_arn().map(|s| s.to_string()),
-            start_time: a.start_time().map(|dt| dt.to_string()),
-            end_time: a.end_time().map(|dt| dt.to_string()),
+            start_time: to_utc(a.start_time()),
+            end_time: to_utc(a.end_time()),
             attack_vectors: a
                 .attack_vectors()
                 .iter()

@@ -3,13 +3,16 @@ use aws_sdk_codedeploy::types::{
     ApplicationInfo as SdkApplicationInfo, DeploymentGroupInfo as SdkDeploymentGroupInfo,
     DeploymentInfo as SdkDeploymentInfo,
 };
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct DeployApplication {
     pub id: Option<String>,
     pub name: String,
     pub compute_platform: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 impl From<SdkApplicationInfo> for DeployApplication {
@@ -18,7 +21,7 @@ impl From<SdkApplicationInfo> for DeployApplication {
             id: a.application_id().map(|v| v.to_string()),
             name: a.application_name().unwrap_or_default().to_string(),
             compute_platform: a.compute_platform().map(|v| v.as_str().to_string()),
-            created_at: a.create_time().map(|t| t.to_string()),
+            created_at: to_utc(a.create_time()),
         }
     }
 }
@@ -56,9 +59,9 @@ pub struct Deployment {
     pub application_name: Option<String>,
     pub deployment_group_name: Option<String>,
     pub status: Option<String>,
-    pub create_time: Option<String>,
-    pub start_time: Option<String>,
-    pub complete_time: Option<String>,
+    pub create_time: Option<DateTime<Utc>>,
+    pub start_time: Option<DateTime<Utc>>,
+    pub complete_time: Option<DateTime<Utc>>,
     pub error_code: Option<String>,
     pub error_message: Option<String>,
 }
@@ -77,9 +80,9 @@ impl From<SdkDeploymentInfo> for Deployment {
             application_name: d.application_name().map(|v| v.to_string()),
             deployment_group_name: d.deployment_group_name().map(|v| v.to_string()),
             status: d.status().map(|s| s.as_str().to_string()),
-            create_time: d.create_time().map(|t| t.to_string()),
-            start_time: d.start_time().map(|t| t.to_string()),
-            complete_time: d.complete_time().map(|t| t.to_string()),
+            create_time: to_utc(d.create_time()),
+            start_time: to_utc(d.start_time()),
+            complete_time: to_utc(d.complete_time()),
             error_code,
             error_message,
         }
@@ -96,11 +99,16 @@ mod tests {
             .application_id("app-123")
             .application_name("my-app")
             .compute_platform(aws_sdk_codedeploy::types::ComputePlatform::Server)
+            .create_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let da = DeployApplication::from(app);
         assert_eq!(da.id, Some("app-123".to_string()));
         assert_eq!(da.name, "my-app");
         assert_eq!(da.compute_platform, Some("Server".to_string()));
+        assert_eq!(
+            da.created_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]
@@ -147,6 +155,9 @@ mod tests {
             .application_name("my-app")
             .deployment_group_name("prod-group")
             .status(aws_sdk_codedeploy::types::DeploymentStatus::Succeeded)
+            .create_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .start_time(aws_smithy_types::DateTime::from_secs(1_700_000_100))
+            .complete_time(aws_smithy_types::DateTime::from_secs(1_700_000_600))
             .build();
         let d = Deployment::from(dep);
         assert_eq!(d.deployment_id, "d-ABC123");
@@ -155,6 +166,18 @@ mod tests {
         assert_eq!(d.status, Some("Succeeded".to_string()));
         assert!(d.error_code.is_none());
         assert!(d.error_message.is_none());
+        assert_eq!(
+            d.create_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            d.start_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_100))
+        );
+        assert_eq!(
+            d.complete_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_600))
+        );
     }
 
     #[test]

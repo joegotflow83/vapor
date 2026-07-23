@@ -1,5 +1,8 @@
 use async_graphql::SimpleObject;
 use aws_sdk_kafka::types::{Cluster as SdkCluster, NodeInfo as SdkNodeInfo};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "MskTag")]
@@ -19,7 +22,7 @@ pub struct MskCluster {
     pub broker_instance_type: Option<String>,
     pub storage_gb: Option<i32>,
     pub enhanced_monitoring: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -63,7 +66,7 @@ impl From<SdkCluster> for MskCluster {
             broker_instance_type,
             storage_gb,
             enhanced_monitoring,
-            created_at: c.creation_time().map(|t| t.to_string()),
+            created_at: to_utc(c.creation_time()),
             tags,
         }
     }
@@ -101,6 +104,7 @@ mod tests {
             .cluster_name("my-cluster")
             .state(aws_sdk_kafka::types::ClusterState::Active)
             .cluster_type(aws_sdk_kafka::types::ClusterType::Provisioned)
+            .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let msk = MskCluster::from(cluster);
         assert_eq!(msk.arn, "arn:aws:kafka:us-east-1:123456789012:cluster/my-cluster/abc-123");
@@ -108,6 +112,10 @@ mod tests {
         assert_eq!(msk.state, Some("ACTIVE".to_string()));
         assert_eq!(msk.cluster_type, Some("PROVISIONED".to_string()));
         assert!(msk.tags.is_empty());
+        assert_eq!(
+            msk.created_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
     }
 
     #[test]

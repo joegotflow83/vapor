@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::polly::{PollyLexiconInfo, PollySpeechSynthesisTaskInfo, PollyVoiceInfo};
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct PollyVoice {
@@ -31,7 +33,7 @@ impl From<PollyVoiceInfo> for PollyVoice {
 pub struct PollyLexiconAttributes {
     pub alphabet: Option<String>,
     pub language_code: Option<String>,
-    pub last_modified: Option<String>,
+    pub last_modified: Option<DateTime<Utc>>,
     pub lexeme_count: Option<i32>,
     pub size: Option<i32>,
 }
@@ -53,7 +55,7 @@ impl From<PollyLexiconInfo> for PollyLexicon {
             Some(PollyLexiconAttributes {
                 alphabet: lex.alphabet,
                 language_code: lex.language_code,
-                last_modified: lex.last_modified,
+                last_modified: to_utc(lex.last_modified.as_ref()),
                 lexeme_count: lex.lexeme_count,
                 size: lex.size,
             })
@@ -73,7 +75,7 @@ pub struct PollySpeechSynthesisTask {
     pub task_status: Option<String>,
     pub task_status_reason: Option<String>,
     pub output_uri: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub text_type: Option<String>,
     pub voice_id: Option<String>,
     pub output_format: Option<String>,
@@ -86,7 +88,7 @@ impl From<PollySpeechSynthesisTaskInfo> for PollySpeechSynthesisTask {
             task_status: t.task_status,
             task_status_reason: t.task_status_reason,
             output_uri: t.output_uri,
-            creation_time: t.creation_time,
+            creation_time: to_utc(t.creation_time.as_ref()),
             text_type: t.text_type,
             voice_id: t.voice_id,
             output_format: t.output_format,
@@ -98,6 +100,7 @@ impl From<PollySpeechSynthesisTaskInfo> for PollySpeechSynthesisTask {
 mod tests {
     use super::*;
     use crate::aws::polly::{PollyLexiconInfo, PollySpeechSynthesisTaskInfo, PollyVoiceInfo};
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_polly_voice_from_full() {
@@ -141,7 +144,7 @@ mod tests {
             name: Some("my-lexicon".to_string()),
             alphabet: Some("ipa".to_string()),
             language_code: Some("en-US".to_string()),
-            last_modified: Some("2024-01-15T10:00:00Z".to_string()),
+            last_modified: Some(SmithyDateTime::from_secs(1_705_312_800)),
             lexeme_count: Some(5),
             size: Some(1024),
         };
@@ -150,6 +153,10 @@ mod tests {
         assert!(result.attributes.is_some());
         let attrs = result.attributes.unwrap();
         assert_eq!(attrs.alphabet, Some("ipa".to_string()));
+        assert_eq!(
+            attrs.last_modified.map(|d| d.to_rfc3339()),
+            Some("2024-01-15T10:00:00+00:00".to_string())
+        );
         assert_eq!(attrs.lexeme_count, Some(5));
         assert_eq!(attrs.size, Some(1024));
     }
@@ -176,7 +183,7 @@ mod tests {
             task_status: Some("completed".to_string()),
             task_status_reason: None,
             output_uri: Some("s3://bucket/output.mp3".to_string()),
-            creation_time: Some("2024-01-15T10:00:00Z".to_string()),
+            creation_time: Some(SmithyDateTime::from_secs(1_705_312_800)),
             text_type: Some("text".to_string()),
             voice_id: Some("Joanna".to_string()),
             output_format: Some("mp3".to_string()),
@@ -187,6 +194,10 @@ mod tests {
         assert_eq!(
             result.output_uri,
             Some("s3://bucket/output.mp3".to_string())
+        );
+        assert_eq!(
+            result.creation_time.map(|d| d.to_rfc3339()),
+            Some("2024-01-15T10:00:00+00:00".to_string())
         );
         assert_eq!(result.voice_id, Some("Joanna".to_string()));
         assert!(result.task_status_reason.is_none());

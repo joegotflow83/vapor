@@ -1,4 +1,5 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::bedrock::{
     BedrockCloudWatchConfigInfo, BedrockCustomModelInfo, BedrockFoundationModelInfo,
@@ -36,7 +37,7 @@ impl From<BedrockFoundationModelInfo> for BedrockFoundationModel {
 pub struct BedrockCustomModel {
     pub model_arn: Option<String>,
     pub model_name: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub base_model_arn: Option<String>,
     pub customization_type: Option<String>,
     pub job_arn: Option<String>,
@@ -62,8 +63,8 @@ pub struct BedrockGuardrail {
     pub name: Option<String>,
     pub status: Option<String>,
     pub version: Option<String>,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
     pub description: Option<String>,
 }
 
@@ -187,7 +188,7 @@ mod tests {
         let info = BedrockCustomModelInfo {
             model_arn: Some("arn:aws:bedrock:us-east-1:123456789012:custom-model/my-model".to_string()),
             model_name: Some("my-fine-tuned-model".to_string()),
-            creation_time: Some("2024-01-15T10:30:00Z".to_string()),
+            creation_time: Some("2024-01-15T10:30:00Z".parse().unwrap()),
             base_model_arn: Some("arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-text-lite-v1".to_string()),
             customization_type: Some("FINE_TUNING".to_string()),
             job_arn: Some("arn:aws:bedrock:us-east-1:123456789012:model-customization-job/abc123".to_string()),
@@ -224,8 +225,8 @@ mod tests {
             name: Some("my-guardrail".to_string()),
             status: Some("READY".to_string()),
             version: Some("DRAFT".to_string()),
-            created_at: Some("2024-01-15T10:30:00Z".to_string()),
-            updated_at: Some("2024-01-16T12:00:00Z".to_string()),
+            created_at: Some("2024-01-15T10:30:00Z".parse().unwrap()),
+            updated_at: Some("2024-01-16T12:00:00Z".parse().unwrap()),
             description: Some("Content filtering guardrail".to_string()),
         };
         let result = BedrockGuardrail::from(info);
@@ -243,8 +244,8 @@ mod tests {
             name: Some("basic-guardrail".to_string()),
             status: Some("CREATING".to_string()),
             version: Some("DRAFT".to_string()),
-            created_at: Some("2024-01-15T10:30:00Z".to_string()),
-            updated_at: Some("2024-01-15T10:30:00Z".to_string()),
+            created_at: Some("2024-01-15T10:30:00Z".parse().unwrap()),
+            updated_at: Some("2024-01-15T10:30:00Z".parse().unwrap()),
             description: None,
         };
         let result = BedrockGuardrail::from(info);

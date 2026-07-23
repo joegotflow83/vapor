@@ -1,8 +1,10 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::translate::{
     TranslateParallelDataInfo, TranslateTerminologyInfo, TranslateTextTranslationJobInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct TranslateTerminology {
@@ -12,8 +14,8 @@ pub struct TranslateTerminology {
     pub source_language_code: Option<String>,
     pub target_language_codes: Vec<String>,
     pub term_count: Option<i32>,
-    pub created_at: Option<String>,
-    pub last_updated_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub last_updated_at: Option<DateTime<Utc>>,
     pub directionality: Option<String>,
     pub format: Option<String>,
 }
@@ -27,8 +29,8 @@ impl From<TranslateTerminologyInfo> for TranslateTerminology {
             source_language_code: info.source_language_code,
             target_language_codes: info.target_language_codes,
             term_count: info.term_count,
-            created_at: info.created_at,
-            last_updated_at: info.last_updated_at,
+            created_at: to_utc(info.created_at.as_ref()),
+            last_updated_at: to_utc(info.last_updated_at.as_ref()),
             directionality: info.directionality,
             format: info.format,
         }
@@ -43,8 +45,8 @@ pub struct TranslateParallelData {
     pub status: Option<String>,
     pub source_language_code: Option<String>,
     pub target_language_codes: Vec<String>,
-    pub created_at: Option<String>,
-    pub last_updated_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub last_updated_at: Option<DateTime<Utc>>,
 }
 
 impl From<TranslateParallelDataInfo> for TranslateParallelData {
@@ -56,8 +58,8 @@ impl From<TranslateParallelDataInfo> for TranslateParallelData {
             status: info.status,
             source_language_code: info.source_language_code,
             target_language_codes: info.target_language_codes,
-            created_at: info.created_at,
-            last_updated_at: info.last_updated_at,
+            created_at: to_utc(info.created_at.as_ref()),
+            last_updated_at: to_utc(info.last_updated_at.as_ref()),
         }
     }
 }
@@ -69,8 +71,8 @@ pub struct TranslateTextTranslationJob {
     pub job_status: Option<String>,
     pub source_language_code: Option<String>,
     pub target_language_codes: Vec<String>,
-    pub submitted_time: Option<String>,
-    pub end_time: Option<String>,
+    pub submitted_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
 }
 
 impl From<TranslateTextTranslationJobInfo> for TranslateTextTranslationJob {
@@ -81,8 +83,8 @@ impl From<TranslateTextTranslationJobInfo> for TranslateTextTranslationJob {
             job_status: info.job_status,
             source_language_code: info.source_language_code,
             target_language_codes: info.target_language_codes,
-            submitted_time: info.submitted_time,
-            end_time: info.end_time,
+            submitted_time: to_utc(info.submitted_time.as_ref()),
+            end_time: to_utc(info.end_time.as_ref()),
         }
     }
 }
@@ -93,6 +95,7 @@ mod tests {
     use crate::aws::translate::{
         TranslateParallelDataInfo, TranslateTerminologyInfo, TranslateTextTranslationJobInfo,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_terminology_from_full() {
@@ -103,8 +106,8 @@ mod tests {
             source_language_code: Some("en".to_string()),
             target_language_codes: vec!["fr".to_string(), "de".to_string()],
             term_count: Some(42),
-            created_at: Some("2024-01-01T00:00:00Z".to_string()),
-            last_updated_at: Some("2024-06-01T00:00:00Z".to_string()),
+            created_at: Some(SmithyDateTime::from_secs(1_704_067_200)),
+            last_updated_at: Some(SmithyDateTime::from_secs(1_717_200_000)),
             directionality: Some("UNI".to_string()),
             format: Some("CSV".to_string()),
         };
@@ -113,6 +116,11 @@ mod tests {
         assert_eq!(result.source_language_code, Some("en".to_string()));
         assert_eq!(result.target_language_codes, vec!["fr", "de"]);
         assert_eq!(result.term_count, Some(42));
+        assert_eq!(
+            result.created_at.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
+        assert!(result.last_updated_at.is_some());
         assert_eq!(result.directionality, Some("UNI".to_string()));
         assert_eq!(result.format, Some("CSV".to_string()));
     }
@@ -146,13 +154,18 @@ mod tests {
             status: Some("ACTIVE".to_string()),
             source_language_code: Some("en".to_string()),
             target_language_codes: vec!["es".to_string()],
-            created_at: Some("2024-01-01T00:00:00Z".to_string()),
-            last_updated_at: Some("2024-06-01T00:00:00Z".to_string()),
+            created_at: Some(SmithyDateTime::from_secs(1_704_067_200)),
+            last_updated_at: Some(SmithyDateTime::from_secs(1_717_200_000)),
         };
         let result = TranslateParallelData::from(info);
         assert_eq!(result.name, Some("my-pd".to_string()));
         assert_eq!(result.status, Some("ACTIVE".to_string()));
         assert_eq!(result.target_language_codes, vec!["es"]);
+        assert_eq!(
+            result.created_at.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
+        assert!(result.last_updated_at.is_some());
     }
 
     #[test]
@@ -181,8 +194,8 @@ mod tests {
             job_status: Some("COMPLETED".to_string()),
             source_language_code: Some("en".to_string()),
             target_language_codes: vec!["fr".to_string(), "es".to_string()],
-            submitted_time: Some("2024-01-15T10:00:00Z".to_string()),
-            end_time: Some("2024-01-15T10:30:00Z".to_string()),
+            submitted_time: Some(SmithyDateTime::from_secs(1_705_312_800)),
+            end_time: Some(SmithyDateTime::from_secs(1_705_314_600)),
         };
         let result = TranslateTextTranslationJob::from(info);
         assert_eq!(result.job_id, Some("job-abc123".to_string()));
@@ -219,7 +232,7 @@ mod tests {
             job_status: Some("FAILED".to_string()),
             source_language_code: Some("en".to_string()),
             target_language_codes: vec!["zh".to_string()],
-            submitted_time: Some("2024-01-15T09:00:00Z".to_string()),
+            submitted_time: Some(SmithyDateTime::from_secs(1_705_309_200)),
             end_time: None,
         };
         let result = TranslateTextTranslationJob::from(info);

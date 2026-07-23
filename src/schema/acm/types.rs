@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 /// An ACM certificate with full metadata.
 ///
@@ -19,10 +21,10 @@ pub struct AcmCertificate {
     pub type_: Option<String>,
     /// RSA_2048 | RSA_4096 | EC_prime256v1 | ...
     pub key_algorithm: Option<String>,
-    pub issued_at: Option<String>,
-    pub not_before: Option<String>,
+    pub issued_at: Option<DateTime<Utc>>,
+    pub not_before: Option<DateTime<Utc>>,
     /// Certificate expiry timestamp — critical for alerting.
-    pub not_after: Option<String>,
+    pub not_after: Option<DateTime<Utc>>,
     /// ELIGIBLE | INELIGIBLE
     pub renewal_eligibility: Option<String>,
     /// ARNs of resources using this certificate (ELB, CloudFront, ...).
@@ -54,9 +56,9 @@ impl AcmCertificate {
             status: detail.status().map(|s| s.as_str().to_string()),
             type_: detail.r#type().map(|s| s.as_str().to_string()),
             key_algorithm: detail.key_algorithm().map(|s| s.as_str().to_string()),
-            issued_at: detail.issued_at().map(|d| d.to_string()),
-            not_before: detail.not_before().map(|d| d.to_string()),
-            not_after: detail.not_after().map(|d| d.to_string()),
+            issued_at: to_utc(detail.issued_at()),
+            not_before: to_utc(detail.not_before()),
+            not_after: to_utc(detail.not_after()),
             renewal_eligibility: detail.renewal_eligibility().map(|s| s.as_str().to_string()),
             in_use_by: detail.in_use_by().iter().map(|s| s.to_string()).collect(),
             tags,

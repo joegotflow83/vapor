@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::mq::{MqBrokerInfo, MqBrokerInstanceInfo, MqConfigurationInfo};
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct MqBrokerInstance {
@@ -66,7 +68,7 @@ pub struct MqConfiguration {
     pub engine_version: Option<String>,
     pub description: Option<String>,
     pub latest_revision: Option<i32>,
-    pub created: Option<String>,
+    pub created: Option<DateTime<Utc>>,
     pub tags: Vec<Tag>,
 }
 
@@ -80,7 +82,7 @@ impl From<MqConfigurationInfo> for MqConfiguration {
             engine_version: c.engine_version,
             description: c.description,
             latest_revision: c.latest_revision,
-            created: c.created,
+            created: to_utc(c.created.as_ref()),
             tags: c.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
         }
     }
@@ -90,6 +92,7 @@ impl From<MqConfigurationInfo> for MqConfiguration {
 mod tests {
     use super::*;
     use crate::aws::mq::{MqBrokerInfo, MqBrokerInstanceInfo, MqConfigurationInfo};
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_mq_broker_from_minimal() {
@@ -177,7 +180,7 @@ mod tests {
             engine_version: Some("5.15.14".to_string()),
             description: Some("Production ActiveMQ config".to_string()),
             latest_revision: Some(3),
-            created: Some("2024-01-01T00:00:00Z".to_string()),
+            created: Some(SmithyDateTime::from_secs(1_704_067_200)),
             tags: vec![("Project".to_string(), "vapor".to_string())],
         };
         let result = MqConfiguration::from(info);
@@ -185,6 +188,7 @@ mod tests {
         assert_eq!(result.name, Some("my-config".to_string()));
         assert_eq!(result.latest_revision, Some(3));
         assert_eq!(result.description, Some("Production ActiveMQ config".to_string()));
+        assert_eq!(result.created.map(|d| d.to_rfc3339()), Some("2024-01-01T00:00:00+00:00".to_string()));
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Project");
     }

@@ -1,8 +1,10 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::keyspaces::{
     KeyspacesCapacitySpecInfo, KeyspacesEncryptionInfo, KeyspacesKeyspaceInfo, KeyspacesTableInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct KeyspacesKeyspace {
@@ -61,7 +63,7 @@ pub struct KeyspacesTable {
     pub table_name: String,
     pub resource_arn: String,
     pub status: Option<String>,
-    pub creation_timestamp: Option<String>,
+    pub creation_timestamp: Option<DateTime<Utc>>,
     pub capacity_specification: Option<KeyspacesCapacitySpec>,
     pub encryption_specification: Option<KeyspacesEncryption>,
     pub point_in_time_recovery: Option<bool>,
@@ -74,7 +76,7 @@ impl From<KeyspacesTableInfo> for KeyspacesTable {
             table_name: t.table_name,
             resource_arn: t.resource_arn,
             status: t.status,
-            creation_timestamp: t.creation_timestamp,
+            creation_timestamp: to_utc(t.creation_timestamp.as_ref()),
             capacity_specification: t.capacity_specification.map(KeyspacesCapacitySpec::from),
             encryption_specification: t.encryption_specification.map(KeyspacesEncryption::from),
             point_in_time_recovery: t.point_in_time_recovery,
@@ -89,6 +91,7 @@ mod tests {
         KeyspacesCapacitySpecInfo, KeyspacesEncryptionInfo, KeyspacesKeyspaceInfo,
         KeyspacesTableInfo,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_keyspace_from_full() {
@@ -181,7 +184,7 @@ mod tests {
             resource_arn: "arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/mytable"
                 .to_string(),
             status: Some("ACTIVE".to_string()),
-            creation_timestamp: Some("2024-01-01T00:00:00Z".to_string()),
+            creation_timestamp: Some(SmithyDateTime::from_secs(1_704_067_200)),
             capacity_specification: Some(KeyspacesCapacitySpecInfo {
                 throughput_mode: "PAY_PER_REQUEST".to_string(),
                 read_capacity_units: None,
@@ -197,6 +200,10 @@ mod tests {
         assert_eq!(result.keyspace_name, "mykeyspace");
         assert_eq!(result.table_name, "mytable");
         assert_eq!(result.status, Some("ACTIVE".to_string()));
+        assert_eq!(
+            result.creation_timestamp.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
         assert!(result.capacity_specification.is_some());
         assert!(result.encryption_specification.is_some());
         assert_eq!(result.point_in_time_recovery, Some(true));

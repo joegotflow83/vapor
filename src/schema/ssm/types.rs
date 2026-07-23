@@ -1,6 +1,8 @@
 use async_graphql::{Enum, InputObject, SimpleObject};
+use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
+use crate::schema::time::to_utc;
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum PingStatus {
@@ -78,7 +80,7 @@ impl ParameterTier {
 pub struct ManagedInstance {
     pub instance_id: String,
     pub ping_status: PingStatus,
-    pub last_ping_time: Option<String>,
+    pub last_ping_time: Option<DateTime<Utc>>,
     pub platform_type: Option<PlatformType>,
     pub platform_name: Option<String>,
     pub platform_version: Option<String>,
@@ -88,7 +90,7 @@ pub struct ManagedInstance {
     pub name: Option<String>,
     pub resource_type: Option<String>,
     pub iam_role: Option<String>,
-    pub registration_date: Option<String>,
+    pub registration_date: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_ssm::types::InstanceInformation> for ManagedInstance {
@@ -99,7 +101,7 @@ impl From<aws_sdk_ssm::types::InstanceInformation> for ManagedInstance {
                 .ping_status()
                 .map(PingStatus::from_sdk)
                 .unwrap_or(PingStatus::Inactive),
-            last_ping_time: info.last_ping_date_time().map(|d| d.to_string()),
+            last_ping_time: to_utc(info.last_ping_date_time()),
             platform_type: info.platform_type().map(PlatformType::from_sdk),
             platform_name: info.platform_name().map(|s| s.to_string()),
             platform_version: info.platform_version().map(|s| s.to_string()),
@@ -109,7 +111,7 @@ impl From<aws_sdk_ssm::types::InstanceInformation> for ManagedInstance {
             name: info.name().map(|s| s.to_string()),
             resource_type: info.resource_type().map(|r| r.as_str().to_string()),
             iam_role: info.iam_role().map(|s| s.to_string()),
-            registration_date: info.registration_date().map(|d| d.to_string()),
+            registration_date: to_utc(info.registration_date()),
         }
     }
 }
@@ -120,7 +122,7 @@ pub struct Parameter {
     pub parameter_type: Option<ParameterType>,
     pub value: Option<String>,
     pub version: Option<i64>,
-    pub last_modified_date: Option<String>,
+    pub last_modified_date: Option<DateTime<Utc>>,
     pub arn: Option<String>,
     pub data_type: Option<String>,
     pub tier: Option<ParameterTier>,
@@ -133,7 +135,7 @@ impl From<aws_sdk_ssm::types::Parameter> for Parameter {
             parameter_type: p.r#type().map(ParameterType::from_sdk),
             value: p.value().map(|s| s.to_string()),
             version: Some(p.version()),
-            last_modified_date: p.last_modified_date().map(|d| d.to_string()),
+            last_modified_date: to_utc(p.last_modified_date()),
             arn: p.arn().map(|s| s.to_string()),
             data_type: p.data_type().map(|s| s.to_string()),
             tier: None,
@@ -147,7 +149,7 @@ pub struct ParameterMeta {
     pub parameter_type: Option<ParameterType>,
     pub tier: Option<ParameterTier>,
     pub version: Option<i64>,
-    pub last_modified_date: Option<String>,
+    pub last_modified_date: Option<DateTime<Utc>>,
     pub description: Option<String>,
     pub arn: Option<String>,
     pub data_type: Option<String>,
@@ -162,7 +164,7 @@ impl From<aws_sdk_ssm::types::ParameterMetadata> for ParameterMeta {
             parameter_type: m.r#type().map(ParameterType::from_sdk),
             tier: m.tier().map(ParameterTier::from_sdk),
             version: Some(m.version()),
-            last_modified_date: m.last_modified_date().map(|d| d.to_string()),
+            last_modified_date: to_utc(m.last_modified_date()),
             description: m.description().map(|s| s.to_string()),
             arn: m.arn().map(|s| s.to_string()),
             data_type: m.data_type().map(|s| s.to_string()),
@@ -184,7 +186,7 @@ pub struct SsmDocument {
     pub document_version: Option<String>,
     pub status: Option<String>,
     pub owner: Option<String>,
-    pub created_date: Option<String>,
+    pub created_date: Option<DateTime<Utc>>,
     pub description: Option<String>,
     pub platform_types: Vec<String>,
     pub schema_version: Option<String>,
@@ -203,7 +205,7 @@ impl From<aws_sdk_ssm::types::DocumentIdentifier> for SsmDocument {
             // those are only available via describe_document / get_document.
             status: None,
             owner: doc.owner().map(|s| s.to_string()),
-            created_date: doc.created_date().map(|d| d.to_string()),
+            created_date: to_utc(doc.created_date()),
             description: None,
             platform_types: doc
                 .platform_types()

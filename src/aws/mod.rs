@@ -1,4 +1,7 @@
 pub mod config;
+mod pagination;
+#[cfg(test)]
+pub(crate) mod test_util;
 #[cfg(feature = "ec2")]
 pub mod ec2;
 #[cfg(feature = "s3")]

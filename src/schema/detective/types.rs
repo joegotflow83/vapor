@@ -1,18 +1,20 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::detective::DatasourcePackageInfo;
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct DetectiveGraph {
     pub arn: Option<String>,
-    pub created_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
 }
 
 impl From<aws_sdk_detective::types::Graph> for DetectiveGraph {
     fn from(g: aws_sdk_detective::types::Graph) -> Self {
         Self {
             arn: g.arn().map(|v| v.to_string()),
-            created_time: g.created_time().map(|t| t.to_string()),
+            created_time: to_utc(g.created_time()),
         }
     }
 }
@@ -23,8 +25,8 @@ pub struct DetectiveMember {
     pub graph_arn: Option<String>,
     pub email_address: Option<String>,
     pub status: Option<String>,
-    pub invited_time: Option<String>,
-    pub updated_time: Option<String>,
+    pub invited_time: Option<DateTime<Utc>>,
+    pub updated_time: Option<DateTime<Utc>>,
     pub administrator_id: Option<String>,
 }
 
@@ -35,8 +37,8 @@ impl From<aws_sdk_detective::types::MemberDetail> for DetectiveMember {
             graph_arn: m.graph_arn().map(|v| v.to_string()),
             email_address: m.email_address().map(|v| v.to_string()),
             status: m.status().map(|s| s.as_str().to_string()),
-            invited_time: m.invited_time().map(|t| t.to_string()),
-            updated_time: m.updated_time().map(|t| t.to_string()),
+            invited_time: to_utc(m.invited_time()),
+            updated_time: to_utc(m.updated_time()),
             administrator_id: m.administrator_id().map(|v| v.to_string()),
         }
     }
@@ -74,12 +76,14 @@ mod tests {
     fn test_detective_graph_from_full() {
         let g = aws_sdk_detective::types::Graph::builder()
             .arn("arn:aws:detective:us-east-1:123456789012:graph:abc123")
+            .created_time(aws_smithy_types::DateTime::from_secs(0))
             .build();
         let result = DetectiveGraph::from(g);
         assert_eq!(
             result.arn,
             Some("arn:aws:detective:us-east-1:123456789012:graph:abc123".to_string())
         );
+        assert_eq!(result.created_time, Some(DateTime::<Utc>::UNIX_EPOCH));
     }
 
     #[test]
@@ -102,6 +106,8 @@ mod tests {
             .graph_arn("arn:aws:detective:us-east-1:123456789012:graph:abc123")
             .email_address("user@example.com")
             .status(aws_sdk_detective::types::MemberStatus::Enabled)
+            .invited_time(aws_smithy_types::DateTime::from_secs(0))
+            .updated_time(aws_smithy_types::DateTime::from_secs(0))
             .administrator_id("987654321098")
             .build();
         let result = DetectiveMember::from(m);
@@ -112,6 +118,8 @@ mod tests {
         );
         assert_eq!(result.email_address, Some("user@example.com".to_string()));
         assert_eq!(result.status, Some("ENABLED".to_string()));
+        assert_eq!(result.invited_time, Some(DateTime::<Utc>::UNIX_EPOCH));
+        assert_eq!(result.updated_time, Some(DateTime::<Utc>::UNIX_EPOCH));
         assert_eq!(result.administrator_id, Some("987654321098".to_string()));
     }
 

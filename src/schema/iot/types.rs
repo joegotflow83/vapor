@@ -1,9 +1,11 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::iot::{
     IotCertificateInfo, IotPolicyInfo, IotTagPair, IotThingGroupInfo, IotThingInfo,
     IotTopicRuleInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "IotTag")]
@@ -81,7 +83,7 @@ pub struct IotCertificate {
     pub certificate_id: Option<String>,
     pub certificate_arn: Option<String>,
     pub status: Option<String>,
-    pub creation_date: Option<String>,
+    pub creation_date: Option<DateTime<Utc>>,
 }
 
 impl From<IotCertificateInfo> for IotCertificate {
@@ -90,7 +92,7 @@ impl From<IotCertificateInfo> for IotCertificate {
             certificate_id: i.certificate_id,
             certificate_arn: i.certificate_arn,
             status: i.status,
-            creation_date: i.creation_date,
+            creation_date: to_utc(i.creation_date.as_ref()),
         }
     }
 }
@@ -99,7 +101,7 @@ impl From<IotCertificateInfo> for IotCertificate {
 pub struct IotTopicRule {
     pub rule_name: Option<String>,
     pub topic_pattern: Option<String>,
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     pub rule_disabled: Option<bool>,
     pub rule_arn: Option<String>,
 }
@@ -109,7 +111,7 @@ impl From<IotTopicRuleInfo> for IotTopicRule {
         Self {
             rule_name: i.rule_name,
             topic_pattern: i.topic_pattern,
-            created_at: i.created_at,
+            created_at: to_utc(i.created_at.as_ref()),
             rule_disabled: i.rule_disabled,
             rule_arn: i.rule_arn,
         }
@@ -123,6 +125,7 @@ mod tests {
         IotCertificateInfo, IotPolicyInfo, IotTagPair, IotThingGroupInfo, IotThingInfo,
         IotTopicRuleInfo,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_thing_from_full() {
@@ -206,7 +209,7 @@ mod tests {
             certificate_id: Some("abc123def456".to_string()),
             certificate_arn: Some("arn:aws:iot:us-east-1:123456789012:cert/abc123".to_string()),
             status: Some("ACTIVE".to_string()),
-            creation_date: Some("2024-01-15T10:00:00Z".to_string()),
+            creation_date: Some(SmithyDateTime::from_secs(1_705_312_800)),
         };
         let result = IotCertificate::from(info);
         assert_eq!(result.certificate_id, Some("abc123def456".to_string()));
@@ -225,6 +228,7 @@ mod tests {
         let result = IotCertificate::from(info);
         assert!(result.certificate_id.is_none());
         assert_eq!(result.status, Some("INACTIVE".to_string()));
+        assert!(result.creation_date.is_none());
     }
 
     #[test]
@@ -232,7 +236,7 @@ mod tests {
         let info = IotTopicRuleInfo {
             rule_name: Some("temperature-alert".to_string()),
             topic_pattern: Some("sensors/+/temperature".to_string()),
-            created_at: Some("2024-01-01T00:00:00Z".to_string()),
+            created_at: Some(SmithyDateTime::from_secs(1_704_067_200)),
             rule_disabled: Some(false),
             rule_arn: Some("arn:aws:iot:us-east-1:123456789012:rule/temperature-alert".to_string()),
         };
@@ -241,6 +245,7 @@ mod tests {
         assert_eq!(result.topic_pattern, Some("sensors/+/temperature".to_string()));
         assert_eq!(result.rule_disabled, Some(false));
         assert!(result.rule_arn.is_some());
+        assert!(result.created_at.is_some());
     }
 
     #[test]
@@ -255,5 +260,6 @@ mod tests {
         let result = IotTopicRule::from(info);
         assert_eq!(result.rule_disabled, Some(true));
         assert!(result.topic_pattern.is_none());
+        assert!(result.created_at.is_none());
     }
 }

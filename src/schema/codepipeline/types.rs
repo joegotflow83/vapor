@@ -3,14 +3,17 @@ use aws_sdk_codepipeline::types::{
     ActionState as SdkActionState, PipelineExecutionSummary, PipelineSummary,
     StageState as SdkStageState,
 };
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct Pipeline {
     pub name: String,
     pub arn: Option<String>,
     pub version: Option<i32>,
-    pub created: Option<String>,
-    pub updated: Option<String>,
+    pub created: Option<DateTime<Utc>>,
+    pub updated: Option<DateTime<Utc>>,
 }
 
 impl Pipeline {
@@ -19,8 +22,8 @@ impl Pipeline {
             name: s.name().unwrap_or_default().to_string(),
             arn,
             version: s.version(),
-            created: s.created().map(|t| t.to_string()),
-            updated: s.updated().map(|t| t.to_string()),
+            created: to_utc(s.created()),
+            updated: to_utc(s.updated()),
         }
     }
 }
@@ -31,8 +34,8 @@ pub struct PipelineExecution {
     pub execution_id: Option<String>,
     pub status: Option<String>,
     pub trigger: Option<String>,
-    pub started_at: Option<String>,
-    pub last_updated_at: Option<String>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub last_updated_at: Option<DateTime<Utc>>,
 }
 
 impl PipelineExecution {
@@ -44,8 +47,8 @@ impl PipelineExecution {
             trigger: s
                 .trigger()
                 .and_then(|t| t.trigger_type().map(|tt| tt.as_str().to_string())),
-            started_at: s.start_time().map(|t| t.to_string()),
-            last_updated_at: s.last_update_time().map(|t| t.to_string()),
+            started_at: to_utc(s.start_time()),
+            last_updated_at: to_utc(s.last_update_time()),
         }
     }
 }
@@ -78,7 +81,7 @@ impl From<&SdkStageState> for StageState {
 pub struct ActionState {
     pub action_name: Option<String>,
     pub status: Option<String>,
-    pub last_status_change: Option<String>,
+    pub last_status_change: Option<DateTime<Utc>>,
     pub error_details: Option<String>,
     pub external_execution_url: Option<String>,
 }
@@ -89,7 +92,7 @@ impl From<&SdkActionState> for ActionState {
             match a.latest_execution() {
                 Some(exec) => (
                     exec.status().map(|s| s.as_str().to_string()),
-                    exec.last_status_change().map(|t| t.to_string()),
+                    to_utc(exec.last_status_change()),
                     exec.error_details().and_then(|e| e.message()).map(|m| m.to_string()),
                     exec.external_execution_url().map(|u| u.to_string()),
                 ),

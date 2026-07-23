@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::dms::{DmsEndpointInfo, DmsReplicationInstanceInfo, DmsReplicationTaskInfo};
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct DmsReplicationInstance {
@@ -73,8 +75,8 @@ pub struct DmsReplicationTask {
     pub source_endpoint_arn: Option<String>,
     pub target_endpoint_arn: Option<String>,
     pub replication_instance_arn: Option<String>,
-    pub replication_task_creation_date: Option<String>,
-    pub replication_task_start_date: Option<String>,
+    pub replication_task_creation_date: Option<DateTime<Utc>>,
+    pub replication_task_start_date: Option<DateTime<Utc>>,
 }
 
 impl From<DmsReplicationTaskInfo> for DmsReplicationTask {
@@ -87,8 +89,8 @@ impl From<DmsReplicationTaskInfo> for DmsReplicationTask {
             source_endpoint_arn: t.source_endpoint_arn,
             target_endpoint_arn: t.target_endpoint_arn,
             replication_instance_arn: t.replication_instance_arn,
-            replication_task_creation_date: t.replication_task_creation_date,
-            replication_task_start_date: t.replication_task_start_date,
+            replication_task_creation_date: to_utc(t.replication_task_creation_date.as_ref()),
+            replication_task_start_date: to_utc(t.replication_task_start_date.as_ref()),
         }
     }
 }
@@ -191,8 +193,8 @@ mod tests {
             source_endpoint_arn: Some("arn:aws:dms:us-east-1:123456789012:endpoint:source".to_string()),
             target_endpoint_arn: Some("arn:aws:dms:us-east-1:123456789012:endpoint:target".to_string()),
             replication_instance_arn: Some("arn:aws:dms:us-east-1:123456789012:ri:my-ri".to_string()),
-            replication_task_creation_date: Some("2024-01-01T00:00:00Z".to_string()),
-            replication_task_start_date: Some("2024-01-02T00:00:00Z".to_string()),
+            replication_task_creation_date: Some(aws_smithy_types::DateTime::from_secs(1_704_067_200)),
+            replication_task_start_date: Some(aws_smithy_types::DateTime::from_secs(1_704_153_600)),
         };
         let result = DmsReplicationTask::from(info);
         assert_eq!(result.replication_task_identifier, Some("my-task".to_string()));
@@ -200,6 +202,14 @@ mod tests {
         assert_eq!(result.migration_type, Some("full-load-and-cdc".to_string()));
         assert!(result.source_endpoint_arn.is_some());
         assert!(result.target_endpoint_arn.is_some());
+        assert_eq!(
+            result.replication_task_creation_date.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
+        assert_eq!(
+            result.replication_task_start_date.map(|d| d.to_rfc3339()),
+            Some("2024-01-02T00:00:00+00:00".to_string())
+        );
     }
 
     #[test]

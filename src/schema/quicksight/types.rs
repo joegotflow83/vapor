@@ -1,8 +1,10 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::quicksight::{
     QuickSightDashboardInfo, QuickSightDataSetInfo, QuickSightDataSourceInfo, QuickSightUserInfo,
 };
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct QuickSightUser {
@@ -34,10 +36,10 @@ pub struct QuickSightDashboard {
     pub dashboard_id: Option<String>,
     pub arn: Option<String>,
     pub name: Option<String>,
-    pub created_time: Option<String>,
-    pub last_updated_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
     pub published_version_number: Option<i64>,
-    pub last_published_time: Option<String>,
+    pub last_published_time: Option<DateTime<Utc>>,
 }
 
 impl From<QuickSightDashboardInfo> for QuickSightDashboard {
@@ -46,10 +48,10 @@ impl From<QuickSightDashboardInfo> for QuickSightDashboard {
             dashboard_id: d.dashboard_id,
             arn: d.arn,
             name: d.name,
-            created_time: d.created_time,
-            last_updated_time: d.last_updated_time,
+            created_time: to_utc(d.created_time.as_ref()),
+            last_updated_time: to_utc(d.last_updated_time.as_ref()),
             published_version_number: d.published_version_number,
-            last_published_time: d.last_published_time,
+            last_published_time: to_utc(d.last_published_time.as_ref()),
         }
     }
 }
@@ -59,8 +61,8 @@ pub struct QuickSightDataSet {
     pub data_set_id: Option<String>,
     pub arn: Option<String>,
     pub name: Option<String>,
-    pub created_time: Option<String>,
-    pub last_updated_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
     pub import_mode: Option<String>,
 }
 
@@ -70,8 +72,8 @@ impl From<QuickSightDataSetInfo> for QuickSightDataSet {
             data_set_id: ds.data_set_id,
             arn: ds.arn,
             name: ds.name,
-            created_time: ds.created_time,
-            last_updated_time: ds.last_updated_time,
+            created_time: to_utc(ds.created_time.as_ref()),
+            last_updated_time: to_utc(ds.last_updated_time.as_ref()),
             import_mode: ds.import_mode,
         }
     }
@@ -84,8 +86,8 @@ pub struct QuickSightDataSource {
     pub name: Option<String>,
     pub type_: Option<String>,
     pub status: Option<String>,
-    pub created_time: Option<String>,
-    pub last_updated_time: Option<String>,
+    pub created_time: Option<DateTime<Utc>>,
+    pub last_updated_time: Option<DateTime<Utc>>,
 }
 
 impl From<QuickSightDataSourceInfo> for QuickSightDataSource {
@@ -96,8 +98,8 @@ impl From<QuickSightDataSourceInfo> for QuickSightDataSource {
             name: src.name,
             type_: src.type_,
             status: src.status,
-            created_time: src.created_time,
-            last_updated_time: src.last_updated_time,
+            created_time: to_utc(src.created_time.as_ref()),
+            last_updated_time: to_utc(src.last_updated_time.as_ref()),
         }
     }
 }
@@ -151,10 +153,10 @@ mod tests {
             dashboard_id: Some("sales-overview".to_string()),
             arn: Some("arn:aws:quicksight:us-east-1:123456789012:dashboard/sales-overview".to_string()),
             name: Some("Sales Overview".to_string()),
-            created_time: Some("2024-01-15T10:30:00Z".to_string()),
-            last_updated_time: Some("2024-02-01T12:00:00Z".to_string()),
+            created_time: Some(aws_smithy_types::DateTime::from_secs(1705314600)),
+            last_updated_time: Some(aws_smithy_types::DateTime::from_secs(1706788800)),
             published_version_number: Some(3),
-            last_published_time: Some("2024-02-01T12:00:00Z".to_string()),
+            last_published_time: Some(aws_smithy_types::DateTime::from_secs(1706788800)),
         };
         let result = QuickSightDashboard::from(info);
         assert_eq!(result.dashboard_id, Some("sales-overview".to_string()));
@@ -186,8 +188,8 @@ mod tests {
             data_set_id: Some("customer-orders".to_string()),
             arn: Some("arn:aws:quicksight:us-east-1:123456789012:dataset/customer-orders".to_string()),
             name: Some("Customer Orders".to_string()),
-            created_time: Some("2024-01-15T10:30:00Z".to_string()),
-            last_updated_time: Some("2024-02-01T12:00:00Z".to_string()),
+            created_time: Some(aws_smithy_types::DateTime::from_secs(1705314600)),
+            last_updated_time: Some(aws_smithy_types::DateTime::from_secs(1706788800)),
             import_mode: Some("SPICE".to_string()),
         };
         let result = QuickSightDataSet::from(info);
@@ -218,8 +220,8 @@ mod tests {
             name: Some("Production Redshift".to_string()),
             type_: Some("REDSHIFT".to_string()),
             status: Some("CREATION_SUCCESSFUL".to_string()),
-            created_time: Some("2024-01-10T08:00:00Z".to_string()),
-            last_updated_time: Some("2024-01-10T08:05:00Z".to_string()),
+            created_time: Some(aws_smithy_types::DateTime::from_secs(1704873600)),
+            last_updated_time: Some(aws_smithy_types::DateTime::from_secs(1704873900)),
         };
         let result = QuickSightDataSource::from(info);
         assert_eq!(result.data_source_id, Some("prod-redshift".to_string()));

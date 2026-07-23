@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
+use chrono::{DateTime, Utc};
 
 use crate::aws::budgets::{BudgetAmountInfo, BudgetCalculatedSpendInfo, BudgetInfo, BudgetNotificationInfo};
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct BudgetAmount {
@@ -39,7 +41,7 @@ pub struct Budget {
     pub time_unit: Option<String>,
     pub budget_limit: Option<BudgetAmount>,
     pub calculated_spend: Option<BudgetCalculatedSpend>,
-    pub last_updated_time: Option<String>,
+    pub last_updated_time: Option<DateTime<Utc>>,
     pub budget_exceeded: bool,
 }
 
@@ -51,7 +53,7 @@ impl From<BudgetInfo> for Budget {
             time_unit: i.time_unit,
             budget_limit: i.budget_limit.map(BudgetAmount::from),
             calculated_spend: i.calculated_spend.map(BudgetCalculatedSpend::from),
-            last_updated_time: i.last_updated_time,
+            last_updated_time: to_utc(i.last_updated_time.as_ref()),
             budget_exceeded: i.budget_exceeded,
         }
     }
@@ -142,7 +144,7 @@ mod tests {
                 }),
                 forecasted_spend: None,
             }),
-            last_updated_time: Some("2024-01-15T00:00:00Z".to_string()),
+            last_updated_time: Some(aws_smithy_types::DateTime::from_secs(1700000000)),
             budget_exceeded: true,
         };
         let result = Budget::from(info);
@@ -152,7 +154,10 @@ mod tests {
         assert!(result.budget_limit.is_some());
         assert_eq!(result.budget_limit.unwrap().amount, "1000.00");
         assert!(result.budget_exceeded);
-        assert!(result.last_updated_time.is_some());
+        assert_eq!(
+            result.last_updated_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1700000000))
+        );
     }
 
     #[test]

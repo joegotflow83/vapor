@@ -1,5 +1,8 @@
 use async_graphql::SimpleObject;
 use aws_sdk_emr::types::{Cluster, StepSummary};
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct EmrCluster {
@@ -12,7 +15,7 @@ pub struct EmrCluster {
     pub applications: Vec<String>,
     pub instance_count: Option<i32>,
     pub master_public_dns: Option<String>,
-    pub creation_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
     pub termination_protected: bool,
     pub auto_terminate: bool,
 }
@@ -30,11 +33,11 @@ impl From<Cluster> for EmrCluster {
             .and_then(|r| r.message())
             .map(|m| m.to_string());
 
-        let creation_time = c
-            .status()
-            .and_then(|s| s.timeline())
-            .and_then(|t| t.creation_date_time())
-            .map(|dt| dt.to_string());
+        let creation_time = to_utc(
+            c.status()
+                .and_then(|s| s.timeline())
+                .and_then(|t| t.creation_date_time()),
+        );
 
         let applications = c
             .applications()
@@ -66,8 +69,8 @@ pub struct EmrStep {
     pub name: Option<String>,
     pub status: Option<String>,
     pub action_on_failure: Option<String>,
-    pub creation_time: Option<String>,
-    pub end_time: Option<String>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
 }
 
 impl From<StepSummary> for EmrStep {
@@ -77,17 +80,17 @@ impl From<StepSummary> for EmrStep {
             .and_then(|st| st.state())
             .map(|state| state.as_str().to_string());
 
-        let creation_time = s
-            .status()
-            .and_then(|st| st.timeline())
-            .and_then(|t| t.creation_date_time())
-            .map(|dt| dt.to_string());
+        let creation_time = to_utc(
+            s.status()
+                .and_then(|st| st.timeline())
+                .and_then(|t| t.creation_date_time()),
+        );
 
-        let end_time = s
-            .status()
-            .and_then(|st| st.timeline())
-            .and_then(|t| t.end_date_time())
-            .map(|dt| dt.to_string());
+        let end_time = to_utc(
+            s.status()
+                .and_then(|st| st.timeline())
+                .and_then(|t| t.end_date_time()),
+        );
 
         Self {
             id: s.id().unwrap_or_default().to_string(),
@@ -116,7 +119,7 @@ mod tests {
             applications: vec!["Spark".to_string(), "Hive".to_string()],
             instance_count: Some(5),
             master_public_dns: Some("ec2-1-2-3-4.compute-1.amazonaws.com".to_string()),
-            creation_time: Some("2024-01-01T00:00:00Z".to_string()),
+            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
             termination_protected: true,
             auto_terminate: false,
         };
@@ -127,6 +130,7 @@ mod tests {
         assert_eq!(cluster.release_label, Some("emr-6.10.0".to_string()));
         assert_eq!(cluster.applications, vec!["Spark".to_string(), "Hive".to_string()]);
         assert_eq!(cluster.instance_count, Some(5));
+        assert_eq!(cluster.creation_time.unwrap().to_rfc3339(), "2024-01-01T00:00:00+00:00");
         assert!(cluster.termination_protected);
         assert!(!cluster.auto_terminate);
     }
@@ -154,6 +158,7 @@ mod tests {
         assert!(cluster.status.is_none());
         assert!(cluster.applications.is_empty());
         assert!(cluster.instance_count.is_none());
+        assert!(cluster.creation_time.is_none());
         assert!(!cluster.termination_protected);
         assert!(!cluster.auto_terminate);
     }
@@ -165,8 +170,8 @@ mod tests {
             name: Some("my-step".to_string()),
             status: Some("COMPLETED".to_string()),
             action_on_failure: Some("CONTINUE".to_string()),
-            creation_time: Some("2024-01-01T00:00:00Z".to_string()),
-            end_time: Some("2024-01-01T01:00:00Z".to_string()),
+            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
+            end_time: Some(DateTime::parse_from_rfc3339("2024-01-01T01:00:00Z").unwrap().with_timezone(&Utc)),
         };
 
         assert_eq!(step.id, "s-STEP123");

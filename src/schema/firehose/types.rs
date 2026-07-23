@@ -3,6 +3,9 @@ use aws_sdk_firehose::types::{
     DeliveryStreamDescription as SdkDeliveryStream,
     Tag as SdkTag,
 };
+use chrono::{DateTime, Utc};
+
+use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
 pub struct FirehoseTag {
@@ -25,8 +28,8 @@ pub struct FirehoseDeliveryStream {
     pub arn: Option<String>,
     pub status: Option<String>,
     pub stream_type: Option<String>,
-    pub create_timestamp: Option<String>,
-    pub last_update: Option<String>,
+    pub create_timestamp: Option<DateTime<Utc>>,
+    pub last_update: Option<DateTime<Utc>>,
     pub destinations: Vec<String>,
     pub tags: Vec<FirehoseTag>,
 }
@@ -60,8 +63,8 @@ impl FirehoseDeliveryStream {
             arn: Some(d.delivery_stream_arn().to_string()),
             status: Some(d.delivery_stream_status().as_str().to_string()),
             stream_type: Some(d.delivery_stream_type().as_str().to_string()),
-            create_timestamp: d.create_timestamp().map(|t| t.to_string()),
-            last_update: d.last_update_timestamp().map(|t| t.to_string()),
+            create_timestamp: to_utc(d.create_timestamp()),
+            last_update: to_utc(d.last_update_timestamp()),
             destinations,
             tags,
         }
@@ -98,6 +101,8 @@ mod tests {
             .version_id("1")
             .set_destinations(Some(vec![]))
             .has_more_destinations(false)
+            .create_timestamp(aws_smithy_types::DateTime::from_secs(1_700_000_000))
+            .last_update_timestamp(aws_smithy_types::DateTime::from_secs(1_710_000_000))
             .build()
             .unwrap();
         let stream = FirehoseDeliveryStream::from_description(desc, vec![]);
@@ -110,6 +115,14 @@ mod tests {
         assert_eq!(stream.stream_type, Some("DirectPut".to_string()));
         assert!(stream.destinations.is_empty());
         assert!(stream.tags.is_empty());
+        assert_eq!(
+            stream.create_timestamp,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
+        );
+        assert_eq!(
+            stream.last_update,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_710_000_000))
+        );
     }
 
     #[test]

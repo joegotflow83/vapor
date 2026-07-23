@@ -2,6 +2,10 @@
 
 pub mod aws;
 pub mod common;
+pub mod pagination;
+pub mod time;
+#[cfg(test)]
+pub(crate) mod test_util;
 #[cfg(feature = "ec2")]
 pub mod ec2;
 #[cfg(feature = "s3")]
