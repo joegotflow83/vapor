@@ -1,0 +1,25 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+    - name: Run cargo-audit
+      uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
