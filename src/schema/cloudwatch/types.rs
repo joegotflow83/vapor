@@ -360,6 +360,10 @@ pub struct LogStream {
 }
 
 impl From<aws_sdk_cloudwatchlogs::types::LogStream> for LogStream {
+    // LogStream::stored_bytes is deprecated in the AWS SDK (it now always
+    // reports 0 for log streams), but we keep surfacing the field for API
+    // stability. The getter is the only deprecated call in this fn.
+    #[allow(deprecated)]
     fn from(s: aws_sdk_cloudwatchlogs::types::LogStream) -> Self {
         Self {
             name: s.log_stream_name().unwrap_or("").to_string(),
@@ -783,6 +787,9 @@ mod tests {
 
     #[test]
     fn test_log_stream_from_sdk() {
+        // .stored_bytes on the LogStream builder is deprecated (see the
+        // From impl above); we still set it to exercise the mapping.
+        #[allow(deprecated)]
         let sdk = aws_sdk_cloudwatchlogs::types::LogStream::builder()
             .log_stream_name("2024/01/15/[$LATEST]abc123")
             .arn("arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/fn:log-stream:2024/01/15/[$LATEST]abc123")
