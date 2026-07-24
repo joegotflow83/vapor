@@ -58,9 +58,7 @@ impl From<aws_sdk_iam::types::Role> for IamRole {
             create_date: to_utc(Some(r.create_date())),
             description: r.description().map(|s| s.to_string()),
             max_session_duration: r.max_session_duration(),
-            assume_role_policy_document: r
-                .assume_role_policy_document()
-                .map(|s| percent_decode(s)),
+            assume_role_policy_document: r.assume_role_policy_document().map(|s| percent_decode(s)),
             tags,
         }
     }
@@ -188,7 +186,10 @@ impl From<(String, aws_sdk_iam::types::PolicyVersion)> for IamPolicyDocument {
             policy_arn,
             version_id: version.version_id().unwrap_or("").to_string(),
             is_default_version: version.is_default_version(),
-            document: version.document().map(|d| percent_decode(d)).unwrap_or_default(),
+            document: version
+                .document()
+                .map(|d| percent_decode(d))
+                .unwrap_or_default(),
             create_date: to_utc(version.create_date()),
         }
     }
@@ -230,17 +231,16 @@ impl
                 Some(r.to_string())
             }
         });
-        let last_used_service =
-            last_used
-                .as_ref()
-                .map(|lu| lu.service_name())
-                .and_then(|s| {
-                    if s == "N/A" {
-                        None
-                    } else {
-                        Some(s.to_string())
-                    }
-                });
+        let last_used_service = last_used
+            .as_ref()
+            .map(|lu| lu.service_name())
+            .and_then(|s| {
+                if s == "N/A" {
+                    None
+                } else {
+                    Some(s.to_string())
+                }
+            });
 
         Self {
             access_key_id: key.access_key_id().unwrap_or("").to_string(),
@@ -450,7 +450,10 @@ mod tests {
         let key = IamAccessKey::from((meta, Some(last_used)));
         assert_eq!(key.status, "Inactive");
         assert!(key.last_used_region.is_none(), "N/A region should be None");
-        assert!(key.last_used_service.is_none(), "N/A service should be None");
+        assert!(
+            key.last_used_service.is_none(),
+            "N/A service should be None"
+        );
     }
 
     #[test]

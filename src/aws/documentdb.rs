@@ -71,10 +71,7 @@ impl DocumentDbClient {
             let mut req = self.inner.describe_db_instances();
 
             if let Some(ref cid) = cluster_id {
-                let filter = Filter::builder()
-                    .name("db-cluster-id")
-                    .values(cid)
-                    .build();
+                let filter = Filter::builder().name("db-cluster-id").values(cid).build();
                 req = req.filters(filter);
             }
 
@@ -111,7 +108,9 @@ impl DocumentDbClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://rds.us-east-1.amazonaws.com/";
 
@@ -145,7 +144,10 @@ mod tests {
     #[tokio::test]
     async fn describe_db_clusters_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeDBClusters&Version=2014-10-31&Marker=cursor-a"),
+            request(
+                ENDPOINT,
+                "Action=DescribeDBClusters&Version=2014-10-31&Marker=cursor-a",
+            ),
             xml_response(
                 200,
                 "<DescribeDBClustersResponse><DescribeDBClustersResult><DBClusters>\
@@ -290,7 +292,10 @@ mod tests {
         )]);
         let client = DocumentDbClient::new(&sdk_config(http_client.clone()));
 
-        let (instances, marker) = client.describe_db_instances(None, None, None).await.unwrap();
+        let (instances, marker) = client
+            .describe_db_instances(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(instances.len(), 0);
         assert_eq!(marker, None);
@@ -312,7 +317,10 @@ mod tests {
         )]);
         let client = DocumentDbClient::new(&sdk_config(http_client.clone()));
 
-        let (instances, marker) = client.describe_db_instances(None, Some(2), None).await.unwrap();
+        let (instances, marker) = client
+            .describe_db_instances(None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(instances.len(), 2);
         assert_eq!(marker, Some("page2".to_string()));
@@ -322,7 +330,10 @@ mod tests {
     #[tokio::test]
     async fn describe_db_instances_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeDBInstances&Version=2014-10-31&Marker=cursor-b"),
+            request(
+                ENDPOINT,
+                "Action=DescribeDBInstances&Version=2014-10-31&Marker=cursor-b",
+            ),
             xml_response(
                 200,
                 "<DescribeDBInstancesResponse><DescribeDBInstancesResult><DBInstances>\
@@ -349,7 +360,10 @@ mod tests {
         )]);
         let client = DocumentDbClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_db_instances(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_db_instances(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

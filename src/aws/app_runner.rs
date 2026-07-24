@@ -135,7 +135,10 @@ impl AppRunnerClient {
         {
             Ok(o) => o,
             Err(e) => {
-                if matches!(e.code(), Some("InvalidRequestException") | Some("ResourceNotFoundException")) {
+                if matches!(
+                    e.code(),
+                    Some("InvalidRequestException") | Some("ResourceNotFoundException")
+                ) {
                     return Ok(None);
                 }
                 return Err(crate::error::sdk_err(e));
@@ -154,9 +157,7 @@ impl AppRunnerClient {
             });
             let code_repository = sc.code_repository().map(|cr| AppRunnerCodeRepoInfo {
                 repository_url: cr.repository_url().to_string(),
-                source_code_version: cr
-                    .source_code_version()
-                    .map(|scv| scv.value().to_string()),
+                source_code_version: cr.source_code_version().map(|scv| scv.value().to_string()),
             });
             AppRunnerSourceConfigInfo {
                 image_repository,
@@ -166,10 +167,11 @@ impl AppRunnerClient {
         });
 
         let instance_configuration =
-            svc.instance_configuration().map(|ic| AppRunnerInstanceConfigInfo {
-                cpu: ic.cpu().map(|s| s.to_string()),
-                memory: ic.memory().map(|s| s.to_string()),
-            });
+            svc.instance_configuration()
+                .map(|ic| AppRunnerInstanceConfigInfo {
+                    cpu: ic.cpu().map(|s| s.to_string()),
+                    memory: ic.memory().map(|s| s.to_string()),
+                });
 
         Ok(Some(AppRunnerServiceInfo {
             service_id: Some(svc.service_id().to_string()),
@@ -224,7 +226,10 @@ impl AppRunnerClient {
                 vpc_id: None,
                 subnets: vc.subnets.unwrap_or_default(),
                 security_groups: vc.security_groups.unwrap_or_default(),
-                status: vc.status.map(|s| s.as_str().to_string()).unwrap_or_default(),
+                status: vc
+                    .status
+                    .map(|s| s.as_str().to_string())
+                    .unwrap_or_default(),
             })
             .collect();
 
@@ -340,7 +345,10 @@ impl AppRunnerClient {
         {
             Ok(o) => o,
             Err(e) => {
-                if matches!(e.code(), Some("InvalidRequestException") | Some("ResourceNotFoundException")) {
+                if matches!(
+                    e.code(),
+                    Some("InvalidRequestException") | Some("ResourceNotFoundException")
+                ) {
                     return Ok(None);
                 }
                 return Err(crate::error::sdk_err(e));
@@ -353,8 +361,12 @@ impl AppRunnerClient {
         };
 
         Ok(Some(AppRunnerObservabilityConfigurationInfo {
-            observability_configuration_arn: cfg.observability_configuration_arn().map(|s| s.to_string()),
-            observability_configuration_name: cfg.observability_configuration_name().map(|s| s.to_string()),
+            observability_configuration_arn: cfg
+                .observability_configuration_arn()
+                .map(|s| s.to_string()),
+            observability_configuration_name: cfg
+                .observability_configuration_name()
+                .map(|s| s.to_string()),
             observability_configuration_revision: cfg.observability_configuration_revision(),
             tracing_vendor: cfg
                 .trace_configuration()
@@ -368,7 +380,9 @@ impl AppRunnerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://apprunner.us-east-1.amazonaws.com/";
 
@@ -383,7 +397,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"ServiceArn":"arn:aws:apprunner:us-east-1:1:service/svc1"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"ServiceArn":"arn:aws:apprunner:us-east-1:1:service/svc1"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"Service":{"ServiceName":"svc1","ServiceId":"id1","ServiceArn":"arn:aws:apprunner:us-east-1:1:service/svc1","ServiceUrl":"svc1.example.com","Status":"RUNNING","CreatedAt":1700000000,"UpdatedAt":1700000100,"SourceConfiguration":{"ImageRepository":{"ImageIdentifier":"public.ecr.aws/x/y:latest","ImageRepositoryType":"ECR_PUBLIC"},"AutoDeploymentsEnabled":true},"InstanceConfiguration":{"Cpu":"1024","Memory":"2048"}}}"#,
@@ -667,7 +684,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0].observability_configuration_name.as_deref(), Some("cfg1"));
+        assert_eq!(
+            items[0].observability_configuration_name.as_deref(),
+            Some("cfg1")
+        );
         assert_eq!(items[0].tracing_vendor.as_deref(), Some("AWSXRAY"));
         assert!(items[0].latest);
         assert_eq!(items[0].status.as_deref(), Some("ACTIVE"));
@@ -708,7 +728,10 @@ mod tests {
     #[tokio::test]
     async fn describe_observability_configuration_returns_none_when_not_found() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"ObservabilityConfigurationArn":"arn-missing"}"#),
+            request(
+                ENDPOINT,
+                r#"{"ObservabilityConfigurationArn":"arn-missing"}"#,
+            ),
             json_error_response("ResourceNotFoundException", "no such config"),
         )]);
         let client = AppRunnerClient::new(&sdk_config(http_client.clone()));
@@ -741,4 +764,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

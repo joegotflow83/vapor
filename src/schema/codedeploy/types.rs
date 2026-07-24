@@ -39,8 +39,14 @@ pub struct DeploymentGroup {
 
 impl From<SdkDeploymentGroupInfo> for DeploymentGroup {
     fn from(g: SdkDeploymentGroupInfo) -> Self {
-        let deployment_style = g.deployment_style().and_then(|s| s.deployment_type()).map(|t| t.as_str().to_string());
-        let target_revision_type = g.target_revision().and_then(|r| r.revision_type()).map(|t| t.as_str().to_string());
+        let deployment_style = g
+            .deployment_style()
+            .and_then(|s| s.deployment_type())
+            .map(|t| t.as_str().to_string());
+        let target_revision_type = g
+            .target_revision()
+            .and_then(|r| r.revision_type())
+            .map(|t| t.as_str().to_string());
         Self {
             id: g.deployment_group_id().map(|v| v.to_string()),
             name: g.deployment_group_name().unwrap_or_default().to_string(),
@@ -134,8 +140,14 @@ mod tests {
         assert_eq!(dg.id, Some("dg-123".to_string()));
         assert_eq!(dg.name, "prod-group");
         assert_eq!(dg.application_name, Some("my-app".to_string()));
-        assert_eq!(dg.deployment_config_name, Some("CodeDeployDefault.OneAtATime".to_string()));
-        assert_eq!(dg.service_role_arn, Some("arn:aws:iam::123456789012:role/deploy-role".to_string()));
+        assert_eq!(
+            dg.deployment_config_name,
+            Some("CodeDeployDefault.OneAtATime".to_string())
+        );
+        assert_eq!(
+            dg.service_role_arn,
+            Some("arn:aws:iam::123456789012:role/deploy-role".to_string())
+        );
     }
 
     #[test]

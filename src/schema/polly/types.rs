@@ -217,10 +217,7 @@ mod tests {
         };
         let result = PollySpeechSynthesisTask::from(info);
         assert_eq!(result.task_status, Some("failed".to_string()));
-        assert_eq!(
-            result.task_status_reason,
-            Some("Invalid text".to_string())
-        );
+        assert_eq!(result.task_status_reason, Some("Invalid text".to_string()));
         assert!(result.output_uri.is_none());
     }
 }

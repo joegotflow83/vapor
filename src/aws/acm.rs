@@ -1,9 +1,9 @@
 #[cfg(feature = "acm")]
 use aws_config::SdkConfig;
 #[cfg(feature = "acm")]
-use aws_smithy_types::error::metadata::ProvideErrorMetadata;
-#[cfg(feature = "acm")]
 use aws_sdk_acm::types::{CertificateDetail, CertificateStatus, Tag as AcmTag};
+#[cfg(feature = "acm")]
+use aws_smithy_types::error::metadata::ProvideErrorMetadata;
 
 #[cfg(feature = "acm")]
 use crate::error::VaporError;
@@ -72,8 +72,17 @@ impl AcmClient {
     }
 
     /// Fetch full certificate metadata. Returns None if the certificate does not exist.
-    pub async fn describe_certificate(&self, arn: &str) -> Result<Option<CertificateDetail>, VaporError> {
-        match self.inner.describe_certificate().certificate_arn(arn).send().await {
+    pub async fn describe_certificate(
+        &self,
+        arn: &str,
+    ) -> Result<Option<CertificateDetail>, VaporError> {
+        match self
+            .inner
+            .describe_certificate()
+            .certificate_arn(arn)
+            .send()
+            .await
+        {
             Ok(output) => Ok(output.certificate),
             Err(e) => {
                 let svc_err = e.into_service_error();
@@ -108,7 +117,9 @@ impl AcmClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://acm.us-east-1.amazonaws.com/";
 
@@ -137,7 +148,10 @@ mod tests {
     async fn list_certificates_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"NextToken":"cursor-a"}"#),
-            json_response(200, r#"{"CertificateSummaryList":[{"CertificateArn":"arn3"}]}"#),
+            json_response(
+                200,
+                r#"{"CertificateSummaryList":[{"CertificateArn":"arn3"}]}"#,
+            ),
         )]);
         let client = AcmClient::new(&sdk_config(http_client.clone()));
 
@@ -162,7 +176,10 @@ mod tests {
         )]);
         let client = AcmClient::new(&sdk_config(http_client.clone()));
 
-        let (arns, token) = client.list_certificates(vec![], Some(2), None).await.unwrap();
+        let (arns, token) = client
+            .list_certificates(vec![], Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(arns, vec!["a1".to_string(), "a2".to_string()]);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -181,14 +198,23 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"NextToken":"p2","MaxItems":8}"#),
-                json_response(200, r#"{"CertificateSummaryList":[{"CertificateArn":"a3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"CertificateSummaryList":[{"CertificateArn":"a3"}]}"#,
+                ),
             ),
         ]);
         let client = AcmClient::new(&sdk_config(http_client.clone()));
 
-        let (arns, token) = client.list_certificates(vec![], Some(10), None).await.unwrap();
+        let (arns, token) = client
+            .list_certificates(vec![], Some(10), None)
+            .await
+            .unwrap();
 
-        assert_eq!(arns, vec!["a1".to_string(), "a2".to_string(), "a3".to_string()]);
+        assert_eq!(
+            arns,
+            vec!["a1".to_string(), "a2".to_string(), "a3".to_string()]
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -196,7 +222,10 @@ mod tests {
     #[tokio::test]
     async fn describe_certificate_returns_detail_when_found() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"CertificateArn":"arn:aws:acm:us-east-1:1:certificate/abc"}"#),
+            request(
+                ENDPOINT,
+                r#"{"CertificateArn":"arn:aws:acm:us-east-1:1:certificate/abc"}"#,
+            ),
             json_response(
                 200,
                 r#"{"Certificate":{"CertificateArn":"arn:aws:acm:us-east-1:1:certificate/abc","DomainName":"example.com","Status":"ISSUED"}}"#,
@@ -252,7 +281,10 @@ mod tests {
     #[tokio::test]
     async fn list_tags_for_certificate_returns_tags() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"CertificateArn":"arn:aws:acm:us-east-1:1:certificate/abc"}"#),
+            request(
+                ENDPOINT,
+                r#"{"CertificateArn":"arn:aws:acm:us-east-1:1:certificate/abc"}"#,
+            ),
             json_response(
                 200,
                 r#"{"Tags":[{"Key":"env","Value":"prod"},{"Key":"team","Value":"platform"}]}"#,

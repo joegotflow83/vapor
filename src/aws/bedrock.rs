@@ -78,10 +78,7 @@ impl BedrockClient {
         if let Some(t) = by_inference_type {
             req = req.by_inference_type(aws_sdk_bedrock::types::InferenceType::from(t.as_str()));
         }
-        let output = req
-            .send()
-            .await
-            .map_err(crate::error::sdk_err)?;
+        let output = req.send().await.map_err(crate::error::sdk_err)?;
 
         Ok(output
             .model_summaries()
@@ -215,33 +212,35 @@ impl BedrockClient {
             .await
             .map_err(crate::error::sdk_err)?;
 
-        Ok(output.logging_config().map(|lc| {
-            BedrockModelInvocationLoggingConfigInfo {
-                cloudwatch_config: lc.cloud_watch_config().map(|cw| {
-                    BedrockCloudWatchConfigInfo {
+        Ok(output
+            .logging_config()
+            .map(|lc| BedrockModelInvocationLoggingConfigInfo {
+                cloudwatch_config: lc
+                    .cloud_watch_config()
+                    .map(|cw| BedrockCloudWatchConfigInfo {
                         log_group_name: Some(cw.log_group_name().to_string()),
                         role_arn: Some(cw.role_arn().to_string()),
-                        large_data_delivery_s3_config: cw
-                            .large_data_delivery_s3_config()
-                            .map(|s3| BedrockS3ConfigInfo {
+                        large_data_delivery_s3_config: cw.large_data_delivery_s3_config().map(
+                            |s3| BedrockS3ConfigInfo {
                                 bucket_name: Some(s3.bucket_name().to_string()),
                                 key_prefix: s3.key_prefix().map(|s| s.to_string()),
-                            }),
-                    }
-                }),
+                            },
+                        ),
+                    }),
                 s3_config: lc.s3_config().map(|s3| BedrockS3ConfigInfo {
                     bucket_name: Some(s3.bucket_name().to_string()),
                     key_prefix: s3.key_prefix().map(|s| s.to_string()),
                 }),
-            }
-        }))
+            }))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const FOUNDATION_MODELS: &str = "https://bedrock.us-east-1.amazonaws.com/foundation-models";
     const CUSTOM_MODELS: &str = "https://bedrock.us-east-1.amazonaws.com/custom-models";
@@ -259,7 +258,10 @@ mod tests {
         )]);
         let client = BedrockClient::new(&sdk_config(http_client.clone()));
 
-        let models = client.list_foundation_models(None, None, None).await.unwrap();
+        let models = client
+            .list_foundation_models(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(models.len(), 2);
         assert_eq!(models[0].model_id, "model1");
@@ -269,7 +271,10 @@ mod tests {
         assert_eq!(models[0].output_modalities, vec!["TEXT".to_string()]);
         assert_eq!(models[0].model_lifecycle_status, Some("ACTIVE".to_string()));
         assert_eq!(models[0].response_streaming_supported, Some(true));
-        assert_eq!(models[0].customizations_supported, vec!["FINE_TUNING".to_string()]);
+        assert_eq!(
+            models[0].customizations_supported,
+            vec!["FINE_TUNING".to_string()]
+        );
         assert_eq!(models[1].model_id, "model2");
         assert_eq!(models[1].model_lifecycle_status, None);
         http_client.relaxed_requests_match();
@@ -341,7 +346,10 @@ mod tests {
             Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1705314600))
         );
         assert_eq!(models[0].base_model_arn, Some("arn:base1".to_string()));
-        assert_eq!(models[0].customization_type, Some("FINE_TUNING".to_string()));
+        assert_eq!(
+            models[0].customization_type,
+            Some("FINE_TUNING".to_string())
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -458,7 +466,10 @@ mod tests {
             guardrails[0].updated_at,
             Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1705401000))
         );
-        assert_eq!(guardrails[0].description, Some("first guardrail".to_string()));
+        assert_eq!(
+            guardrails[0].description,
+            Some("first guardrail".to_string())
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -492,7 +503,11 @@ mod tests {
         )]);
         let client = BedrockClient::new(&sdk_config(http_client.clone()));
 
-        let config = client.get_model_invocation_logging_config().await.unwrap().unwrap();
+        let config = client
+            .get_model_invocation_logging_config()
+            .await
+            .unwrap()
+            .unwrap();
 
         let cw = config.cloudwatch_config.unwrap();
         assert_eq!(cw.log_group_name, Some("/aws/bedrock".to_string()));
@@ -539,4 +554,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

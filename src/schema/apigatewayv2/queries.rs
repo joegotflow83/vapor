@@ -106,7 +106,9 @@ impl ApiGatewayV2Query {
 #[cfg(test)]
 mod tests {
     use crate::aws::apigatewayv2::ApiGatewayV2Client;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::ApiGatewayV2Query;
@@ -143,14 +145,19 @@ mod tests {
     async fn api_v2_stages_maps_items() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{BASE}/apis/api1/stages"), ""),
-            json_response(200, r#"{"items":[{"stageName":"prod","deploymentId":"dep1"}]}"#),
+            json_response(
+                200,
+                r#"{"items":[{"stageName":"prod","deploymentId":"dep1"}]}"#,
+            ),
         )]);
         let schema = build_query_schema(ApiGatewayV2Query)
             .data(ApiGatewayV2Client::new(&sdk_config(http_client.clone())))
             .finish();
 
         let res = schema
-            .execute(r#"{ apiV2Stages(apiId: "api1") { items { stageName deploymentId } nextToken } }"#)
+            .execute(
+                r#"{ apiV2Stages(apiId: "api1") { items { stageName deploymentId } nextToken } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -199,7 +206,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["apiV2DomainNames"]["items"][0]["domainName"], "example.com");
+        assert_eq!(
+            json["apiV2DomainNames"]["items"][0]["domainName"],
+            "example.com"
+        );
         assert!(json["apiV2DomainNames"]["nextToken"].is_null());
         http_client.relaxed_requests_match();
     }

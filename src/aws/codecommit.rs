@@ -2,8 +2,8 @@ use aws_config::SdkConfig;
 use aws_sdk_codecommit::types::PullRequestStatusEnum;
 use aws_smithy_types::DateTime;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 #[derive(Debug)]
 pub struct CodeCommitRepositoryInfo {
@@ -167,9 +167,11 @@ impl CodeCommitClient {
                 .send()
                 .await;
 
-            let commit_id = result
-                .ok()
-                .and_then(|o| o.branch().and_then(|b| b.commit_id()).map(|s| s.to_string()));
+            let commit_id = result.ok().and_then(|o| {
+                o.branch()
+                    .and_then(|b| b.commit_id())
+                    .map(|s| s.to_string())
+            });
 
             items.push(CodeCommitBranchInfo {
                 branch_name: Some(name),
@@ -569,7 +571,10 @@ mod tests {
                 json_response(200, r#"{"branches":["main"]}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"repo-1","branchName":"main"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"repo-1","branchName":"main"}"#,
+                ),
                 json_response(200, r#"{"branch":{"branchName":"main","commitId":"c1"}}"#),
             ),
         ]);
@@ -598,7 +603,10 @@ mod tests {
                 json_response(200, r#"{"branches":["dev"]}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"repo-1","branchName":"dev"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"repo-1","branchName":"dev"}"#,
+                ),
                 json_response(200, r#"{"branch":{"branchName":"dev","commitId":"c2"}}"#),
             ),
         ]);
@@ -623,7 +631,10 @@ mod tests {
                 json_response(200, r#"{"branches":["main","dev"],"nextToken":"page2"}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"repo-1","branchName":"main"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"repo-1","branchName":"main"}"#,
+                ),
                 json_response(200, r#"{"branch":{"branchName":"main","commitId":"c1"}}"#),
             ),
         ]);
@@ -647,18 +658,21 @@ mod tests {
                 json_response(200, r#"{"branches":["main"],"nextToken":"p2"}"#),
             ),
             ReplayEvent::new(
-                request(
-                    ENDPOINT,
-                    r#"{"repositoryName":"repo-1","nextToken":"p2"}"#,
-                ),
+                request(ENDPOINT, r#"{"repositoryName":"repo-1","nextToken":"p2"}"#),
                 json_response(200, r#"{"branches":["dev"]}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"repo-1","branchName":"main"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"repo-1","branchName":"main"}"#,
+                ),
                 json_response(200, r#"{"branch":{"branchName":"main","commitId":"c1"}}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"repo-1","branchName":"dev"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"repo-1","branchName":"dev"}"#,
+                ),
                 json_response(200, r#"{"branch":{"branchName":"dev","commitId":"c2"}}"#),
             ),
         ]);
@@ -708,7 +722,10 @@ mod tests {
                 json_response(200, r#"{"branches":["main"]}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"repo-1","branchName":"main"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"repo-1","branchName":"main"}"#,
+                ),
                 json_error_response("EncryptionKeyAccessDeniedException", "denied"),
             ),
         ]);
@@ -807,14 +824,8 @@ mod tests {
         // rather than truncated client-side after the fact.
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(
-                    ENDPOINT,
-                    r#"{"repositoryName":"repo-1","maxResults":1}"#,
-                ),
-                json_response(
-                    200,
-                    r#"{"pullRequestIds":["1"],"nextToken":"page2"}"#,
-                ),
+                request(ENDPOINT, r#"{"repositoryName":"repo-1","maxResults":1}"#),
+                json_response(200, r#"{"pullRequestIds":["1"],"nextToken":"page2"}"#),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"pullRequestId":"1"}"#),
@@ -840,14 +851,8 @@ mod tests {
     async fn list_pull_requests_pages_through_until_exhausted_when_limit_not_reached() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(
-                    ENDPOINT,
-                    r#"{"repositoryName":"repo-1","maxResults":10}"#,
-                ),
-                json_response(
-                    200,
-                    r#"{"pullRequestIds":["1"],"nextToken":"p2"}"#,
-                ),
+                request(ENDPOINT, r#"{"repositoryName":"repo-1","maxResults":10}"#),
+                json_response(200, r#"{"pullRequestIds":["1"],"nextToken":"p2"}"#),
             ),
             ReplayEvent::new(
                 request(
@@ -933,4 +938,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

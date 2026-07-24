@@ -22,7 +22,12 @@ impl MacieQuery {
     ) -> Result<Page<MacieFinding>> {
         let client = ctx.data::<MacieClient>()?;
         let (ids, token) = client
-            .list_findings(severity.as_deref(), finding_type.as_deref(), limit, next_token)
+            .list_findings(
+                severity.as_deref(),
+                finding_type.as_deref(),
+                limit,
+                next_token,
+            )
             .await?;
         let findings = client.get_findings(ids).await?;
         Ok(Page {
@@ -73,13 +78,13 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{BASE}/findings"), r#"{"maxResults":1}"#),
-                json_response(
-                    200,
-                    r#"{"findingIds":["f-1"],"nextToken":"page2-token"}"#,
-                ),
+                json_response(200, r#"{"findingIds":["f-1"],"nextToken":"page2-token"}"#),
             ),
             ReplayEvent::new(
-                request(&format!("{BASE}/findings/describe"), r#"{"findingIds":["f-1"]}"#),
+                request(
+                    &format!("{BASE}/findings/describe"),
+                    r#"{"findingIds":["f-1"]}"#,
+                ),
                 json_response(
                     200,
                     r#"{"findings":[{"id":"f-1","title":"Exposed credentials","description":"PII in S3 object","severity":{"description":"High"},"type":"SensitiveData:S3Object/Multiple","category":"CLASSIFICATION","createdAt":"2024-01-01T00:00:00+00:00","updatedAt":"2024-01-02T00:00:00+00:00","archived":false,"resourcesAffected":{"s3Bucket":{"name":"my-bucket"}}}]}"#,
@@ -147,7 +152,10 @@ mod tests {
                 json_response(200, r#"{"findingIds":["f-1"]}"#),
             ),
             ReplayEvent::new(
-                request(&format!("{BASE}/findings/describe"), r#"{"findingIds":["f-1"]}"#),
+                request(
+                    &format!("{BASE}/findings/describe"),
+                    r#"{"findingIds":["f-1"]}"#,
+                ),
                 json_error_response("ResourceNotFoundException", "no such finding"),
             ),
         ]);

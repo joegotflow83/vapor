@@ -22,12 +22,9 @@ pub struct SnsTopic {
 
 impl SnsTopic {
     pub fn from_attrs(arn: String, attrs: HashMap<String, String>) -> Self {
-        let parse_i64 = |key: &str| -> Option<i64> {
-            attrs.get(key).and_then(|v| v.parse::<i64>().ok())
-        };
-        let parse_bool = |key: &str| -> Option<bool> {
-            attrs.get(key).map(|v| v == "true")
-        };
+        let parse_i64 =
+            |key: &str| -> Option<i64> { attrs.get(key).and_then(|v| v.parse::<i64>().ok()) };
+        let parse_bool = |key: &str| -> Option<bool> { attrs.get(key).map(|v| v == "true") };
 
         Self {
             arn,
@@ -73,7 +70,10 @@ mod tests {
     use super::*;
 
     fn make_attrs(pairs: &[(&str, &str)]) -> HashMap<String, String> {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
     }
 
     #[test]
@@ -107,7 +107,10 @@ mod tests {
 
     #[test]
     fn test_sns_topic_empty_attrs() {
-        let topic = SnsTopic::from_attrs("arn:aws:sns:us-east-1:123:empty".to_string(), HashMap::new());
+        let topic = SnsTopic::from_attrs(
+            "arn:aws:sns:us-east-1:123:empty".to_string(),
+            HashMap::new(),
+        );
         assert_eq!(topic.arn, "arn:aws:sns:us-east-1:123:empty");
         assert_eq!(topic.display_name, None);
         assert_eq!(topic.owner, None);
@@ -123,11 +126,9 @@ mod tests {
 
     #[test]
     fn test_sns_topic_fifo_true() {
-        let attrs = make_attrs(&[
-            ("FifoTopic", "true"),
-            ("ContentBasedDeduplication", "true"),
-        ]);
-        let topic = SnsTopic::from_attrs("arn:aws:sns:us-east-1:123:my-topic.fifo".to_string(), attrs);
+        let attrs = make_attrs(&[("FifoTopic", "true"), ("ContentBasedDeduplication", "true")]);
+        let topic =
+            SnsTopic::from_attrs("arn:aws:sns:us-east-1:123:my-topic.fifo".to_string(), attrs);
         assert_eq!(topic.fifo_topic, Some(true));
         assert_eq!(topic.content_based_deduplication, Some(true));
     }
@@ -150,11 +151,20 @@ mod tests {
             .build();
 
         let sub = SnsSubscription::from(sdk);
-        assert_eq!(sub.subscription_arn, Some("arn:aws:sns:us-east-1:123:topic:sub-id".to_string()));
+        assert_eq!(
+            sub.subscription_arn,
+            Some("arn:aws:sns:us-east-1:123:topic:sub-id".to_string())
+        );
         assert_eq!(sub.owner, Some("123456789012".to_string()));
         assert_eq!(sub.protocol, Some("sqs".to_string()));
-        assert_eq!(sub.endpoint, Some("arn:aws:sqs:us-east-1:123:my-queue".to_string()));
-        assert_eq!(sub.topic_arn, Some("arn:aws:sns:us-east-1:123:topic".to_string()));
+        assert_eq!(
+            sub.endpoint,
+            Some("arn:aws:sqs:us-east-1:123:my-queue".to_string())
+        );
+        assert_eq!(
+            sub.topic_arn,
+            Some("arn:aws:sns:us-east-1:123:topic".to_string())
+        );
     }
 
     #[test]

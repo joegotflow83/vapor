@@ -26,7 +26,10 @@ impl CodeBuildQuery {
             None => client.list_projects(limit, next_token).await?,
         };
         if project_names.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token,
+            });
         }
         let projects = client.batch_get_projects(project_names).await?;
         Ok(Page {
@@ -49,7 +52,10 @@ impl CodeBuildQuery {
             .list_builds_for_project(&project_name, limit, next_token)
             .await?;
         if ids.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token,
+            });
         }
         let builds = client.batch_get_builds(ids).await?;
         Ok(Page {
@@ -167,7 +173,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert!(json["buildProjects"]["items"].as_array().unwrap().is_empty());
+        assert!(json["buildProjects"]["items"]
+            .as_array()
+            .unwrap()
+            .is_empty());
         assert!(json["buildProjects"]["nextToken"].is_null());
         http_client.relaxed_requests_match();
     }
@@ -206,10 +215,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"projectName":"my-project"}"#),
-                json_response(
-                    200,
-                    r#"{"ids":["my-project:build-1"],"nextToken":"page2"}"#,
-                ),
+                json_response(200, r#"{"ids":["my-project:build-1"],"nextToken":"page2"}"#),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"ids":["my-project:build-1"]}"#),

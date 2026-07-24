@@ -111,9 +111,7 @@ mod tests {
     #[test]
     fn test_sso_permission_set_from_full() {
         let ps = aws_sdk_ssoadmin::types::PermissionSet::builder()
-            .permission_set_arn(
-                "arn:aws:sso:::permissionSet/ssoins-abc123/ps-xyz789",
-            )
+            .permission_set_arn("arn:aws:sso:::permissionSet/ssoins-abc123/ps-xyz789")
             .name("AdminAccess")
             .description("Full admin access")
             .session_duration("PT8H")

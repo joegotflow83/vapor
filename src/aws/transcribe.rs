@@ -131,9 +131,8 @@ impl TranscribeClient {
         loop {
             let mut req = self.inner.list_vocabularies();
             if let Some(ref s) = state_equals {
-                req = req.state_equals(aws_sdk_transcribe::types::VocabularyState::from(
-                    s.as_str(),
-                ));
+                req =
+                    req.state_equals(aws_sdk_transcribe::types::VocabularyState::from(s.as_str()));
             }
             if let Some(ref name) = name_contains {
                 req = req.name_contains(name);
@@ -251,10 +250,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(jobs.len(), 2);
-        assert_eq!(
-            jobs[0].transcription_job_name,
-            Some("job-1".to_string())
-        );
+        assert_eq!(jobs[0].transcription_job_name, Some("job-1".to_string()));
         assert_eq!(
             jobs[0].transcription_job_status,
             Some("COMPLETED".to_string())
@@ -270,10 +266,7 @@ mod tests {
             jobs[0].output_location_type,
             Some("CUSTOMER_BUCKET".to_string())
         );
-        assert_eq!(
-            jobs[1].transcription_job_status,
-            Some("FAILED".to_string())
-        );
+        assert_eq!(jobs[1].transcription_job_status, Some("FAILED".to_string()));
         assert_eq!(jobs[1].failure_reason, Some("bad audio".to_string()));
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
@@ -428,7 +421,10 @@ mod tests {
         )]);
         let client = TranscribeClient::new(&sdk_config(http_client.clone()));
 
-        let (vocabs, token) = client.list_vocabularies(None, None, None, None).await.unwrap();
+        let (vocabs, token) = client
+            .list_vocabularies(None, None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(vocabs.len(), 2);
         assert_eq!(vocabs[0].vocabulary_name, Some("vocab-1".to_string()));
@@ -453,7 +449,12 @@ mod tests {
         let client = TranscribeClient::new(&sdk_config(http_client.clone()));
 
         let (vocabs, _token) = client
-            .list_vocabularies(Some("READY".to_string()), Some("foo".to_string()), None, None)
+            .list_vocabularies(
+                Some("READY".to_string()),
+                Some("foo".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 

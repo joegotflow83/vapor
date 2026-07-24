@@ -62,7 +62,11 @@ async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Query { query, region, format } => {
+        Commands::Query {
+            query,
+            region,
+            format,
+        } => {
             let config = aws::config::load_aws_config(region.as_deref()).await;
             let schema = schema::root::build_schema(&config);
             let result = schema.execute(&query).await;
@@ -80,7 +84,12 @@ async fn main() {
                 std::process::exit(1);
             }
         }
-        Commands::Serve { port, region, bind, auth_token } => {
+        Commands::Serve {
+            port,
+            region,
+            bind,
+            auth_token,
+        } => {
             let port = port.unwrap_or(4000);
             let bind = bind.unwrap_or_else(|| "127.0.0.1".to_string());
             let config = aws::config::load_aws_config(region.as_deref()).await;

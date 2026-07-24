@@ -20,7 +20,13 @@ impl SecurityHubQuery {
     ) -> Result<Page<SecurityHubFinding>> {
         let client = ctx.data::<SecurityHubClient>()?;
         let (findings, next_token) = client
-            .get_findings(severity_label, workflow_status, record_state, limit, next_token)
+            .get_findings(
+                severity_label,
+                workflow_status,
+                record_state,
+                limit,
+                next_token,
+            )
             .await?;
         Ok(Page {
             items: findings.into_iter().map(SecurityHubFinding::from).collect(),
@@ -42,7 +48,9 @@ impl SecurityHubQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::security_hub::SecurityHubClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::SecurityHubQuery;
@@ -104,7 +112,9 @@ mod tests {
             })
             .expect("spawn security-hub-findings thread");
 
-        handle.join().expect("security-hub-findings thread panicked");
+        handle
+            .join()
+            .expect("security-hub-findings thread panicked");
     }
 
     #[tokio::test]
@@ -128,7 +138,13 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["securityHubFindings"]["items"].as_array().unwrap().len(), 0);
+        assert_eq!(
+            json["securityHubFindings"]["items"]
+                .as_array()
+                .unwrap()
+                .len(),
+            0
+        );
         assert!(json["securityHubFindings"]["nextToken"].is_null());
         http_client.relaxed_requests_match();
     }

@@ -44,7 +44,9 @@ impl DirectConnectQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     const ENDPOINT: &str = "https://directconnect.us-east-1.amazonaws.com/";
@@ -59,9 +61,7 @@ mod tests {
             ),
         )]);
         let client = DirectConnectClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(DirectConnectQuery)
-            .data(client)
-            .finish();
+        let schema = build_query_schema(DirectConnectQuery).data(client).finish();
 
         let res = schema
             .execute(
@@ -71,10 +71,7 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(
-            data["dxConnections"]["items"][0]["connectionId"],
-            "dxcon-1"
-        );
+        assert_eq!(data["dxConnections"]["items"][0]["connectionId"], "dxcon-1");
         assert_eq!(
             data["dxConnections"]["items"][0]["connectionState"],
             "available"
@@ -93,9 +90,7 @@ mod tests {
             ),
         )]);
         let client = DirectConnectClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(DirectConnectQuery)
-            .data(client)
-            .finish();
+        let schema = build_query_schema(DirectConnectQuery).data(client).finish();
 
         let res = schema
             .execute(
@@ -113,7 +108,10 @@ mod tests {
             data["dxVirtualInterfaces"]["items"][0]["connectionId"],
             "dxcon-1"
         );
-        assert_eq!(data["dxVirtualInterfaces"]["nextToken"], serde_json::Value::Null);
+        assert_eq!(
+            data["dxVirtualInterfaces"]["nextToken"],
+            serde_json::Value::Null
+        );
         http_client.relaxed_requests_match();
     }
 }

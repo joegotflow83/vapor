@@ -104,7 +104,9 @@ mod tests {
         assert_eq!(result.name, Some("MyPool".to_string()));
         assert_eq!(
             result.arn,
-            Some("arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_abc123".to_string())
+            Some(
+                "arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_abc123".to_string()
+            )
         );
         assert_eq!(result.estimated_number_of_users, 42);
         assert_eq!(
@@ -132,7 +134,9 @@ mod tests {
         assert_eq!(result.client_name, Some("MyApp".to_string()));
         assert_eq!(result.user_pool_id, "us-east-1_abc123");
         assert_eq!(result.explicit_auth_flows.len(), 2);
-        assert!(result.explicit_auth_flows.contains(&"ALLOW_USER_SRP_AUTH".to_string()));
+        assert!(result
+            .explicit_auth_flows
+            .contains(&"ALLOW_USER_SRP_AUTH".to_string()));
         assert!(result.token_validity_units.is_none());
     }
 

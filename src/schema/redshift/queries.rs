@@ -49,7 +49,9 @@ impl RedshiftQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::redshift::RedshiftClient;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::RedshiftQuery;

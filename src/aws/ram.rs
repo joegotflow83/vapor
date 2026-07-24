@@ -31,7 +31,10 @@ impl RamClient {
                 break;
             }
 
-            let mut req = self.inner.get_resource_shares().resource_owner(owner.clone());
+            let mut req = self
+                .inner
+                .get_resource_shares()
+                .resource_owner(owner.clone());
             if let Some(t) = &token {
                 req = req.next_token(t);
             }
@@ -163,10 +166,7 @@ mod tests {
         )]);
         let client = RamClient::new(&sdk_config(http_client.clone()));
 
-        let (shares, token) = client
-            .list_resource_shares(None, None, None)
-            .await
-            .unwrap();
+        let (shares, token) = client.list_resource_shares(None, None, None).await.unwrap();
 
         assert_eq!(shares.len(), 1);
         assert_eq!(
@@ -368,7 +368,10 @@ mod tests {
     #[tokio::test]
     async fn list_resources_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/listresources"), r#"{"resourceOwner":"SELF"}"#),
+            request(
+                &format!("{BASE}/listresources"),
+                r#"{"resourceOwner":"SELF"}"#,
+            ),
             json_error_response("MalformedArnException", "bad arn"),
         )]);
         let client = RamClient::new(&sdk_config(http_client.clone()));
@@ -465,4 +468,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

@@ -1,8 +1,8 @@
 use aws_config::SdkConfig;
 use aws_sdk_efs::types::{AccessPointDescription, FileSystemDescription, MountTargetDescription};
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 pub struct EfsClient {
     inner: aws_sdk_efs::Client,
@@ -138,7 +138,9 @@ impl EfsClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const FS: &str = "https://elasticfilesystem.us-east-1.amazonaws.com/2015-02-01/file-systems";
     const MT: &str = "https://elasticfilesystem.us-east-1.amazonaws.com/2015-02-01/mount-targets";
@@ -151,11 +153,15 @@ mod tests {
     }
 
     fn mount_target_json(id: &str, fs_id: &str) -> String {
-        format!(r#"{{"MountTargetId":"{id}","FileSystemId":"{fs_id}","SubnetId":"subnet-1","LifeCycleState":"available"}}"#)
+        format!(
+            r#"{{"MountTargetId":"{id}","FileSystemId":"{fs_id}","SubnetId":"subnet-1","LifeCycleState":"available"}}"#
+        )
     }
 
     fn access_point_json(id: &str, fs_id: &str) -> String {
-        format!(r#"{{"AccessPointId":"{id}","FileSystemId":"{fs_id}","LifeCycleState":"available"}}"#)
+        format!(
+            r#"{{"AccessPointId":"{id}","FileSystemId":"{fs_id}","LifeCycleState":"available"}}"#
+        )
     }
 
     #[tokio::test]
@@ -164,7 +170,11 @@ mod tests {
             request(FS, ""),
             json_response(
                 200,
-                format!(r#"{{"FileSystems":[{},{}]}}"#, file_system_json("fs-1"), file_system_json("fs-2")),
+                format!(
+                    r#"{{"FileSystems":[{},{}]}}"#,
+                    file_system_json("fs-1"),
+                    file_system_json("fs-2")
+                ),
             ),
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
@@ -182,7 +192,10 @@ mod tests {
     async fn describe_file_systems_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{FS}?Marker=cursor-a"), ""),
-            json_response(200, format!(r#"{{"FileSystems":[{}]}}"#, file_system_json("fs-3"))),
+            json_response(
+                200,
+                format!(r#"{{"FileSystems":[{}]}}"#, file_system_json("fs-3")),
+            ),
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
@@ -234,7 +247,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(&format!("{FS}?MaxItems=8&Marker=page2"), ""),
-                json_response(200, format!(r#"{{"FileSystems":[{}]}}"#, file_system_json("fs-3"))),
+                json_response(
+                    200,
+                    format!(r#"{{"FileSystems":[{}]}}"#, file_system_json("fs-3")),
+                ),
             ),
         ]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
@@ -285,7 +301,10 @@ mod tests {
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let (targets, token) = client.describe_mount_targets("fs-1", None, None).await.unwrap();
+        let (targets, token) = client
+            .describe_mount_targets("fs-1", None, None)
+            .await
+            .unwrap();
 
         assert_eq!(targets.len(), 2);
         assert_eq!(targets[0].mount_target_id, "mt-1");
@@ -297,7 +316,13 @@ mod tests {
     async fn describe_mount_targets_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{MT}?Marker=cursor-a&FileSystemId=fs-1"), ""),
-            json_response(200, format!(r#"{{"MountTargets":[{}]}}"#, mount_target_json("mt-3", "fs-1"))),
+            json_response(
+                200,
+                format!(
+                    r#"{{"MountTargets":[{}]}}"#,
+                    mount_target_json("mt-3", "fs-1")
+                ),
+            ),
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
@@ -333,7 +358,10 @@ mod tests {
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let (targets, token) = client.describe_mount_targets("fs-1", Some(2), None).await.unwrap();
+        let (targets, token) = client
+            .describe_mount_targets("fs-1", Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(targets.len(), 2);
         assert_eq!(targets[0].mount_target_id, "mt-1");
@@ -358,12 +386,21 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(&format!("{MT}?Marker=p2&FileSystemId=fs-1"), ""),
-                json_response(200, format!(r#"{{"MountTargets":[{}]}}"#, mount_target_json("mt-3", "fs-1"))),
+                json_response(
+                    200,
+                    format!(
+                        r#"{{"MountTargets":[{}]}}"#,
+                        mount_target_json("mt-3", "fs-1")
+                    ),
+                ),
             ),
         ]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let (targets, token) = client.describe_mount_targets("fs-1", Some(10), None).await.unwrap();
+        let (targets, token) = client
+            .describe_mount_targets("fs-1", Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(targets.len(), 3);
         assert_eq!(token, None);
@@ -378,7 +415,10 @@ mod tests {
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_mount_targets("fs-1", None, None).await.unwrap_err();
+        let err = client
+            .describe_mount_targets("fs-1", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -405,7 +445,10 @@ mod tests {
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let (points, token) = client.describe_access_points(None, None, None).await.unwrap();
+        let (points, token) = client
+            .describe_access_points(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(points.len(), 2);
         assert_eq!(points[0].access_point_id.as_deref(), Some("fsap-1"));
@@ -417,11 +460,20 @@ mod tests {
     async fn describe_access_points_filters_by_file_system_id() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{AP}?FileSystemId=fs-1"), ""),
-            json_response(200, format!(r#"{{"AccessPoints":[{}]}}"#, access_point_json("fsap-1", "fs-1"))),
+            json_response(
+                200,
+                format!(
+                    r#"{{"AccessPoints":[{}]}}"#,
+                    access_point_json("fsap-1", "fs-1")
+                ),
+            ),
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let (points, token) = client.describe_access_points(Some("fs-1"), None, None).await.unwrap();
+        let (points, token) = client
+            .describe_access_points(Some("fs-1"), None, None)
+            .await
+            .unwrap();
 
         assert_eq!(points.len(), 1);
         assert_eq!(token, None);
@@ -432,7 +484,13 @@ mod tests {
     async fn describe_access_points_resumes_from_provided_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{AP}?NextToken=cursor-a"), ""),
-            json_response(200, format!(r#"{{"AccessPoints":[{}]}}"#, access_point_json("fsap-2", "fs-2"))),
+            json_response(
+                200,
+                format!(
+                    r#"{{"AccessPoints":[{}]}}"#,
+                    access_point_json("fsap-2", "fs-2")
+                ),
+            ),
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
@@ -452,12 +510,18 @@ mod tests {
             request(&format!("{AP}?MaxResults=1"), ""),
             json_response(
                 200,
-                format!(r#"{{"AccessPoints":[{}],"NextToken":"page2"}}"#, access_point_json("fsap-1", "fs-1")),
+                format!(
+                    r#"{{"AccessPoints":[{}],"NextToken":"page2"}}"#,
+                    access_point_json("fsap-1", "fs-1")
+                ),
             ),
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let (points, token) = client.describe_access_points(None, Some(1), None).await.unwrap();
+        let (points, token) = client
+            .describe_access_points(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(points.len(), 1);
         assert_eq!(token, Some("page2".to_string()));
@@ -480,12 +544,21 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(&format!("{AP}?MaxResults=8&NextToken=p2"), ""),
-                json_response(200, format!(r#"{{"AccessPoints":[{}]}}"#, access_point_json("fsap-3", "fs-3"))),
+                json_response(
+                    200,
+                    format!(
+                        r#"{{"AccessPoints":[{}]}}"#,
+                        access_point_json("fsap-3", "fs-3")
+                    ),
+                ),
             ),
         ]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let (points, token) = client.describe_access_points(None, Some(10), None).await.unwrap();
+        let (points, token) = client
+            .describe_access_points(None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(points.len(), 3);
         assert_eq!(token, None);
@@ -500,7 +573,10 @@ mod tests {
         )]);
         let client = EfsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_access_points(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_access_points(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

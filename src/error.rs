@@ -1,7 +1,9 @@
 use std::fmt;
 use std::sync::Arc;
 
-use async_graphql::extensions::{Extension, ExtensionContext, ExtensionFactory, NextResolve, ResolveInfo};
+use async_graphql::extensions::{
+    Extension, ExtensionContext, ExtensionFactory, NextResolve, ResolveInfo,
+};
 use async_graphql::{ServerResult, Value};
 use aws_smithy_runtime_api::client::result::SdkError;
 use aws_smithy_types::error::display::DisplayErrorContext;
@@ -26,7 +28,10 @@ impl fmt::Display for VaporError {
                 code: Some(code),
                 message,
             } => write!(f, "AWS SDK error: {code}: {message}"),
-            VaporError::AwsSdk { code: None, message } => write!(f, "AWS SDK error: {message}"),
+            VaporError::AwsSdk {
+                code: None,
+                message,
+            } => write!(f, "AWS SDK error: {message}"),
             VaporError::InvalidInput(msg) => write!(f, "Invalid input: {msg}"),
         }
     }
@@ -77,8 +82,12 @@ impl Extension for ErrorCodeExtension {
         next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
         next.run(ctx, info).await.map_err(|mut err| {
-            if let Some(VaporError::AwsSdk { code: Some(code), .. }) =
-                err.source.as_ref().and_then(|s| s.downcast_ref::<VaporError>())
+            if let Some(VaporError::AwsSdk {
+                code: Some(code), ..
+            }) = err
+                .source
+                .as_ref()
+                .and_then(|s| s.downcast_ref::<VaporError>())
             {
                 err.extensions
                     .get_or_insert_with(Default::default)

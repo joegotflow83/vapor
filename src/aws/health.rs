@@ -83,7 +83,9 @@ impl HealthClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://health.us-east-1.amazonaws.com/";
 
@@ -98,10 +100,16 @@ mod tests {
         )]);
         let client = HealthClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.describe_events(None, None, None, None).await.unwrap();
+        let (items, token) = client
+            .describe_events(None, None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
-        assert_eq!(items[0].arn(), Some("arn:aws:health:us-east-1::event/EC2/AWS_EC2_1/1"));
+        assert_eq!(
+            items[0].arn(),
+            Some("arn:aws:health:us-east-1::event/EC2/AWS_EC2_1/1")
+        );
         assert_eq!(items[0].status_code(), Some(&EventStatusCode::Open));
         assert_eq!(items[1].service(), Some("RDS"));
         assert_eq!(token, None);
@@ -167,7 +175,10 @@ mod tests {
         )]);
         let client = HealthClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.describe_events(None, None, Some(2), None).await.unwrap();
+        let (items, token) = client
+            .describe_events(None, None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(token, Some("page2".to_string()));
@@ -191,7 +202,10 @@ mod tests {
         ]);
         let client = HealthClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.describe_events(None, None, Some(10), None).await.unwrap();
+        let (items, token) = client
+            .describe_events(None, None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 3);
         assert_eq!(token, None);
@@ -208,7 +222,10 @@ mod tests {
         )]);
         let client = HealthClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_events(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_events(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -220,4 +237,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

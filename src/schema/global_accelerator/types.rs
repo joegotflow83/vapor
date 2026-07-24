@@ -1,7 +1,5 @@
 use async_graphql::SimpleObject;
-use aws_sdk_globalaccelerator::types::{
-    Accelerator as SdkAccelerator, EndpointGroup, Listener,
-};
+use aws_sdk_globalaccelerator::types::{Accelerator as SdkAccelerator, EndpointGroup, Listener};
 use chrono::{DateTime, Utc};
 
 use crate::schema::time::to_utc;
@@ -93,7 +91,10 @@ mod tests {
             dns_name: Some("abc123.awsglobalaccelerator.com".to_string()),
             created_time: Some(DateTime::<Utc>::UNIX_EPOCH),
         };
-        assert_eq!(acc.arn, "arn:aws:globalaccelerator::123456789012:accelerator/test");
+        assert_eq!(
+            acc.arn,
+            "arn:aws:globalaccelerator::123456789012:accelerator/test"
+        );
         assert_eq!(acc.name, Some("test-accelerator".to_string()));
         assert_eq!(acc.status, Some("DEPLOYED".to_string()));
         assert!(acc.enabled);
@@ -121,7 +122,8 @@ mod tests {
     #[test]
     fn test_ga_listener_fields() {
         let listener = GaListener {
-            listener_arn: "arn:aws:globalaccelerator::123456789012:accelerator/test/listener/abc".to_string(),
+            listener_arn: "arn:aws:globalaccelerator::123456789012:accelerator/test/listener/abc"
+                .to_string(),
             protocol: Some("TCP".to_string()),
             from_port: Some(80),
             to_port: Some(80),
@@ -134,7 +136,8 @@ mod tests {
     #[test]
     fn test_ga_listener_no_ports() {
         let listener = GaListener {
-            listener_arn: "arn:aws:globalaccelerator::123456789012:accelerator/test/listener/xyz".to_string(),
+            listener_arn: "arn:aws:globalaccelerator::123456789012:accelerator/test/listener/xyz"
+                .to_string(),
             protocol: Some("UDP".to_string()),
             from_port: None,
             to_port: None,

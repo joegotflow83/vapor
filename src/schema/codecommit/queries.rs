@@ -1,10 +1,10 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::codecommit::CodeCommitClient;
-use crate::schema::pagination::Page;
 use crate::schema::codecommit::types::{
     CodeCommitBranch, CodeCommitPullRequest, CodeCommitRepository,
 };
+use crate::schema::pagination::Page;
 
 #[derive(Default)]
 pub struct CodeCommitQuery;
@@ -210,7 +210,10 @@ mod tests {
                 json_response(200, r#"{"branches":["main"]}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"repo-1","branchName":"main"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"repo-1","branchName":"main"}"#,
+                ),
                 json_response(200, r#"{"branch":{"branchName":"main","commitId":"c1"}}"#),
             ),
         ]);
@@ -268,7 +271,10 @@ mod tests {
         assert_eq!(items.as_array().unwrap().len(), 1);
         assert_eq!(items[0]["pullRequestId"], "1");
         assert_eq!(items[0]["pullRequestStatus"], "OPEN");
-        assert_eq!(items[0]["targets"][0]["sourceReference"], "refs/heads/feature");
+        assert_eq!(
+            items[0]["targets"][0]["sourceReference"],
+            "refs/heads/feature"
+        );
         http_client.relaxed_requests_match();
     }
 }

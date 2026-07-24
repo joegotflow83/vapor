@@ -27,7 +27,9 @@ impl EmrQuery {
                 .collect()
         });
 
-        let (summaries, next_token) = client.list_clusters(cluster_states, limit, next_token).await?;
+        let (summaries, next_token) = client
+            .list_clusters(cluster_states, limit, next_token)
+            .await?;
 
         let futures: Vec<_> = summaries
             .iter()
@@ -63,7 +65,9 @@ impl EmrQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::emr::EmrClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::EmrQuery;
@@ -75,10 +79,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(
-                    200,
-                    r#"{"Clusters":[{"Id":"j-1"}],"Marker":"page2"}"#,
-                ),
+                json_response(200, r#"{"Clusters":[{"Id":"j-1"}],"Marker":"page2"}"#),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"ClusterId":"j-1"}"#),
@@ -142,19 +143,14 @@ mod tests {
     async fn emr_steps_forwards_cluster_id_and_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"ClusterId":"j-1"}"#),
-            json_response(
-                200,
-                r#"{"Steps":[{"Id":"a"},{"Id":"b"}],"Marker":"page2"}"#,
-            ),
+            json_response(200, r#"{"Steps":[{"Id":"a"},{"Id":"b"}],"Marker":"page2"}"#),
         )]);
         let schema = build_query_schema(EmrQuery)
             .data(EmrClient::new(&sdk_config(http_client.clone())))
             .finish();
 
         let res = schema
-            .execute(
-                r#"{ emrSteps(clusterId: "j-1", limit: 1) { items { id } nextToken } }"#,
-            )
+            .execute(r#"{ emrSteps(clusterId: "j-1", limit: 1) { items { id } nextToken } }"#)
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);

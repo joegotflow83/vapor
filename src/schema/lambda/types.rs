@@ -69,10 +69,7 @@ impl LambdaFunction {
             .filter_map(|l| l.arn().map(|a| a.to_string()))
             .collect();
 
-        let architecture = cfg
-            .architectures()
-            .first()
-            .map(|a| a.as_str().to_string());
+        let architecture = cfg.architectures().first().map(|a| a.as_str().to_string());
 
         let tags = raw_tags
             .into_iter()

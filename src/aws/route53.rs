@@ -66,7 +66,13 @@ impl Route53Client {
         hosted_zone_id: &str,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_route53::types::ResourceRecordSet>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_route53::types::ResourceRecordSet>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut cursor: Option<RecordSetCursor> = next_token
             .map(|t| RecordSetCursor::decode(&t))
             .transpose()?;
@@ -174,14 +180,20 @@ impl RecordSetCursor {
     }
 
     fn decode(token: &str) -> Result<Self, VaporError> {
-        let v: serde_json::Value = serde_json::from_str(token)
-            .map_err(|e| VaporError::InvalidInput(format!("invalid route53 record set token: {e}")))?;
+        let v: serde_json::Value = serde_json::from_str(token).map_err(|e| {
+            VaporError::InvalidInput(format!("invalid route53 record set token: {e}"))
+        })?;
         let name = v
             .get("name")
             .and_then(|n| n.as_str())
-            .ok_or_else(|| VaporError::InvalidInput("route53 record set token missing 'name'".to_string()))?
+            .ok_or_else(|| {
+                VaporError::InvalidInput("route53 record set token missing 'name'".to_string())
+            })?
             .to_string();
-        let record_type = v.get("type").and_then(|t| t.as_str()).map(|s| s.to_string());
+        let record_type = v
+            .get("type")
+            .and_then(|t| t.as_str())
+            .map(|s| s.to_string());
         let identifier = v.get("id").and_then(|i| i.as_str()).map(|s| s.to_string());
         Ok(Self {
             name,
@@ -233,7 +245,9 @@ mod tests {
         assert!(matches!(err, VaporError::InvalidInput(_)));
     }
 
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://route53.amazonaws.com/2013-04-01";
 
@@ -338,10 +352,7 @@ mod tests {
 
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(
-                    &format!("{BASE}/hostedzone/ZTEST/rrset"),
-                    "",
-                ),
+                request(&format!("{BASE}/hostedzone/ZTEST/rrset"), ""),
                 xml_response(
                     200,
                     "<ListResourceRecordSetsResponse><ResourceRecordSets>\

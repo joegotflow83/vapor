@@ -396,7 +396,10 @@ mod tests {
     #[tokio::test]
     async fn list_targets_by_rule_passes_event_bus_name_filter() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"Rule":"my-rule","EventBusName":"custom-bus"}"#),
+            request(
+                ENDPOINT,
+                r#"{"Rule":"my-rule","EventBusName":"custom-bus"}"#,
+            ),
             json_response(200, r#"{"Targets":[{"Id":"3","Arn":"arn3"}]}"#),
         )]);
         let client = EventBridgeClient::new(&sdk_config(http_client.clone()));
@@ -504,4 +507,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

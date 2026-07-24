@@ -97,11 +97,14 @@ impl MskClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://kafka.us-east-1.amazonaws.com";
     const CLUSTER_ARN: &str = "arn:aws:kafka:us-east-1:123456789012:cluster/c1/abc-123";
-    const CLUSTER_ARN_ENCODED: &str = "arn%3Aaws%3Akafka%3Aus-east-1%3A123456789012%3Acluster%2Fc1%2Fabc-123";
+    const CLUSTER_ARN_ENCODED: &str =
+        "arn%3Aaws%3Akafka%3Aus-east-1%3A123456789012%3Acluster%2Fc1%2Fabc-123";
 
     #[tokio::test]
     async fn list_clusters_v2_lists_all_when_no_limit() {
@@ -123,11 +126,23 @@ mod tests {
             Some("arn:aws:kafka:us-east-1:123456789012:cluster/c1/abc")
         );
         assert_eq!(c1.cluster_name(), Some("cluster-one"));
-        assert_eq!(c1.cluster_type(), Some(&aws_sdk_kafka::types::ClusterType::Provisioned));
-        assert_eq!(c1.state(), Some(&aws_sdk_kafka::types::ClusterState::Active));
+        assert_eq!(
+            c1.cluster_type(),
+            Some(&aws_sdk_kafka::types::ClusterType::Provisioned)
+        );
+        assert_eq!(
+            c1.state(),
+            Some(&aws_sdk_kafka::types::ClusterState::Active)
+        );
         assert_eq!(
             c1.creation_time(),
-            Some(&aws_smithy_types::DateTime::from_str("2024-01-01T00:00:00Z", aws_smithy_types::date_time::Format::DateTimeWithOffset).unwrap())
+            Some(
+                &aws_smithy_types::DateTime::from_str(
+                    "2024-01-01T00:00:00Z",
+                    aws_smithy_types::date_time::Format::DateTimeWithOffset
+                )
+                .unwrap()
+            )
         );
         assert_eq!(c1.tags().unwrap().get("env"), Some(&"prod".to_string()));
 
@@ -187,7 +202,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(&format!("{BASE}/api/v2/clusters?maxResults=8&nextToken=p2"), ""),
+                request(
+                    &format!("{BASE}/api/v2/clusters?maxResults=8&nextToken=p2"),
+                    "",
+                ),
                 json_response(200, r#"{"clusterInfoList":[{"clusterArn":"arn:c3"}]}"#),
             ),
         ]);
@@ -226,7 +244,10 @@ mod tests {
     #[tokio::test]
     async fn list_nodes_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"), ""),
+            request(
+                &format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"nodeInfoList":[{"nodeARN":"arn:node1","nodeType":"BROKER","instanceType":"kafka.m5.large","addedToClusterTime":"2024-01-01T00:00:00Z","brokerNodeInfo":{"brokerId":1.0,"clientVpcIpAddress":"10.0.0.5","attachedENIId":"eni-1","endpoints":["b-1.cluster:9092"]}},{"nodeARN":"arn:node2"}]}"#,
@@ -239,7 +260,10 @@ mod tests {
         assert_eq!(items.len(), 2);
         let n1 = &items[0];
         assert_eq!(n1.node_arn(), Some("arn:node1"));
-        assert_eq!(n1.node_type(), Some(&aws_sdk_kafka::types::NodeType::Broker));
+        assert_eq!(
+            n1.node_type(),
+            Some(&aws_sdk_kafka::types::NodeType::Broker)
+        );
         assert_eq!(n1.instance_type(), Some("kafka.m5.large"));
         let broker_info = n1.broker_node_info().unwrap();
         assert_eq!(broker_info.broker_id(), Some(1.0));
@@ -279,7 +303,10 @@ mod tests {
     #[tokio::test]
     async fn list_nodes_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes?maxResults=2"), ""),
+            request(
+                &format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes?maxResults=2"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"nodeInfoList":[{"nodeARN":"arn:node1"},{"nodeARN":"arn:node2"}],"nextToken":"page2-token"}"#,
@@ -298,7 +325,10 @@ mod tests {
     async fn list_nodes_pages_through_until_exhausted_when_limit_not_reached() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes?maxResults=10"), ""),
+                request(
+                    &format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes?maxResults=10"),
+                    "",
+                ),
                 json_response(
                     200,
                     r#"{"nodeInfoList":[{"nodeARN":"arn:node1"},{"nodeARN":"arn:node2"}],"nextToken":"p2"}"#,
@@ -306,7 +336,9 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(
-                    &format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes?maxResults=8&nextToken=p2"),
+                    &format!(
+                        "{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes?maxResults=8&nextToken=p2"
+                    ),
                     "",
                 ),
                 json_response(200, r#"{"nodeInfoList":[{"nodeARN":"arn:node3"}]}"#),
@@ -314,7 +346,10 @@ mod tests {
         ]);
         let client = MskClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_nodes(CLUSTER_ARN, Some(10), None).await.unwrap();
+        let (items, token) = client
+            .list_nodes(CLUSTER_ARN, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 3);
         assert_eq!(token, None);
@@ -324,12 +359,18 @@ mod tests {
     #[tokio::test]
     async fn list_nodes_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"), ""),
+            request(
+                &format!("{BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"),
+                "",
+            ),
             json_error_response("NotFoundException", "cluster not found"),
         )]);
         let client = MskClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_nodes(CLUSTER_ARN, None, None).await.unwrap_err();
+        let err = client
+            .list_nodes(CLUSTER_ARN, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

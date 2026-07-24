@@ -29,10 +29,7 @@ pub struct KmsKey {
 }
 
 impl KmsKey {
-    pub fn from_sdk(
-        m: &aws_sdk_kms::types::KeyMetadata,
-        rotation_enabled: Option<bool>,
-    ) -> Self {
+    pub fn from_sdk(m: &aws_sdk_kms::types::KeyMetadata, rotation_enabled: Option<bool>) -> Self {
         Self {
             key_id: m.key_id().to_string(),
             arn: m.arn().map(|s| s.to_string()),
@@ -113,7 +110,10 @@ mod tests {
         assert_eq!(key.key_id, "1234abcd-12ab-34cd-56ef-1234567890ab");
         assert_eq!(
             key.arn,
-            Some("arn:aws:kms:us-east-1:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab".to_string())
+            Some(
+                "arn:aws:kms:us-east-1:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+                    .to_string()
+            )
         );
         assert_eq!(key.description, Some("My test key".to_string()));
         assert_eq!(key.key_state, Some("Enabled".to_string()));

@@ -147,7 +147,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["cognitoUserPools"]["items"].as_array().unwrap().len(), 0);
+        assert_eq!(
+            json["cognitoUserPools"]["items"].as_array().unwrap().len(),
+            0
+        );
         http_client.relaxed_requests_match();
     }
 
@@ -261,7 +264,10 @@ mod tests {
                 json_response(200, r#"{"UserPoolClients":[{"ClientId":"client-err"}]}"#),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"UserPoolId":"pool-1","ClientId":"client-err"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"UserPoolId":"pool-1","ClientId":"client-err"}"#,
+                ),
                 json_error_response("ResourceNotFoundException", "app client not found"),
             ),
         ]);

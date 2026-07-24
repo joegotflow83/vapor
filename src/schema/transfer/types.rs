@@ -60,7 +60,9 @@ mod tests {
     fn test_transfer_server_full() {
         let s = TransferServer {
             server_id: "s-1234567890abcdef0".to_string(),
-            arn: Some("arn:aws:transfer:us-east-1:123456789012:server/s-1234567890abcdef0".to_string()),
+            arn: Some(
+                "arn:aws:transfer:us-east-1:123456789012:server/s-1234567890abcdef0".to_string(),
+            ),
             state: Some("ONLINE".to_string()),
             protocols: vec!["SFTP".to_string(), "FTPS".to_string()],
             endpoint_type: Some("PUBLIC".to_string()),
@@ -73,7 +75,10 @@ mod tests {
         assert_eq!(s.state, Some("ONLINE".to_string()));
         assert_eq!(s.protocols, vec!["SFTP".to_string(), "FTPS".to_string()]);
         assert_eq!(s.endpoint_type, Some("PUBLIC".to_string()));
-        assert_eq!(s.identity_provider_type, Some("SERVICE_MANAGED".to_string()));
+        assert_eq!(
+            s.identity_provider_type,
+            Some("SERVICE_MANAGED".to_string())
+        );
         assert_eq!(s.domain, Some("S3".to_string()));
         assert_eq!(s.user_count, Some(5));
     }
@@ -114,7 +119,10 @@ mod tests {
 
         assert_eq!(u.user_name, "alice");
         assert_eq!(u.server_id, "s-abc");
-        assert_eq!(u.role, Some("arn:aws:iam::123456789012:role/transfer-role".to_string()));
+        assert_eq!(
+            u.role,
+            Some("arn:aws:iam::123456789012:role/transfer-role".to_string())
+        );
         assert_eq!(u.home_directory, Some("/mybucket/alice".to_string()));
         assert_eq!(u.home_directory_type, Some("PATH".to_string()));
     }

@@ -224,7 +224,9 @@ impl PinpointClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://pinpoint.us-east-1.amazonaws.com";
 
@@ -368,7 +370,10 @@ mod tests {
         assert_eq!(c1.name, Some("Campaign One".to_string()));
         assert_eq!(c1.status, Some("EXECUTING".to_string()));
         assert_eq!(c1.creation_date, Some("2024-01-01T00:00:00Z".to_string()));
-        assert_eq!(c1.last_modified_date, Some("2024-01-02T00:00:00Z".to_string()));
+        assert_eq!(
+            c1.last_modified_date,
+            Some("2024-01-02T00:00:00Z".to_string())
+        );
 
         let c2 = &items[1];
         assert_eq!(c2.id, Some("camp-2".to_string()));
@@ -484,7 +489,10 @@ mod tests {
         assert_eq!(s1.name, Some("Segment One".to_string()));
         assert_eq!(s1.segment_type, Some("DIMENSIONAL".to_string()));
         assert_eq!(s1.creation_date, Some("2024-01-01T00:00:00Z".to_string()));
-        assert_eq!(s1.last_modified_date, Some("2024-01-02T00:00:00Z".to_string()));
+        assert_eq!(
+            s1.last_modified_date,
+            Some("2024-01-02T00:00:00Z".to_string())
+        );
 
         // `segment_response_correct_errors` default-fills a missing
         // `SegmentType` by parsing the literal string "no value was set"

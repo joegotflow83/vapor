@@ -46,12 +46,13 @@ impl S3Query {
                             value: t.value().to_string(),
                         })
                         .collect();
-                    let public_access_block = pab_res.unwrap_or(None).map(|cfg| S3PublicAccessBlock {
-                        block_public_acls: cfg.block_public_acls().unwrap_or(false),
-                        ignore_public_acls: cfg.ignore_public_acls().unwrap_or(false),
-                        block_public_policy: cfg.block_public_policy().unwrap_or(false),
-                        restrict_public_buckets: cfg.restrict_public_buckets().unwrap_or(false),
-                    });
+                    let public_access_block =
+                        pab_res.unwrap_or(None).map(|cfg| S3PublicAccessBlock {
+                            block_public_acls: cfg.block_public_acls().unwrap_or(false),
+                            ignore_public_acls: cfg.ignore_public_acls().unwrap_or(false),
+                            block_public_policy: cfg.block_public_policy().unwrap_or(false),
+                            restrict_public_buckets: cfg.restrict_public_buckets().unwrap_or(false),
+                        });
                     S3Bucket {
                         name,
                         creation_date,
@@ -128,7 +129,9 @@ impl S3Query {
 #[cfg(test)]
 mod tests {
     use crate::aws::s3::S3Client;
-    use crate::aws::test_util::{request, s3_error_response, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, s3_error_response, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::S3Query;
@@ -291,7 +294,10 @@ mod tests {
                 &format!("{LIST_BASE}/?x-id=ListBuckets&max-buckets=1&continuation-token=cursor-a"),
                 "",
             ),
-            xml_response(200, "<ListAllMyBucketsResult><Buckets></Buckets></ListAllMyBucketsResult>"),
+            xml_response(
+                200,
+                "<ListAllMyBucketsResult><Buckets></Buckets></ListAllMyBucketsResult>",
+            ),
         )]);
         let schema = build_query_schema(S3Query)
             .data(S3Client::new(&sdk_config(http_client.clone())))
@@ -380,7 +386,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["s3BucketPolicy"], r#"{"Version":"2012-10-17","Statement":[]}"#);
+        assert_eq!(
+            json["s3BucketPolicy"],
+            r#"{"Version":"2012-10-17","Statement":[]}"#
+        );
         http_client.relaxed_requests_match();
     }
 

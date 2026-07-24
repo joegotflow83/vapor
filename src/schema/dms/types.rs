@@ -104,7 +104,9 @@ mod tests {
     fn test_replication_instance_from() {
         let info = DmsReplicationInstanceInfo {
             replication_instance_identifier: Some("my-ri".to_string()),
-            replication_instance_arn: Some("arn:aws:dms:us-east-1:123456789012:ri:my-ri".to_string()),
+            replication_instance_arn: Some(
+                "arn:aws:dms:us-east-1:123456789012:ri:my-ri".to_string(),
+            ),
             replication_instance_class: Some("dms.r5.large".to_string()),
             replication_instance_status: Some("available".to_string()),
             allocated_storage: Some(100),
@@ -116,8 +118,14 @@ mod tests {
             multi_az: Some(false),
         };
         let result = DmsReplicationInstance::from(info);
-        assert_eq!(result.replication_instance_identifier, Some("my-ri".to_string()));
-        assert_eq!(result.replication_instance_class, Some("dms.r5.large".to_string()));
+        assert_eq!(
+            result.replication_instance_identifier,
+            Some("my-ri".to_string())
+        );
+        assert_eq!(
+            result.replication_instance_class,
+            Some("dms.r5.large".to_string())
+        );
         assert_eq!(result.allocated_storage, Some(100));
         assert_eq!(result.publicly_accessible, Some(false));
         assert_eq!(result.vpc_security_groups, vec!["sg-abc123"]);
@@ -187,23 +195,38 @@ mod tests {
     fn test_replication_task_from() {
         let info = DmsReplicationTaskInfo {
             replication_task_identifier: Some("my-task".to_string()),
-            replication_task_arn: Some("arn:aws:dms:us-east-1:123456789012:task:my-task".to_string()),
+            replication_task_arn: Some(
+                "arn:aws:dms:us-east-1:123456789012:task:my-task".to_string(),
+            ),
             status: Some("running".to_string()),
             migration_type: Some("full-load-and-cdc".to_string()),
-            source_endpoint_arn: Some("arn:aws:dms:us-east-1:123456789012:endpoint:source".to_string()),
-            target_endpoint_arn: Some("arn:aws:dms:us-east-1:123456789012:endpoint:target".to_string()),
-            replication_instance_arn: Some("arn:aws:dms:us-east-1:123456789012:ri:my-ri".to_string()),
-            replication_task_creation_date: Some(aws_smithy_types::DateTime::from_secs(1_704_067_200)),
+            source_endpoint_arn: Some(
+                "arn:aws:dms:us-east-1:123456789012:endpoint:source".to_string(),
+            ),
+            target_endpoint_arn: Some(
+                "arn:aws:dms:us-east-1:123456789012:endpoint:target".to_string(),
+            ),
+            replication_instance_arn: Some(
+                "arn:aws:dms:us-east-1:123456789012:ri:my-ri".to_string(),
+            ),
+            replication_task_creation_date: Some(aws_smithy_types::DateTime::from_secs(
+                1_704_067_200,
+            )),
             replication_task_start_date: Some(aws_smithy_types::DateTime::from_secs(1_704_153_600)),
         };
         let result = DmsReplicationTask::from(info);
-        assert_eq!(result.replication_task_identifier, Some("my-task".to_string()));
+        assert_eq!(
+            result.replication_task_identifier,
+            Some("my-task".to_string())
+        );
         assert_eq!(result.status, Some("running".to_string()));
         assert_eq!(result.migration_type, Some("full-load-and-cdc".to_string()));
         assert!(result.source_endpoint_arn.is_some());
         assert!(result.target_endpoint_arn.is_some());
         assert_eq!(
-            result.replication_task_creation_date.map(|d| d.to_rfc3339()),
+            result
+                .replication_task_creation_date
+                .map(|d| d.to_rfc3339()),
             Some("2024-01-01T00:00:00+00:00".to_string())
         );
         assert_eq!(

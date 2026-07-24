@@ -214,7 +214,10 @@ mod tests {
     async fn list_web_acls_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"Scope":"REGIONAL","NextMarker":"cursor-a"}"#),
-            json_response(200, r#"{"WebACLs":[{"Name":"acl3","Id":"id3","ARN":"arn:acl3"}]}"#),
+            json_response(
+                200,
+                r#"{"WebACLs":[{"Name":"acl3","Id":"id3","ARN":"arn:acl3"}]}"#,
+            ),
         )]);
         let client = WafV2Client::new(&sdk_config(http_client.clone()));
 
@@ -261,7 +264,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"Scope":"REGIONAL","Limit":8,"NextMarker":"p2"}"#),
-                json_response(200, r#"{"WebACLs":[{"Name":"acl3","Id":"id3","ARN":"arn:acl3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"WebACLs":[{"Name":"acl3","Id":"id3","ARN":"arn:acl3"}]}"#,
+                ),
             ),
         ]);
         let client = WafV2Client::new(&sdk_config(http_client.clone()));
@@ -378,7 +384,10 @@ mod tests {
     async fn list_ip_sets_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"Scope":"REGIONAL","NextMarker":"cursor-a"}"#),
-            json_response(200, r#"{"IPSets":[{"Name":"ipset3","Id":"id3","ARN":"arn:ipset3"}]}"#),
+            json_response(
+                200,
+                r#"{"IPSets":[{"Name":"ipset3","Id":"id3","ARN":"arn:ipset3"}]}"#,
+            ),
         )]);
         let client = WafV2Client::new(&sdk_config(http_client.clone()));
 
@@ -425,7 +434,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"Scope":"REGIONAL","Limit":8,"NextMarker":"p2"}"#),
-                json_response(200, r#"{"IPSets":[{"Name":"ipset3","Id":"id3","ARN":"arn:ipset3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"IPSets":[{"Name":"ipset3","Id":"id3","ARN":"arn:ipset3"}]}"#,
+                ),
             ),
         ]);
         let client = WafV2Client::new(&sdk_config(http_client.clone()));
@@ -541,7 +553,10 @@ mod tests {
     async fn list_rule_groups_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"Scope":"REGIONAL","NextMarker":"cursor-a"}"#),
-            json_response(200, r#"{"RuleGroups":[{"Name":"rg3","Id":"id3","ARN":"arn:rg3"}]}"#),
+            json_response(
+                200,
+                r#"{"RuleGroups":[{"Name":"rg3","Id":"id3","ARN":"arn:rg3"}]}"#,
+            ),
         )]);
         let client = WafV2Client::new(&sdk_config(http_client.clone()));
 
@@ -588,7 +603,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"Scope":"REGIONAL","Limit":8,"NextMarker":"p2"}"#),
-                json_response(200, r#"{"RuleGroups":[{"Name":"rg3","Id":"id3","ARN":"arn:rg3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"RuleGroups":[{"Name":"rg3","Id":"id3","ARN":"arn:rg3"}]}"#,
+                ),
             ),
         ]);
         let client = WafV2Client::new(&sdk_config(http_client.clone()));

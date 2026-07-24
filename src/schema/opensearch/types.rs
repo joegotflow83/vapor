@@ -79,8 +79,16 @@ impl From<&aws_sdk_opensearch::types::VpcDerivedInfo> for OpenSearchVpcDerivedIn
         Self {
             vpc_id: vpc.vpc_id().map(|s| s.to_string()),
             subnet_ids: vpc.subnet_ids().iter().map(|s| s.to_string()).collect(),
-            availability_zones: vpc.availability_zones().iter().map(|s| s.to_string()).collect(),
-            security_group_ids: vpc.security_group_ids().iter().map(|s| s.to_string()).collect(),
+            availability_zones: vpc
+                .availability_zones()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+            security_group_ids: vpc
+                .security_group_ids()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
         }
     }
 }
@@ -131,9 +139,7 @@ pub struct OpenSearchServiceSoftwareOptions {
     pub optional_deployment: Option<bool>,
 }
 
-impl From<&aws_sdk_opensearch::types::ServiceSoftwareOptions>
-    for OpenSearchServiceSoftwareOptions
-{
+impl From<&aws_sdk_opensearch::types::ServiceSoftwareOptions> for OpenSearchServiceSoftwareOptions {
     fn from(sso: &aws_sdk_opensearch::types::ServiceSoftwareOptions) -> Self {
         Self {
             current_version: sso.current_version().map(|s| s.to_string()),
@@ -186,7 +192,10 @@ impl From<aws_sdk_opensearch::types::DomainStatus> for OpenSearchDomain {
             .endpoints()
             .map(|m| {
                 m.iter()
-                    .map(|(k, v)| Tag { key: k.clone(), value: v.clone() })
+                    .map(|(k, v)| Tag {
+                        key: k.clone(),
+                        value: v.clone(),
+                    })
                     .collect()
             })
             .unwrap_or_default();
@@ -403,8 +412,10 @@ mod tests {
     #[test]
     fn test_opensearch_domain_endpoints_to_tags() {
         let mut endpoints_map = std::collections::HashMap::new();
-        endpoints_map
-            .insert("vpc".to_string(), "vpc-endpoint.us-east-1.es.amazonaws.com".to_string());
+        endpoints_map.insert(
+            "vpc".to_string(),
+            "vpc-endpoint.us-east-1.es.amazonaws.com".to_string(),
+        );
         let ds = aws_sdk_opensearch::types::DomainStatus::builder()
             .domain_id("123456789/vpc-domain")
             .domain_name("vpc-domain")

@@ -1,8 +1,5 @@
 use async_graphql::SimpleObject;
-use aws_sdk_firehose::types::{
-    DeliveryStreamDescription as SdkDeliveryStream,
-    Tag as SdkTag,
-};
+use aws_sdk_firehose::types::{DeliveryStreamDescription as SdkDeliveryStream, Tag as SdkTag};
 use chrono::{DateTime, Utc};
 
 use crate::schema::time::to_utc;
@@ -48,7 +45,10 @@ impl FirehoseDeliveryStream {
             if dest.redshift_destination_description().is_some() {
                 destinations.push("Redshift".to_string());
             }
-            if dest.amazonopensearchservice_destination_description().is_some() {
+            if dest
+                .amazonopensearchservice_destination_description()
+                .is_some()
+            {
                 destinations.push("OpenSearch".to_string());
             }
             if dest.splunk_destination_description().is_some() {

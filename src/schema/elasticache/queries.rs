@@ -45,7 +45,10 @@ impl ElastiCacheQuery {
             .describe_replication_groups(replication_group_id.as_deref(), limit, next_token)
             .await?;
         Ok(Page {
-            items: results.iter().map(ElastiCacheReplicationGroup::from).collect(),
+            items: results
+                .iter()
+                .map(ElastiCacheReplicationGroup::from)
+                .collect(),
             next_token,
         })
     }
@@ -58,7 +61,9 @@ impl ElastiCacheQuery {
         next_token: Option<String>,
     ) -> Result<Page<ElastiCacheSubnetGroup>> {
         let client = ctx.data::<ElastiCacheClient>()?;
-        let (results, next_token) = client.describe_cache_subnet_groups(limit, next_token).await?;
+        let (results, next_token) = client
+            .describe_cache_subnet_groups(limit, next_token)
+            .await?;
         Ok(Page {
             items: results.iter().map(ElastiCacheSubnetGroup::from).collect(),
             next_token,
@@ -69,7 +74,9 @@ impl ElastiCacheQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::elasticache::ElastiCacheClient;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::ElastiCacheQuery;

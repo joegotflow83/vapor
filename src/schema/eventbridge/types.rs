@@ -87,7 +87,10 @@ mod tests {
 
         let bus = EbEventBus::from(&sdk);
         assert_eq!(bus.name, Some("my-bus".to_string()));
-        assert_eq!(bus.arn, Some("arn:aws:events:us-east-1:123456789012:event-bus/my-bus".to_string()));
+        assert_eq!(
+            bus.arn,
+            Some("arn:aws:events:us-east-1:123456789012:event-bus/my-bus".to_string())
+        );
         assert_eq!(bus.description, Some("My event bus".to_string()));
         assert_eq!(bus.policy, Some("{\"Statement\":[]}".to_string()));
         // `EventBus` no longer exposes `created_by` in the SDK; always None.
@@ -121,13 +124,25 @@ mod tests {
 
         let rule = EbRule::from(&sdk);
         assert_eq!(rule.name, Some("my-rule".to_string()));
-        assert_eq!(rule.arn, Some("arn:aws:events:us-east-1:123456789012:rule/my-rule".to_string()));
+        assert_eq!(
+            rule.arn,
+            Some("arn:aws:events:us-east-1:123456789012:rule/my-rule".to_string())
+        );
         assert_eq!(rule.event_bus_name, Some("my-bus".to_string()));
         assert_eq!(rule.state, Some("ENABLED".to_string()));
         assert_eq!(rule.description, Some("My rule description".to_string()));
-        assert_eq!(rule.schedule_expression, Some("rate(5 minutes)".to_string()));
-        assert_eq!(rule.event_pattern, Some("{\"source\":[\"aws.ec2\"]}".to_string()));
-        assert_eq!(rule.role_arn, Some("arn:aws:iam::123456789012:role/MyRole".to_string()));
+        assert_eq!(
+            rule.schedule_expression,
+            Some("rate(5 minutes)".to_string())
+        );
+        assert_eq!(
+            rule.event_pattern,
+            Some("{\"source\":[\"aws.ec2\"]}".to_string())
+        );
+        assert_eq!(
+            rule.role_arn,
+            Some("arn:aws:iam::123456789012:role/MyRole".to_string())
+        );
     }
 
     #[test]
@@ -168,8 +183,14 @@ mod tests {
 
         let target = EbTarget::from(&sdk);
         assert_eq!(target.id, Some("my-target".to_string()));
-        assert_eq!(target.arn, Some("arn:aws:lambda:us-east-1:123456789012:function:my-function".to_string()));
-        assert_eq!(target.role_arn, Some("arn:aws:iam::123456789012:role/MyRole".to_string()));
+        assert_eq!(
+            target.arn,
+            Some("arn:aws:lambda:us-east-1:123456789012:function:my-function".to_string())
+        );
+        assert_eq!(
+            target.role_arn,
+            Some("arn:aws:iam::123456789012:role/MyRole".to_string())
+        );
         assert_eq!(target.input, Some("{\"key\": \"value\"}".to_string()));
         assert_eq!(target.input_path, Some("$.body".to_string()));
     }
@@ -184,7 +205,10 @@ mod tests {
 
         let target = EbTarget::from(&sdk);
         assert_eq!(target.id, Some("simple-target".to_string()));
-        assert_eq!(target.arn, Some("arn:aws:sqs:us-east-1:123456789012:my-queue".to_string()));
+        assert_eq!(
+            target.arn,
+            Some("arn:aws:sqs:us-east-1:123456789012:my-queue".to_string())
+        );
         assert!(target.role_arn.is_none());
         assert!(target.input.is_none());
         assert!(target.input_path.is_none());

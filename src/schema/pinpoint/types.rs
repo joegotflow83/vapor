@@ -19,7 +19,11 @@ impl From<PinpointAppInfo> for PinpointApp {
             name: i.name,
             arn: i.arn,
             creation_date: i.creation_date,
-            tags: i.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: i
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -87,8 +91,14 @@ mod tests {
         let result = PinpointApp::from(info);
         assert_eq!(result.id, Some("app-abc123".to_string()));
         assert_eq!(result.name, Some("MyApp".to_string()));
-        assert_eq!(result.arn, Some("arn:aws:mobiletargeting:us-east-1:123456789:apps/app-abc123".to_string()));
-        assert_eq!(result.creation_date, Some("2024-01-15T10:30:00Z".to_string()));
+        assert_eq!(
+            result.arn,
+            Some("arn:aws:mobiletargeting:us-east-1:123456789:apps/app-abc123".to_string())
+        );
+        assert_eq!(
+            result.creation_date,
+            Some("2024-01-15T10:30:00Z".to_string())
+        );
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "env");
         assert_eq!(result.tags[0].value, "prod");
@@ -124,8 +134,14 @@ mod tests {
         assert_eq!(result.application_id, Some("app-abc123".to_string()));
         assert_eq!(result.name, Some("WelcomeCampaign".to_string()));
         assert_eq!(result.status, Some("SCHEDULED".to_string()));
-        assert_eq!(result.creation_date, Some("2024-02-01T08:00:00Z".to_string()));
-        assert_eq!(result.last_modified_date, Some("2024-02-10T12:00:00Z".to_string()));
+        assert_eq!(
+            result.creation_date,
+            Some("2024-02-01T08:00:00Z".to_string())
+        );
+        assert_eq!(
+            result.last_modified_date,
+            Some("2024-02-10T12:00:00Z".to_string())
+        );
     }
 
     #[test]
@@ -158,8 +174,14 @@ mod tests {
         assert_eq!(result.application_id, Some("app-abc123".to_string()));
         assert_eq!(result.name, Some("HighValueUsers".to_string()));
         assert_eq!(result.segment_type, Some("DIMENSIONAL".to_string()));
-        assert_eq!(result.creation_date, Some("2024-03-01T09:00:00Z".to_string()));
-        assert_eq!(result.last_modified_date, Some("2024-03-15T11:00:00Z".to_string()));
+        assert_eq!(
+            result.creation_date,
+            Some("2024-03-01T09:00:00Z".to_string())
+        );
+        assert_eq!(
+            result.last_modified_date,
+            Some("2024-03-15T11:00:00Z".to_string())
+        );
     }
 
     #[test]

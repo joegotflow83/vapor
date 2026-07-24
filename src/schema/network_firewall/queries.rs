@@ -209,7 +209,9 @@ mod tests {
 
         assert!(!res.errors.is_empty(), "expected an error, got none");
         assert!(
-            res.errors[0].message.contains("Failed to describe firewall"),
+            res.errors[0]
+                .message
+                .contains("Failed to describe firewall"),
             "unexpected error message: {}",
             res.errors[0].message
         );
@@ -242,9 +244,7 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(
-                r#"{ networkFirewallPolicies(limit: 1) { items { name arn } nextToken } }"#,
-            )
+            .execute(r#"{ networkFirewallPolicies(limit: 1) { items { name arn } nextToken } }"#)
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -264,7 +264,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{}"#),
-                json_response(200, r#"{"FirewallPolicies":[{"Name":"pol1","Arn":"arn:1"}]}"#),
+                json_response(
+                    200,
+                    r#"{"FirewallPolicies":[{"Name":"pol1","Arn":"arn:1"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"FirewallPolicyArn":"arn:1"}"#),

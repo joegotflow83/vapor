@@ -12,7 +12,9 @@ pub struct ApiGatewayClient {
 #[cfg(feature = "apigateway")]
 impl ApiGatewayClient {
     pub fn new(config: &SdkConfig) -> Self {
-        Self { rest: aws_sdk_apigateway::Client::new(config) }
+        Self {
+            rest: aws_sdk_apigateway::Client::new(config),
+        }
     }
 
     // ── REST API (v1) ─────────────────────────────────────────────────────────
@@ -146,7 +148,9 @@ impl ApiGatewayClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const APIS: &str = "https://apigateway.us-east-1.amazonaws.com/restapis";
 
@@ -154,7 +158,10 @@ mod tests {
     async fn list_rest_apis_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(APIS, ""),
-            json_response(200, r#"{"item":[{"id":"api1","name":"one"},{"id":"api2","name":"two"}]}"#),
+            json_response(
+                200,
+                r#"{"item":[{"id":"api1","name":"one"},{"id":"api2","name":"two"}]}"#,
+            ),
         )]);
         let client = ApiGatewayClient::new(&sdk_config(http_client.clone()));
 
@@ -256,7 +263,10 @@ mod tests {
     #[tokio::test]
     async fn list_rest_stages_returns_items() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request("https://apigateway.us-east-1.amazonaws.com/restapis/api1/stages", ""),
+            request(
+                "https://apigateway.us-east-1.amazonaws.com/restapis/api1/stages",
+                "",
+            ),
             json_response(
                 200,
                 r#"{"item":[{"stageName":"prod","deploymentId":"dep1"},{"stageName":"dev","deploymentId":"dep2"}]}"#,
@@ -275,12 +285,18 @@ mod tests {
     #[tokio::test]
     async fn list_rest_resources_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request("https://apigateway.us-east-1.amazonaws.com/restapis/api1/resources", ""),
+            request(
+                "https://apigateway.us-east-1.amazonaws.com/restapis/api1/resources",
+                "",
+            ),
             json_response(200, r#"{"item":[{"id":"res1","pathPart":"users"}]}"#),
         )]);
         let client = ApiGatewayClient::new(&sdk_config(http_client.clone()));
 
-        let (resources, token) = client.list_rest_resources("api1", None, None).await.unwrap();
+        let (resources, token) = client
+            .list_rest_resources("api1", None, None)
+            .await
+            .unwrap();
 
         assert_eq!(resources.len(), 1);
         assert_eq!(resources[0].path_part(), Some("users"));
@@ -295,11 +311,17 @@ mod tests {
                 "https://apigateway.us-east-1.amazonaws.com/restapis/api1/resources?limit=1",
                 "",
             ),
-            json_response(200, r#"{"item":[{"id":"res1","pathPart":"users"}],"position":"page2"}"#),
+            json_response(
+                200,
+                r#"{"item":[{"id":"res1","pathPart":"users"}],"position":"page2"}"#,
+            ),
         )]);
         let client = ApiGatewayClient::new(&sdk_config(http_client.clone()));
 
-        let (resources, token) = client.list_rest_resources("api1", Some(1), None).await.unwrap();
+        let (resources, token) = client
+            .list_rest_resources("api1", Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(resources.len(), 1);
         assert_eq!(token, Some("page2".to_string()));
@@ -309,12 +331,18 @@ mod tests {
     #[tokio::test]
     async fn list_rest_deployments_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request("https://apigateway.us-east-1.amazonaws.com/restapis/api1/deployments", ""),
+            request(
+                "https://apigateway.us-east-1.amazonaws.com/restapis/api1/deployments",
+                "",
+            ),
             json_response(200, r#"{"item":[{"id":"dep1"},{"id":"dep2"}]}"#),
         )]);
         let client = ApiGatewayClient::new(&sdk_config(http_client.clone()));
 
-        let (deployments, token) = client.list_rest_deployments("api1", None, None).await.unwrap();
+        let (deployments, token) = client
+            .list_rest_deployments("api1", None, None)
+            .await
+            .unwrap();
 
         assert_eq!(deployments.len(), 2);
         assert_eq!(deployments[0].id(), Some("dep1"));
@@ -333,7 +361,10 @@ mod tests {
         )]);
         let client = ApiGatewayClient::new(&sdk_config(http_client.clone()));
 
-        let (deployments, token) = client.list_rest_deployments("api1", Some(1), None).await.unwrap();
+        let (deployments, token) = client
+            .list_rest_deployments("api1", Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(deployments.len(), 1);
         assert_eq!(token, Some("page2".to_string()));

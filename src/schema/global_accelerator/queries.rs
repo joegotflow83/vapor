@@ -67,7 +67,9 @@ impl GlobalAcceleratorQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::global_accelerator::GlobalAcceleratorClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::GlobalAcceleratorQuery;
@@ -84,7 +86,9 @@ mod tests {
             ),
         )]);
         let schema = build_query_schema(GlobalAcceleratorQuery)
-            .data(GlobalAcceleratorClient::new(&sdk_config(http_client.clone())))
+            .data(GlobalAcceleratorClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema
@@ -114,17 +118,16 @@ mod tests {
     #[tokio::test]
     async fn global_accelerator_listeners_forwards_arn_and_maps_items() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(
-                ENDPOINT,
-                r#"{"AcceleratorArn":"acc-1","MaxResults":1}"#,
-            ),
+            request(ENDPOINT, r#"{"AcceleratorArn":"acc-1","MaxResults":1}"#),
             json_response(
                 200,
                 r#"{"Listeners":[{"ListenerArn":"arn:listener-a","Protocol":"TCP","PortRanges":[{"FromPort":80,"ToPort":80}]}],"NextToken":"page2"}"#,
             ),
         )]);
         let schema = build_query_schema(GlobalAcceleratorQuery)
-            .data(GlobalAcceleratorClient::new(&sdk_config(http_client.clone())))
+            .data(GlobalAcceleratorClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema
@@ -147,17 +150,16 @@ mod tests {
     #[tokio::test]
     async fn global_accelerator_endpoint_groups_forwards_arn_and_maps_items() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(
-                ENDPOINT,
-                r#"{"ListenerArn":"listener-1","MaxResults":1}"#,
-            ),
+            request(ENDPOINT, r#"{"ListenerArn":"listener-1","MaxResults":1}"#),
             json_response(
                 200,
                 r#"{"EndpointGroups":[{"EndpointGroupArn":"arn:group-a","EndpointGroupRegion":"us-east-1","HealthCheckProtocol":"HTTP","TrafficDialPercentage":100.0}],"NextToken":"page2"}"#,
             ),
         )]);
         let schema = build_query_schema(GlobalAcceleratorQuery)
-            .data(GlobalAcceleratorClient::new(&sdk_config(http_client.clone())))
+            .data(GlobalAcceleratorClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema
@@ -173,7 +175,10 @@ mod tests {
         assert_eq!(items[0]["endpointGroupRegion"], "us-east-1");
         assert_eq!(items[0]["healthCheckProtocol"], "HTTP");
         assert_eq!(items[0]["trafficDialPercentage"], 100.0);
-        assert_eq!(json["globalAcceleratorEndpointGroups"]["nextToken"], "page2");
+        assert_eq!(
+            json["globalAcceleratorEndpointGroups"]["nextToken"],
+            "page2"
+        );
         http_client.relaxed_requests_match();
     }
 }

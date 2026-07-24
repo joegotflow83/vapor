@@ -141,9 +141,7 @@ impl From<aws_sdk_autoscaling::types::AutoScalingGroup> for AutoScalingGroup {
             health_check_type: asg.health_check_type().unwrap_or_default().to_string(),
             vpc_zone_identifier: asg.vpc_zone_identifier().map(|s| s.to_string()),
             launch_template: asg.launch_template().map(LaunchTemplateRef::from),
-            launch_configuration_name: asg
-                .launch_configuration_name()
-                .map(|s| s.to_string()),
+            launch_configuration_name: asg.launch_configuration_name().map(|s| s.to_string()),
             instances: asg.instances().iter().map(AsgInstance::from).collect(),
             tags: asg
                 .tags()
@@ -175,10 +173,7 @@ impl From<aws_sdk_autoscaling::types::Activity> for ScalingActivity {
     fn from(a: aws_sdk_autoscaling::types::Activity) -> Self {
         Self {
             activity_id: a.activity_id().unwrap_or_default().to_string(),
-            auto_scaling_group_name: a
-                .auto_scaling_group_name()
-                .unwrap_or_default()
-                .to_string(),
+            auto_scaling_group_name: a.auto_scaling_group_name().unwrap_or_default().to_string(),
             description: a.description().map(|s| s.to_string()),
             status_code: a
                 .status_code()
@@ -255,7 +250,9 @@ mod tests {
             ScalingActivityStatus::Cancelled
         );
         assert_eq!(
-            ScalingActivityStatus::from_sdk(&ScalingActivityStatusCode::WaitingForConnectionDraining),
+            ScalingActivityStatus::from_sdk(
+                &ScalingActivityStatusCode::WaitingForConnectionDraining
+            ),
             ScalingActivityStatus::WaitingForConnectionDraining
         );
         // Unknown variant fallback
@@ -340,7 +337,10 @@ mod tests {
         assert_eq!(result.default_cooldown, 300);
         assert_eq!(result.health_check_type, "EC2");
         assert!(result.launch_template.is_some());
-        assert_eq!(result.launch_template.unwrap().id, Some("lt-abc".to_string()));
+        assert_eq!(
+            result.launch_template.unwrap().id,
+            Some("lt-abc".to_string())
+        );
         assert_eq!(
             result.created_time,
             Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))

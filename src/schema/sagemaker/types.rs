@@ -85,8 +85,16 @@ mod tests {
             arn: Some("arn:aws:sagemaker:us-east-1:123456789012:endpoint/my-endpoint".to_string()),
             status: Some("InService".to_string()),
             endpoint_config_name: Some("my-config".to_string()),
-            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
-            last_modified_time: Some(DateTime::parse_from_rfc3339("2024-01-02T00:00:00Z").unwrap().with_timezone(&Utc)),
+            creation_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
+            last_modified_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-02T00:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
         };
 
         assert_eq!(endpoint.name, "my-endpoint");
@@ -119,10 +127,20 @@ mod tests {
     fn test_sagemaker_training_job_full() {
         let job = SageMakerTrainingJob {
             name: "my-training-job".to_string(),
-            arn: Some("arn:aws:sagemaker:us-east-1:123456789012:training-job/my-training-job".to_string()),
+            arn: Some(
+                "arn:aws:sagemaker:us-east-1:123456789012:training-job/my-training-job".to_string(),
+            ),
             status: Some("Completed".to_string()),
-            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
-            training_end_time: Some(DateTime::parse_from_rfc3339("2024-01-01T02:00:00Z").unwrap().with_timezone(&Utc)),
+            creation_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
+            training_end_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-01T02:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
             instance_type: Some("ml.m5.xlarge".to_string()),
             instance_count: Some(2),
         };
@@ -158,7 +176,11 @@ mod tests {
         let model = SageMakerModel {
             name: "my-model".to_string(),
             arn: Some("arn:aws:sagemaker:us-east-1:123456789012:model/my-model".to_string()),
-            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
+            creation_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
         };
 
         assert_eq!(model.name, "my-model");

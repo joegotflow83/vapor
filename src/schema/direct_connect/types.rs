@@ -25,9 +25,7 @@ impl From<Connection> for DxConnection {
             vlan: if c.vlan() == 0 { None } else { Some(c.vlan()) },
             partner_name: c.partner_name().map(|s| s.to_string()),
             region: c.region().map(|s| s.to_string()),
-            has_logical_redundancy: c
-                .has_logical_redundancy()
-                .map(|s| s.as_str().to_string()),
+            has_logical_redundancy: c.has_logical_redundancy().map(|s| s.as_str().to_string()),
         }
     }
 }
@@ -51,9 +49,7 @@ impl From<VirtualInterface> for DxVirtualInterface {
             virtual_interface_id: v.virtual_interface_id().unwrap_or_default().to_string(),
             virtual_interface_name: v.virtual_interface_name().map(|s| s.to_string()),
             virtual_interface_type: v.virtual_interface_type().map(|s| s.to_string()),
-            virtual_interface_state: v
-                .virtual_interface_state()
-                .map(|s| s.as_str().to_string()),
+            virtual_interface_state: v.virtual_interface_state().map(|s| s.as_str().to_string()),
             connection_id: v.connection_id().map(|s| s.to_string()),
             vlan: if v.vlan() == 0 { None } else { Some(v.vlan()) },
             asn: Some(v.asn() as i32),

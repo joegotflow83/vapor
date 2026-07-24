@@ -79,7 +79,9 @@ impl TranslateQuery {
 
 #[cfg(test)]
 mod tests {
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::aws::translate::TranslateClient;
     use crate::schema::test_util::build_query_schema;
 
@@ -185,7 +187,9 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        let items = json["translateTextTranslationJobs"]["items"].as_array().unwrap();
+        let items = json["translateTextTranslationJobs"]["items"]
+            .as_array()
+            .unwrap();
         assert_eq!(items.len(), 1);
         let j1 = &items[0];
         assert_eq!(j1["jobId"], "j1");

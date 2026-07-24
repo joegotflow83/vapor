@@ -53,10 +53,7 @@ impl From<aws_sdk_controltower::types::EnabledControlSummary> for EnabledControl
             arn: e.arn().map(|s| s.to_string()),
             control_identifier: e.control_identifier().map(|s| s.to_string()),
             target_identifier: e.target_identifier().map(|s| s.to_string()),
-            status_summary: e
-                .status_summary()
-                .cloned()
-                .map(EnabledControlStatus::from),
+            status_summary: e.status_summary().cloned().map(EnabledControlStatus::from),
         }
     }
 }

@@ -39,7 +39,9 @@ impl WorkspacesQuery {
         next_token: Option<String>,
     ) -> Result<Page<WorkspaceDirectory>> {
         let client = ctx.data::<WorkspacesClient>()?;
-        let (items, token) = client.describe_workspace_directories(limit, next_token).await?;
+        let (items, token) = client
+            .describe_workspace_directories(limit, next_token)
+            .await?;
         Ok(Page {
             items: items.into_iter().map(WorkspaceDirectory::from).collect(),
             next_token: token,
@@ -56,7 +58,9 @@ impl WorkspacesQuery {
         next_token: Option<String>,
     ) -> Result<Page<WorkspaceBundle>> {
         let client = ctx.data::<WorkspacesClient>()?;
-        let (items, token) = client.describe_workspace_bundles(owner, limit, next_token).await?;
+        let (items, token) = client
+            .describe_workspace_bundles(owner, limit, next_token)
+            .await?;
         Ok(Page {
             items: items.into_iter().map(WorkspaceBundle::from).collect(),
             next_token: token,
@@ -66,7 +70,9 @@ impl WorkspacesQuery {
 
 #[cfg(test)]
 mod tests {
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::aws::workspaces::WorkspacesClient;
     use crate::schema::test_util::build_query_schema;
 

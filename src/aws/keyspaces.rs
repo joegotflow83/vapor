@@ -92,21 +92,25 @@ impl KeyspacesClient {
         Ok((items, token))
     }
 
-    fn table_info_from_output(output: aws_sdk_keyspaces::operation::get_table::GetTableOutput) -> KeyspacesTableInfo {
-        let capacity_specification = output.capacity_specification().map(|cs| {
-            KeyspacesCapacitySpecInfo {
-                throughput_mode: cs.throughput_mode().as_str().to_string(),
-                read_capacity_units: cs.read_capacity_units(),
-                write_capacity_units: cs.write_capacity_units(),
-            }
-        });
+    fn table_info_from_output(
+        output: aws_sdk_keyspaces::operation::get_table::GetTableOutput,
+    ) -> KeyspacesTableInfo {
+        let capacity_specification =
+            output
+                .capacity_specification()
+                .map(|cs| KeyspacesCapacitySpecInfo {
+                    throughput_mode: cs.throughput_mode().as_str().to_string(),
+                    read_capacity_units: cs.read_capacity_units(),
+                    write_capacity_units: cs.write_capacity_units(),
+                });
 
-        let encryption_specification = output.encryption_specification().map(|es| {
-            KeyspacesEncryptionInfo {
-                type_: es.r#type().as_str().to_string(),
-                kms_key_identifier: es.kms_key_identifier().map(|s| s.to_string()),
-            }
-        });
+        let encryption_specification =
+            output
+                .encryption_specification()
+                .map(|es| KeyspacesEncryptionInfo {
+                    type_: es.r#type().as_str().to_string(),
+                    kms_key_identifier: es.kms_key_identifier().map(|s| s.to_string()),
+                });
 
         let point_in_time_recovery = output
             .point_in_time_recovery()
@@ -216,7 +220,9 @@ impl KeyspacesClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://cassandra.us-east-1.amazonaws.com/";
 
@@ -235,7 +241,10 @@ mod tests {
 
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].keyspace_name, "ks1");
-        assert_eq!(items[0].replication_strategy, Some("SINGLE_REGION".to_string()));
+        assert_eq!(
+            items[0].replication_strategy,
+            Some("SINGLE_REGION".to_string())
+        );
         assert!(items[0].replication_regions.is_empty());
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
@@ -254,7 +263,10 @@ mod tests {
 
         let (items, _) = client.list_keyspaces(None, None).await.unwrap();
 
-        assert_eq!(items[0].replication_strategy, Some("MULTI_REGION".to_string()));
+        assert_eq!(
+            items[0].replication_strategy,
+            Some("MULTI_REGION".to_string())
+        );
         assert_eq!(
             items[0].replication_regions,
             vec!["us-east-1".to_string(), "eu-west-1".to_string()]
@@ -273,7 +285,10 @@ mod tests {
         )]);
         let client = KeyspacesClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_keyspaces(None, Some("cursor-a".to_string())).await.unwrap();
+        let (items, token) = client
+            .list_keyspaces(None, Some("cursor-a".to_string()))
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, None);
@@ -356,7 +371,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"keyspaceName":"mykeyspace","tableName":"t1","resourceArn":"arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/t1","status":"ACTIVE"}"#,
@@ -378,14 +396,20 @@ mod tests {
     async fn list_tables_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"nextToken":"cursor-a","keyspaceName":"mykeyspace"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"nextToken":"cursor-a","keyspaceName":"mykeyspace"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"tables":[{"keyspaceName":"mykeyspace","tableName":"t2","resourceArn":"arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/t2"}]}"#,
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"keyspaceName":"mykeyspace","tableName":"t2"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"keyspaceName":"mykeyspace","tableName":"t2"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"keyspaceName":"mykeyspace","tableName":"t2","resourceArn":"arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/t2"}"#,
@@ -415,7 +439,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"keyspaceName":"mykeyspace","tableName":"t1","resourceArn":"arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/t1"}"#,
@@ -424,7 +451,10 @@ mod tests {
         ]);
         let client = KeyspacesClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_tables("mykeyspace", Some(1), None).await.unwrap();
+        let (items, token) = client
+            .list_tables("mykeyspace", Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, Some("cursor-b".to_string()));
@@ -439,7 +469,10 @@ mod tests {
         )]);
         let client = KeyspacesClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_tables("mykeyspace", None, None).await.unwrap_err();
+        let err = client
+            .list_tables("mykeyspace", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -462,13 +495,19 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#,
+                ),
                 json_error_response("InternalServerException", "internal error"),
             ),
         ]);
         let client = KeyspacesClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_tables("mykeyspace", None, None).await.unwrap_err();
+        let err = client
+            .list_tables("mykeyspace", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -483,7 +522,10 @@ mod tests {
     #[tokio::test]
     async fn get_table_returns_full_detail_when_found() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"keyspaceName":"mykeyspace","tableName":"mytable"}"#),
+            request(
+                ENDPOINT,
+                r#"{"keyspaceName":"mykeyspace","tableName":"mytable"}"#,
+            ),
             json_response(
                 200,
                 r#"{"keyspaceName":"mykeyspace","tableName":"mytable","resourceArn":"arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/mytable","status":"ACTIVE","creationTimestamp":1704067200,"capacitySpecification":{"throughputMode":"PROVISIONED","readCapacityUnits":100,"writeCapacityUnits":50},"encryptionSpecification":{"type":"CUSTOMER_MANAGED_KMS_KEY","kmsKeyIdentifier":"arn:aws:kms:us-east-1:123456789012:key/abc123"},"pointInTimeRecovery":{"status":"ENABLED"}}"#,
@@ -491,7 +533,11 @@ mod tests {
         )]);
         let client = KeyspacesClient::new(&sdk_config(http_client.clone()));
 
-        let table = client.get_table("mykeyspace", "mytable").await.unwrap().unwrap();
+        let table = client
+            .get_table("mykeyspace", "mytable")
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(table.keyspace_name, "mykeyspace");
         assert_eq!(table.table_name, "mytable");
@@ -584,4 +630,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

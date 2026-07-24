@@ -5,9 +5,9 @@ use aws_sdk_lambda::types::{
     AliasConfiguration, EventSourceMappingConfiguration, FunctionConfiguration, LayersListItem,
 };
 #[cfg(feature = "lambda")]
-use std::collections::HashMap;
-#[cfg(feature = "lambda")]
 use aws_smithy_types::error::metadata::ProvideErrorMetadata;
+#[cfg(feature = "lambda")]
+use std::collections::HashMap;
 
 #[cfg(feature = "lambda")]
 use crate::error::VaporError;
@@ -352,10 +352,7 @@ mod tests {
         )]);
         let client = LambdaClient::new(&sdk_config(http_client.clone()));
 
-        let err = client
-            .list_aliases("my-fn", None, None)
-            .await
-            .unwrap_err();
+        let err = client.list_aliases("my-fn", None, None).await.unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

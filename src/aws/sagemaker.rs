@@ -136,7 +136,10 @@ impl SageMakerClient {
         Ok((jobs, token))
     }
 
-    pub async fn describe_endpoint(&self, name: &str) -> Result<DescribeEndpointOutput, VaporError> {
+    pub async fn describe_endpoint(
+        &self,
+        name: &str,
+    ) -> Result<DescribeEndpointOutput, VaporError> {
         self.inner
             .describe_endpoint()
             .endpoint_name(name)
@@ -442,7 +445,10 @@ mod tests {
         // (a second `ReplayEvent` is required here, unlike a file where a
         // missing name is genuinely skippable).
         let http_client = StaticReplayClient::new(vec![
-            ReplayEvent::new(request(BASE, r#"{}"#), json_response(200, r#"{"Endpoints":[{}]}"#)),
+            ReplayEvent::new(
+                request(BASE, r#"{}"#),
+                json_response(200, r#"{"Endpoints":[{}]}"#),
+            ),
             ReplayEvent::new(
                 request(BASE, r#"{"EndpointName":""}"#),
                 json_response(
@@ -504,7 +510,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{}"#),
-                json_response(200, r#"{"TrainingJobSummaries":[{"TrainingJobName":"job-1"}]}"#),
+                json_response(
+                    200,
+                    r#"{"TrainingJobSummaries":[{"TrainingJobName":"job-1"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"TrainingJobName":"job-1"}"#),
@@ -524,7 +533,10 @@ mod tests {
             items[0].training_job_arn(),
             Some("arn:aws:sagemaker:us-east-1:111111111111:training-job/job-1")
         );
-        assert_eq!(items[0].training_job_status(), Some(&TrainingJobStatus::Completed));
+        assert_eq!(
+            items[0].training_job_status(),
+            Some(&TrainingJobStatus::Completed)
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -585,7 +597,10 @@ mod tests {
         ]);
         let client = SageMakerClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_training_jobs(None, Some(1), None).await.unwrap();
+        let (items, token) = client
+            .list_training_jobs(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -604,7 +619,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"NextToken":"p2","MaxResults":8}"#),
-                json_response(200, r#"{"TrainingJobSummaries":[{"TrainingJobName":"job-3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"TrainingJobSummaries":[{"TrainingJobName":"job-3"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"TrainingJobName":"job-1"}"#),
@@ -630,7 +648,10 @@ mod tests {
         ]);
         let client = SageMakerClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_training_jobs(None, Some(10), None).await.unwrap();
+        let (items, token) = client
+            .list_training_jobs(None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 3);
         assert_eq!(token, None);
@@ -645,7 +666,10 @@ mod tests {
         )]);
         let client = SageMakerClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_training_jobs(None, None, None).await.unwrap_err();
+        let err = client
+            .list_training_jobs(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -665,7 +689,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{}"#),
-                json_response(200, r#"{"TrainingJobSummaries":[{"TrainingJobName":"job-1"}]}"#),
+                json_response(
+                    200,
+                    r#"{"TrainingJobSummaries":[{"TrainingJobName":"job-1"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"TrainingJobName":"job-1"}"#),
@@ -695,7 +722,10 @@ mod tests {
         let output = client.describe_training_job("job-1").await.unwrap();
 
         assert_eq!(output.training_job_name(), Some("job-1"));
-        assert_eq!(output.training_job_status(), Some(&TrainingJobStatus::Failed));
+        assert_eq!(
+            output.training_job_status(),
+            Some(&TrainingJobStatus::Failed)
+        );
         assert_eq!(output.failure_reason(), Some("boom"));
         http_client.relaxed_requests_match();
     }

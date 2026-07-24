@@ -199,8 +199,13 @@ impl SesClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_sesv2::types::EmailTemplateMetadata>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_sesv2::types::EmailTemplateMetadata>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -240,8 +245,13 @@ impl SesClient {
         end_date: Option<String>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_sesv2::types::SuppressedDestinationSummary>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_sesv2::types::SuppressedDestinationSummary>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let reason_vals: Option<Vec<aws_sdk_sesv2::types::SuppressionListReason>> =
             reasons.as_ref().map(|rs| {
                 rs.iter()
@@ -357,7 +367,10 @@ mod tests {
         // `ListEmailIdentities` uses literal PascalCase query keys
         // (`NextToken`/`PageSize`), not kebab-case like quicksight.rs.
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/v2/email/identities?NextToken=cursor-a"), ""),
+            request(
+                &format!("{BASE}/v2/email/identities?NextToken=cursor-a"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"EmailIdentities":[{"IdentityName":"carol@example.com"}]}"#,
@@ -470,7 +483,10 @@ mod tests {
     #[tokio::test]
     async fn get_email_identity_returns_none_on_not_found() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/v2/email/identities/missing.example.com"), ""),
+            request(
+                &format!("{BASE}/v2/email/identities/missing.example.com"),
+                "",
+            ),
             json_error_response("NotFoundException", "no such identity"),
         )]);
         let client = SesClient::new(&sdk_config(http_client.clone()));
@@ -507,20 +523,14 @@ mod tests {
                 json_response(200, r#"{"ConfigurationSets":["set-a","set-b"]}"#),
             ),
             ReplayEvent::new(
-                request(
-                    &format!("{BASE}/v2/email/configuration-sets/set-a"),
-                    "",
-                ),
+                request(&format!("{BASE}/v2/email/configuration-sets/set-a"), ""),
                 json_response(
                     200,
                     r#"{"SendingOptions":{"SendingEnabled":true},"Tags":[{"Key":"k","Value":"v"}]}"#,
                 ),
             ),
             ReplayEvent::new(
-                request(
-                    &format!("{BASE}/v2/email/configuration-sets/set-b"),
-                    "",
-                ),
+                request(&format!("{BASE}/v2/email/configuration-sets/set-b"), ""),
                 json_response(200, r#"{"SendingOptions":{"SendingEnabled":false}}"#),
             ),
         ]);
@@ -547,26 +557,23 @@ mod tests {
         // `limit(1)` is satisfied by page 1, so only 1 fan-out call happens.
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/v2/email/configuration-sets?PageSize=1"), ""),
+                request(
+                    &format!("{BASE}/v2/email/configuration-sets?PageSize=1"),
+                    "",
+                ),
                 json_response(
                     200,
                     r#"{"ConfigurationSets":["set-a"],"NextToken":"cursor-b"}"#,
                 ),
             ),
             ReplayEvent::new(
-                request(
-                    &format!("{BASE}/v2/email/configuration-sets/set-a"),
-                    "",
-                ),
+                request(&format!("{BASE}/v2/email/configuration-sets/set-a"), ""),
                 json_response(200, r#"{"SendingOptions":{"SendingEnabled":true}}"#),
             ),
         ]);
         let client = SesClient::new(&sdk_config(http_client.clone()));
 
-        let (items, _token) = client
-            .list_configuration_sets(Some(1), None)
-            .await
-            .unwrap();
+        let (items, _token) = client.list_configuration_sets(Some(1), None).await.unwrap();
 
         assert_eq!(items.len(), 1);
         http_client.relaxed_requests_match();
@@ -599,10 +606,7 @@ mod tests {
                 json_response(200, r#"{"ConfigurationSets":["set-a"]}"#),
             ),
             ReplayEvent::new(
-                request(
-                    &format!("{BASE}/v2/email/configuration-sets/set-a"),
-                    "",
-                ),
+                request(&format!("{BASE}/v2/email/configuration-sets/set-a"), ""),
                 json_error_response("BadRequestException", "no such configuration set"),
             ),
         ]);
@@ -865,4 +869,3 @@ mod tests {
         assert!(format!("{err:?}").contains("account lookup failed"));
     }
 }
-

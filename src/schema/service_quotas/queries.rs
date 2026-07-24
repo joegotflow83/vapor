@@ -88,7 +88,10 @@ mod tests {
         let items = &json["serviceQuotas"]["items"];
         assert_eq!(items[0]["serviceCode"], "ec2");
         assert_eq!(items[0]["quotaCode"], "L-1216C47A");
-        assert_eq!(items[0]["quotaName"], "Running On-Demand Standard instances");
+        assert_eq!(
+            items[0]["quotaName"],
+            "Running On-Demand Standard instances"
+        );
         assert_eq!(items[0]["value"], 32.0);
         assert_eq!(items[0]["unit"], "None");
         assert_eq!(items[0]["adjustable"], true);

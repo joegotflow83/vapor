@@ -1,7 +1,7 @@
 use aws_config::SdkConfig;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 #[derive(Debug)]
 pub struct PollyVoiceInfo {
@@ -80,27 +80,26 @@ impl PollyClient {
             if let Some(ref tok) = token {
                 req = req.next_token(tok);
             }
-            let output = req
-                .send()
-                .await
-                .map_err(crate::error::sdk_err)?;
+            let output = req.send().await.map_err(crate::error::sdk_err)?;
 
-            voices.extend(output.voices().iter().map(|v| PollyVoiceInfo {
-                voice_id: v.id().map(|id| id.as_str().to_string()),
-                language_code: v.language_code().map(|lc| lc.as_str().to_string()),
-                language_name: v.language_name().map(|s| s.to_string()),
-                name: v.name().map(|s| s.to_string()),
-                gender: v.gender().map(|g| g.as_str().to_string()),
-                additional_language_codes: v
-                    .additional_language_codes()
-                    .iter()
-                    .map(|lc| lc.as_str().to_string())
-                    .collect(),
-                supported_engines: v
-                    .supported_engines()
-                    .iter()
-                    .map(|e| e.as_str().to_string())
-                    .collect(),
+            voices.extend(output.voices().iter().map(|v| {
+                PollyVoiceInfo {
+                    voice_id: v.id().map(|id| id.as_str().to_string()),
+                    language_code: v.language_code().map(|lc| lc.as_str().to_string()),
+                    language_name: v.language_name().map(|s| s.to_string()),
+                    name: v.name().map(|s| s.to_string()),
+                    gender: v.gender().map(|g| g.as_str().to_string()),
+                    additional_language_codes: v
+                        .additional_language_codes()
+                        .iter()
+                        .map(|lc| lc.as_str().to_string())
+                        .collect(),
+                    supported_engines: v
+                        .supported_engines()
+                        .iter()
+                        .map(|e| e.as_str().to_string())
+                        .collect(),
+                }
             }));
 
             token = match output.next_token() {
@@ -138,10 +137,7 @@ impl PollyClient {
             if let Some(ref tok) = token {
                 req = req.next_token(tok);
             }
-            let output = req
-                .send()
-                .await
-                .map_err(crate::error::sdk_err)?;
+            let output = req.send().await.map_err(crate::error::sdk_err)?;
 
             for lex in output.lexicons() {
                 let attrs = lex.attributes();
@@ -232,8 +228,10 @@ impl PollyClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use aws_smithy_types::DateTime;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
 
     const BASE: &str = "https://polly.us-east-1.amazonaws.com";
 
@@ -248,7 +246,10 @@ mod tests {
         )]);
         let client = PollyClient::new(&sdk_config(http_client.clone()));
 
-        let (voices, token) = client.describe_voices(None, None, None, None).await.unwrap();
+        let (voices, token) = client
+            .describe_voices(None, None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(voices.len(), 2);
         let v1 = &voices[0];
@@ -278,13 +279,24 @@ mod tests {
         // Query-param order (`Engine` before `LanguageCode`) read straight
         // from the pinned SDK's `describe_voices`'s `uri_query` fn.
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/v1/voices?Engine=neural&LanguageCode=en-US"), ""),
-            json_response(200, r#"{"Voices":[{"Id":"Joanna","LanguageCode":"en-US"}]}"#),
+            request(
+                &format!("{BASE}/v1/voices?Engine=neural&LanguageCode=en-US"),
+                "",
+            ),
+            json_response(
+                200,
+                r#"{"Voices":[{"Id":"Joanna","LanguageCode":"en-US"}]}"#,
+            ),
         )]);
         let client = PollyClient::new(&sdk_config(http_client.clone()));
 
         let (voices, token) = client
-            .describe_voices(Some("en-US".to_string()), Some("neural".to_string()), None, None)
+            .describe_voices(
+                Some("en-US".to_string()),
+                Some("neural".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -329,7 +341,10 @@ mod tests {
         )]);
         let client = PollyClient::new(&sdk_config(http_client.clone()));
 
-        let (voices, token) = client.describe_voices(None, None, Some(2), None).await.unwrap();
+        let (voices, token) = client
+            .describe_voices(None, None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(voices.len(), 2);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -341,7 +356,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{BASE}/v1/voices"), ""),
-                json_response(200, r#"{"Voices":[{"Id":"v1"},{"Id":"v2"}],"NextToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"Voices":[{"Id":"v1"},{"Id":"v2"}],"NextToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/v1/voices?NextToken=p2"), ""),
@@ -350,7 +368,10 @@ mod tests {
         ]);
         let client = PollyClient::new(&sdk_config(http_client.clone()));
 
-        let (voices, token) = client.describe_voices(None, None, Some(10), None).await.unwrap();
+        let (voices, token) = client
+            .describe_voices(None, None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(voices.len(), 3);
         assert_eq!(token, None);
@@ -368,7 +389,10 @@ mod tests {
         )]);
         let client = PollyClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_voices(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_voices(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -463,7 +487,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{BASE}/v1/lexicons"), ""),
-                json_response(200, r#"{"Lexicons":[{"Name":"lex1"},{"Name":"lex2"}],"NextToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"Lexicons":[{"Name":"lex1"},{"Name":"lex2"}],"NextToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/v1/lexicons?NextToken=p2"), ""),
@@ -540,7 +567,10 @@ mod tests {
     async fn list_speech_synthesis_tasks_filters_by_status() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{BASE}/v1/synthesisTasks?Status=inProgress"), ""),
-            json_response(200, r#"{"SynthesisTasks":[{"TaskId":"task-5","TaskStatus":"inProgress"}]}"#),
+            json_response(
+                200,
+                r#"{"SynthesisTasks":[{"TaskId":"task-5","TaskStatus":"inProgress"}]}"#,
+            ),
         )]);
         let client = PollyClient::new(&sdk_config(http_client.clone()));
 
@@ -610,7 +640,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(&format!("{BASE}/v1/synthesisTasks?MaxResults=8&NextToken=p2"), ""),
+                request(
+                    &format!("{BASE}/v1/synthesisTasks?MaxResults=8&NextToken=p2"),
+                    "",
+                ),
                 json_response(200, r#"{"SynthesisTasks":[{"TaskId":"task-3"}]}"#),
             ),
         ]);
@@ -649,4 +682,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

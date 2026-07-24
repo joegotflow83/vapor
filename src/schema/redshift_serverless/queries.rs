@@ -53,7 +53,9 @@ impl RedshiftServerlessQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     // Crate name (`aws-sdk-redshiftserverless`) doesn't match the endpoint
@@ -74,7 +76,9 @@ mod tests {
             ),
         )]);
         let schema = build_query_schema(RedshiftServerlessQuery)
-            .data(RedshiftServerlessClient::new(&sdk_config(http_client.clone())))
+            .data(RedshiftServerlessClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema
@@ -107,7 +111,9 @@ mod tests {
             ),
         )]);
         let schema = build_query_schema(RedshiftServerlessQuery)
-            .data(RedshiftServerlessClient::new(&sdk_config(http_client.clone())))
+            .data(RedshiftServerlessClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema

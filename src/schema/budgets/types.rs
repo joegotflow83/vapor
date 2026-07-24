@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
 use chrono::{DateTime, Utc};
 
-use crate::aws::budgets::{BudgetAmountInfo, BudgetCalculatedSpendInfo, BudgetInfo, BudgetNotificationInfo};
+use crate::aws::budgets::{
+    BudgetAmountInfo, BudgetCalculatedSpendInfo, BudgetInfo, BudgetNotificationInfo,
+};
 use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
@@ -85,7 +87,9 @@ impl From<BudgetNotificationInfo> for BudgetNotification {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::budgets::{BudgetAmountInfo, BudgetCalculatedSpendInfo, BudgetInfo, BudgetNotificationInfo};
+    use crate::aws::budgets::{
+        BudgetAmountInfo, BudgetCalculatedSpendInfo, BudgetInfo, BudgetNotificationInfo,
+    };
 
     #[test]
     fn test_budget_amount_from() {

@@ -1,7 +1,9 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::appconfig::AppConfigClient;
-use crate::schema::appconfig::types::{AppConfigApplication, AppConfigEnvironment, AppConfigProfile};
+use crate::schema::appconfig::types::{
+    AppConfigApplication, AppConfigEnvironment, AppConfigProfile,
+};
 use crate::schema::pagination::Page;
 
 #[derive(Default)]
@@ -71,7 +73,9 @@ impl AppConfigQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::appconfig::AppConfigClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::AppConfigQuery;
@@ -92,7 +96,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute("{ appconfigApplications(limit: 1) { items { id name description } nextToken } }")
+            .execute(
+                "{ appconfigApplications(limit: 1) { items { id name description } nextToken } }",
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);

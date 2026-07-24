@@ -34,7 +34,11 @@ impl From<LightsailInstanceInfo> for LightsailInstance {
             private_ip_address: i.private_ip_address,
             location: i.location,
             created_at: to_utc(i.created_at.as_ref()),
-            tags: i.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: i
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -78,7 +82,11 @@ impl From<LightsailDatabaseInfo> for LightsailDatabase {
             master_username: d.master_username,
             master_endpoint: d.master_endpoint.map(LightsailEndpoint::from),
             created_at: to_utc(d.created_at.as_ref()),
-            tags: d.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: d
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -153,11 +161,11 @@ impl From<LightsailStaticIpInfo> for LightsailStaticIp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use aws_smithy_types::DateTime as SmithyDateTime;
     use crate::aws::lightsail::{
         LightsailDatabaseInfo, LightsailEndpointInfo, LightsailInstanceHealthInfo,
         LightsailInstanceInfo, LightsailLoadBalancerInfo, LightsailStaticIpInfo,
     };
+    use aws_smithy_types::DateTime as SmithyDateTime;
 
     #[test]
     fn test_instance_from() {

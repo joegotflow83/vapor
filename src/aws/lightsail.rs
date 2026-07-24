@@ -223,9 +223,7 @@ impl LightsailClient {
                         .iter()
                         .map(|h| LightsailInstanceHealthInfo {
                             instance_name: h.instance_name().map(|s| s.to_string()),
-                            instance_health: h
-                                .instance_health()
-                                .map(|s| s.as_str().to_string()),
+                            instance_health: h.instance_health().map(|s| s.as_str().to_string()),
                         })
                         .collect(),
                     created_at: lb.created_at().cloned(),
@@ -288,7 +286,9 @@ impl LightsailClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use aws_smithy_types::DateTime;
 
     const ENDPOINT: &str = "https://lightsail.us-east-1.amazonaws.com/";
@@ -398,7 +398,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"instances":[{"name":"instance-1"}],"nextPageToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"instances":[{"name":"instance-1"}],"nextPageToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"pageToken":"p2"}"#),
@@ -462,7 +465,10 @@ mod tests {
         assert_eq!(db.master_username, Some("dbadmin".to_string()));
         let endpoint = db.master_endpoint.as_ref().unwrap();
         assert_eq!(endpoint.port, 3306);
-        assert_eq!(endpoint.address, "my-db.abcdefg.us-east-1.rds.amazonaws.com");
+        assert_eq!(
+            endpoint.address,
+            "my-db.abcdefg.us-east-1.rds.amazonaws.com"
+        );
         assert_eq!(db.created_at, Some(DateTime::from_secs(1700000000)));
         assert_eq!(db.tags, vec![("Env".to_string(), "prod".to_string())]);
         assert_eq!(token, None);
@@ -523,7 +529,10 @@ mod tests {
         )]);
         let client = LightsailClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.get_relational_databases(Some(2), None).await.unwrap();
+        let (items, token) = client
+            .get_relational_databases(Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].name, Some("db-1".to_string()));
@@ -537,7 +546,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"relationalDatabases":[{"name":"db-1"}],"nextPageToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"relationalDatabases":[{"name":"db-1"}],"nextPageToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"pageToken":"p2"}"#),
@@ -546,7 +558,10 @@ mod tests {
         ]);
         let client = LightsailClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.get_relational_databases(Some(10), None).await.unwrap();
+        let (items, token) = client
+            .get_relational_databases(Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].name, Some("db-1".to_string()));
@@ -563,7 +578,10 @@ mod tests {
         )]);
         let client = LightsailClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.get_relational_databases(None, None).await.unwrap_err();
+        let err = client
+            .get_relational_databases(None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -600,13 +618,22 @@ mod tests {
             lb.arn,
             Some("arn:aws:lightsail:us-east-1:123456789012:LoadBalancer/lb-id".to_string())
         );
-        assert_eq!(lb.dns_name, Some("my-lb.abcdefg.us-east-1.elb.amazonaws.com".to_string()));
+        assert_eq!(
+            lb.dns_name,
+            Some("my-lb.abcdefg.us-east-1.elb.amazonaws.com".to_string())
+        );
         assert_eq!(lb.state, Some("active_impaired".to_string()));
         assert_eq!(lb.protocol, Some("HTTP_HTTPS".to_string()));
         assert_eq!(lb.instance_port, Some(80));
         assert_eq!(lb.instance_health_summary.len(), 1);
-        assert_eq!(lb.instance_health_summary[0].instance_name, Some("my-instance".to_string()));
-        assert_eq!(lb.instance_health_summary[0].instance_health, Some("healthy".to_string()));
+        assert_eq!(
+            lb.instance_health_summary[0].instance_name,
+            Some("my-instance".to_string())
+        );
+        assert_eq!(
+            lb.instance_health_summary[0].instance_health,
+            Some("healthy".to_string())
+        );
         assert_eq!(lb.created_at, Some(DateTime::from_secs(1700000000)));
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
@@ -679,7 +706,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"loadBalancers":[{"name":"lb-1"}],"nextPageToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"loadBalancers":[{"name":"lb-1"}],"nextPageToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"pageToken":"p2"}"#),
@@ -811,7 +841,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"staticIps":[{"name":"ip-1"}],"nextPageToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"staticIps":[{"name":"ip-1"}],"nextPageToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"pageToken":"p2"}"#),

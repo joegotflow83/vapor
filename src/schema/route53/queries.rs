@@ -39,7 +39,10 @@ impl Route53Query {
             .list_resource_record_sets(&hosted_zone_id, limit, next_token)
             .await?;
         Ok(Page {
-            items: records.into_iter().map(R53ResourceRecordSet::from).collect(),
+            items: records
+                .into_iter()
+                .map(R53ResourceRecordSet::from)
+                .collect(),
             next_token,
         })
     }
@@ -64,7 +67,9 @@ impl Route53Query {
 #[cfg(test)]
 mod tests {
     use crate::aws::route53::Route53Client;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::Route53Query;

@@ -1,7 +1,10 @@
 #[cfg(feature = "iam")]
 use aws_config::SdkConfig;
 #[cfg(feature = "iam")]
-use aws_sdk_iam::types::{AccessKeyLastUsed, AccessKeyMetadata, AttachedPolicy, Group, MfaDevice, PasswordPolicy, Policy, PolicyVersion, Role, User};
+use aws_sdk_iam::types::{
+    AccessKeyLastUsed, AccessKeyMetadata, AttachedPolicy, Group, MfaDevice, PasswordPolicy, Policy,
+    PolicyVersion, Role, User,
+};
 
 #[cfg(feature = "iam")]
 use crate::error::VaporError;
@@ -263,9 +266,13 @@ impl IamClient {
             .await
             .map_err(crate::error::sdk_err)?;
 
-        output.policy_version().cloned().ok_or_else(|| {
-            VaporError::AwsSdk { code: None, message: format!("No policy version found for {policy_arn}") }
-        })
+        output
+            .policy_version()
+            .cloned()
+            .ok_or_else(|| VaporError::AwsSdk {
+                code: None,
+                message: format!("No policy version found for {policy_arn}"),
+            })
     }
 
     /// List access keys for an IAM user, optionally capped at `limit`
@@ -324,9 +331,7 @@ impl IamClient {
     /// Fetch the account-wide IAM password policy.
     /// Returns `None` if no custom password policy has been configured
     /// (AWS then applies its own minimum defaults).
-    pub async fn get_account_password_policy(
-        &self,
-    ) -> Result<Option<PasswordPolicy>, VaporError> {
+    pub async fn get_account_password_policy(&self) -> Result<Option<PasswordPolicy>, VaporError> {
         match self.inner.get_account_password_policy().send().await {
             Ok(output) => Ok(output.password_policy().cloned()),
             Err(e) => {
@@ -437,7 +442,9 @@ impl IamClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     // IAM is a global service: a single endpoint regardless of configured
     // region (verified against pinned `aws-sdk-iam` 1.113.0's
@@ -449,7 +456,10 @@ mod tests {
     #[tokio::test]
     async fn list_roles_happy_path_with_path_prefix() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListRoles&Version=2010-05-08&PathPrefix=%2Fapp%2F"),
+            request(
+                ENDPOINT,
+                "Action=ListRoles&Version=2010-05-08&PathPrefix=%2Fapp%2F",
+            ),
             xml_response(
                 200,
                 "<ListRolesResponse><ListRolesResult><Roles><member>\
@@ -474,7 +484,10 @@ mod tests {
     #[tokio::test]
     async fn list_roles_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListRoles&Version=2010-05-08&Marker=cursor-a"),
+            request(
+                ENDPOINT,
+                "Action=ListRoles&Version=2010-05-08&Marker=cursor-a",
+            ),
             xml_response(
                 200,
                 "<ListRolesResponse><ListRolesResult><Roles></Roles>\
@@ -532,7 +545,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, "Action=ListRoles&Version=2010-05-08&Marker=p2&MaxItems=99"),
+                request(
+                    ENDPOINT,
+                    "Action=ListRoles&Version=2010-05-08&Marker=p2&MaxItems=99",
+                ),
                 xml_response(
                     200,
                     "<ListRolesResponse><ListRolesResult><Roles>\
@@ -599,7 +615,10 @@ mod tests {
         // `scope` maps any value other than the literal "AWS"/"All" strings
         // to `PolicyScopeType::Local` (see the wrapper's `match scope`).
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListPolicies&Version=2010-05-08&Scope=Local"),
+            request(
+                ENDPOINT,
+                "Action=ListPolicies&Version=2010-05-08&Scope=Local",
+            ),
             xml_response(
                 200,
                 "<ListPoliciesResponse><ListPoliciesResult><Policies></Policies>\
@@ -620,7 +639,10 @@ mod tests {
     #[tokio::test]
     async fn list_policies_capped_at_limit_aws_side_enforced() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListPolicies&Version=2010-05-08&Scope=All&MaxItems=1"),
+            request(
+                ENDPOINT,
+                "Action=ListPolicies&Version=2010-05-08&Scope=All&MaxItems=1",
+            ),
             xml_response(
                 200,
                 "<ListPoliciesResponse><ListPoliciesResult><Policies><member>\
@@ -631,7 +653,10 @@ mod tests {
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let (policies, marker) = client.list_policies("All", None, Some(1), None).await.unwrap();
+        let (policies, marker) = client
+            .list_policies("All", None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(policies.len(), 1);
         assert_eq!(marker, Some("p2".to_string()));
@@ -646,7 +671,10 @@ mod tests {
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_policies("AWS", None, None, None).await.unwrap_err();
+        let err = client
+            .list_policies("AWS", None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("ServiceFailure".to_string())),
@@ -681,7 +709,10 @@ mod tests {
     #[tokio::test]
     async fn list_users_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListUsers&Version=2010-05-08&Marker=cursor-a"),
+            request(
+                ENDPOINT,
+                "Action=ListUsers&Version=2010-05-08&Marker=cursor-a",
+            ),
             xml_response(
                 200,
                 "<ListUsersResponse><ListUsersResult><Users></Users>\
@@ -765,7 +796,10 @@ mod tests {
     #[tokio::test]
     async fn list_groups_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListGroups&Version=2010-05-08&Marker=cursor-a"),
+            request(
+                ENDPOINT,
+                "Action=ListGroups&Version=2010-05-08&Marker=cursor-a",
+            ),
             xml_response(
                 200,
                 "<ListGroupsResponse><ListGroupsResult><Groups></Groups>\
@@ -846,7 +880,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(policies.len(), 1);
-        assert_eq!(policies[0].policy_arn(), Some("arn:aws:iam::aws:policy/AdministratorAccess"));
+        assert_eq!(
+            policies[0].policy_arn(),
+            Some("arn:aws:iam::aws:policy/AdministratorAccess")
+        );
         assert_eq!(marker, None);
         http_client.relaxed_requests_match();
     }
@@ -997,7 +1034,10 @@ mod tests {
         ]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let version = client.get_managed_policy_document(POLICY_ARN, None).await.unwrap();
+        let version = client
+            .get_managed_policy_document(POLICY_ARN, None)
+            .await
+            .unwrap();
 
         assert_eq!(version.version_id(), Some("v3"));
         http_client.relaxed_requests_match();
@@ -1030,7 +1070,10 @@ mod tests {
         ]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let version = client.get_managed_policy_document(POLICY_ARN, None).await.unwrap();
+        let version = client
+            .get_managed_policy_document(POLICY_ARN, None)
+            .await
+            .unwrap();
 
         assert_eq!(version.version_id(), Some("v1"));
         http_client.relaxed_requests_match();
@@ -1074,7 +1117,10 @@ mod tests {
     #[tokio::test]
     async fn get_managed_policy_document_error_from_get_policy_propagates() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, format!("Action=GetPolicy&Version=2010-05-08&PolicyArn={POLICY_ARN_ENC}")),
+            request(
+                ENDPOINT,
+                format!("Action=GetPolicy&Version=2010-05-08&PolicyArn={POLICY_ARN_ENC}"),
+            ),
             xml_error_response("NoSuchEntity", "policy not found"),
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
@@ -1117,7 +1163,10 @@ mod tests {
     #[tokio::test]
     async fn list_access_keys_happy_path() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListAccessKeys&Version=2010-05-08&UserName=alice"),
+            request(
+                ENDPOINT,
+                "Action=ListAccessKeys&Version=2010-05-08&UserName=alice",
+            ),
             xml_response(
                 200,
                 "<ListAccessKeysResponse><ListAccessKeysResult><AccessKeyMetadata><member>\
@@ -1179,7 +1228,10 @@ mod tests {
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let (keys, marker) = client.list_access_keys("alice", Some(1), None).await.unwrap();
+        let (keys, marker) = client
+            .list_access_keys("alice", Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(keys.len(), 1);
         assert_eq!(marker, Some("p2".to_string()));
@@ -1189,12 +1241,18 @@ mod tests {
     #[tokio::test]
     async fn list_access_keys_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListAccessKeys&Version=2010-05-08&UserName=alice"),
+            request(
+                ENDPOINT,
+                "Action=ListAccessKeys&Version=2010-05-08&UserName=alice",
+            ),
             xml_error_response("ServiceFailure", "internal error"),
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_access_keys("alice", None, None).await.unwrap_err();
+        let err = client
+            .list_access_keys("alice", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("ServiceFailure".to_string())),
@@ -1248,7 +1306,10 @@ mod tests {
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let last_used = client.get_access_key_last_used("AKIAEXAMPLE").await.unwrap();
+        let last_used = client
+            .get_access_key_last_used("AKIAEXAMPLE")
+            .await
+            .unwrap();
 
         assert_eq!(last_used, None);
         http_client.relaxed_requests_match();
@@ -1265,7 +1326,10 @@ mod tests {
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.get_access_key_last_used("AKIAEXAMPLE").await.unwrap_err();
+        let err = client
+            .get_access_key_last_used("AKIAEXAMPLE")
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("NoSuchEntity".to_string())),
@@ -1277,7 +1341,10 @@ mod tests {
     #[tokio::test]
     async fn get_account_password_policy_happy_path_configured() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=GetAccountPasswordPolicy&Version=2010-05-08"),
+            request(
+                ENDPOINT,
+                "Action=GetAccountPasswordPolicy&Version=2010-05-08",
+            ),
             xml_response(
                 200,
                 "<GetAccountPasswordPolicyResponse><GetAccountPasswordPolicyResult>\
@@ -1309,7 +1376,10 @@ mod tests {
         // exercise the wrapper's `Ok(None)` path (gotcha 14). The only way
         // to reach `Ok(None)` is the explicit `NoSuchEntityException` catch.
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=GetAccountPasswordPolicy&Version=2010-05-08"),
+            request(
+                ENDPOINT,
+                "Action=GetAccountPasswordPolicy&Version=2010-05-08",
+            ),
             xml_error_response("NoSuchEntity", "no custom password policy"),
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
@@ -1323,7 +1393,10 @@ mod tests {
     #[tokio::test]
     async fn get_account_password_policy_other_error_propagates() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=GetAccountPasswordPolicy&Version=2010-05-08"),
+            request(
+                ENDPOINT,
+                "Action=GetAccountPasswordPolicy&Version=2010-05-08",
+            ),
             xml_error_response("ServiceFailure", "internal error"),
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
@@ -1354,7 +1427,10 @@ mod tests {
         let (devices, marker) = client.list_mfa_devices("alice", None, None).await.unwrap();
 
         assert_eq!(devices.len(), 1);
-        assert_eq!(devices[0].serial_number(), "arn:aws:iam::123456789012:mfa/alice");
+        assert_eq!(
+            devices[0].serial_number(),
+            "arn:aws:iam::123456789012:mfa/alice"
+        );
         assert_eq!(marker, None);
         http_client.relaxed_requests_match();
     }
@@ -1362,7 +1438,10 @@ mod tests {
     #[tokio::test]
     async fn list_mfa_devices_returns_empty_vec_for_user_with_no_devices() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListMFADevices&Version=2010-05-08&UserName=bob"),
+            request(
+                ENDPOINT,
+                "Action=ListMFADevices&Version=2010-05-08&UserName=bob",
+            ),
             xml_response(
                 200,
                 "<ListMFADevicesResponse><ListMFADevicesResult><MFADevices></MFADevices>\
@@ -1394,7 +1473,10 @@ mod tests {
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let (devices, marker) = client.list_mfa_devices("alice", Some(1), None).await.unwrap();
+        let (devices, marker) = client
+            .list_mfa_devices("alice", Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(devices.len(), 1);
         assert_eq!(marker, Some("p2".to_string()));
@@ -1404,12 +1486,18 @@ mod tests {
     #[tokio::test]
     async fn list_mfa_devices_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListMFADevices&Version=2010-05-08&UserName=alice"),
+            request(
+                ENDPOINT,
+                "Action=ListMFADevices&Version=2010-05-08&UserName=alice",
+            ),
             xml_error_response("ServiceFailure", "internal error"),
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_mfa_devices("alice", None, None).await.unwrap_err();
+        let err = client
+            .list_mfa_devices("alice", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("ServiceFailure".to_string())),
@@ -1450,7 +1538,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(results, vec![("inline-policy-1".to_string(), "doc-body".to_string())]);
+        assert_eq!(
+            results,
+            vec![("inline-policy-1".to_string(), "doc-body".to_string())]
+        );
         assert_eq!(marker, None);
         http_client.relaxed_requests_match();
     }
@@ -1523,7 +1614,10 @@ mod tests {
     #[tokio::test]
     async fn get_role_inline_policies_error_in_discovery_propagates() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListRolePolicies&Version=2010-05-08&RoleName=my-role"),
+            request(
+                ENDPOINT,
+                "Action=ListRolePolicies&Version=2010-05-08&RoleName=my-role",
+            ),
             xml_error_response("ServiceFailure", "internal error"),
         )]);
         let client = IamClient::new(&sdk_config(http_client.clone()));

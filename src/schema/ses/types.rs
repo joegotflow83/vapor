@@ -48,9 +48,9 @@ impl From<SesConfigSetDetail> for SesConfigurationSet {
     fn from(d: SesConfigSetDetail) -> Self {
         Self {
             name: d.name,
-            sending_options: d
-                .sending_enabled
-                .map(|se| SesSendingOptions { sending_enabled: se }),
+            sending_options: d.sending_enabled.map(|se| SesSendingOptions {
+                sending_enabled: se,
+            }),
             tags: d
                 .tags
                 .into_iter()
@@ -207,7 +207,9 @@ mod tests {
         let s = aws_sdk_sesv2::types::SuppressedDestinationSummary::builder()
             .email_address("blocked@example.com")
             .reason(aws_sdk_sesv2::types::SuppressionListReason::Bounce)
-            .last_update_time(aws_sdk_sesv2::primitives::DateTime::from_secs(1_700_000_000))
+            .last_update_time(aws_sdk_sesv2::primitives::DateTime::from_secs(
+                1_700_000_000,
+            ))
             .build()
             .unwrap();
         let result = SesSuppressedDestination::from(s);
@@ -251,7 +253,9 @@ mod tests {
         let s = aws_sdk_sesv2::types::SuppressedDestinationSummary::builder()
             .email_address("complaint@example.com")
             .reason(aws_sdk_sesv2::types::SuppressionListReason::Complaint)
-            .last_update_time(aws_sdk_sesv2::primitives::DateTime::from_secs(1_700_000_000))
+            .last_update_time(aws_sdk_sesv2::primitives::DateTime::from_secs(
+                1_700_000_000,
+            ))
             .build()
             .unwrap();
         let result = SesSuppressedDestination::from(s);

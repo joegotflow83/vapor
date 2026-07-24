@@ -256,9 +256,7 @@ mod tests {
     #[test]
     fn test_settings_from_full() {
         let info = LakeFormationSettingsInfo {
-            data_lake_admins: vec![
-                "arn:aws:iam::123456789012:user/admin".to_string(),
-            ],
+            data_lake_admins: vec!["arn:aws:iam::123456789012:user/admin".to_string()],
             create_database_default_permissions: vec![LfDefaultPermissionInfo {
                 principal: Some("IAM_ALLOWED_PRINCIPALS".to_string()),
                 permissions: vec!["ALL".to_string()],

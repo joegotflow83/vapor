@@ -72,7 +72,9 @@ impl PollyQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::polly::PollyClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::PollyQuery;
@@ -126,8 +128,14 @@ mod tests {
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
         assert_eq!(data["pollyLexicons"]["items"][0]["name"], "lex1");
-        assert_eq!(data["pollyLexicons"]["items"][0]["attributes"]["alphabet"], "ipa");
-        assert_eq!(data["pollyLexicons"]["items"][0]["attributes"]["lexemeCount"], 5);
+        assert_eq!(
+            data["pollyLexicons"]["items"][0]["attributes"]["alphabet"],
+            "ipa"
+        );
+        assert_eq!(
+            data["pollyLexicons"]["items"][0]["attributes"]["lexemeCount"],
+            5
+        );
         assert_eq!(data["pollyLexicons"]["items"][0]["attributes"]["size"], 120);
         assert_eq!(data["pollyLexicons"]["nextToken"], "cursor-b");
         http_client.relaxed_requests_match();
@@ -153,10 +161,22 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["pollySpeechSynthesisTasks"]["items"][0]["taskId"], "task-1");
-        assert_eq!(data["pollySpeechSynthesisTasks"]["items"][0]["taskStatus"], "completed");
-        assert_eq!(data["pollySpeechSynthesisTasks"]["items"][0]["voiceId"], "Joanna");
-        assert_eq!(data["pollySpeechSynthesisTasks"]["items"][0]["outputFormat"], "mp3");
+        assert_eq!(
+            data["pollySpeechSynthesisTasks"]["items"][0]["taskId"],
+            "task-1"
+        );
+        assert_eq!(
+            data["pollySpeechSynthesisTasks"]["items"][0]["taskStatus"],
+            "completed"
+        );
+        assert_eq!(
+            data["pollySpeechSynthesisTasks"]["items"][0]["voiceId"],
+            "Joanna"
+        );
+        assert_eq!(
+            data["pollySpeechSynthesisTasks"]["items"][0]["outputFormat"],
+            "mp3"
+        );
         assert_eq!(data["pollySpeechSynthesisTasks"]["nextToken"], "cursor-c");
         http_client.relaxed_requests_match();
     }

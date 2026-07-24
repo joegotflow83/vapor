@@ -1,11 +1,11 @@
 use async_graphql::{Context, Object, Result};
 
-use crate::schema::pagination::Page;
 use crate::aws::ec2::Ec2Client;
 use crate::schema::ec2::types::{
     ElasticIp, Image, Instance, InstanceState, KeyPair, LaunchTemplate, LaunchTemplateVersion,
     SecurityGroup, Snapshot, Subnet, TagFilter, Volume, Vpc,
 };
+use crate::schema::pagination::Page;
 
 #[derive(Default)]
 pub struct Ec2Query;
@@ -35,7 +35,15 @@ impl Ec2Query {
         });
 
         let (aws_instances, next_token) = ec2
-            .describe_instances(ids, state_str, vpc_id, subnet_id, tag_filters, limit, next_token)
+            .describe_instances(
+                ids,
+                state_str,
+                vpc_id,
+                subnet_id,
+                tag_filters,
+                limit,
+                next_token,
+            )
             .await?;
 
         Ok(Page {
@@ -117,9 +125,7 @@ impl Ec2Query {
     ) -> Result<Page<Volume>> {
         let ec2 = ctx.data::<Ec2Client>()?;
 
-        let (aws_volumes, next_token) = ec2
-            .describe_volumes(ids, state, limit, next_token)
-            .await?;
+        let (aws_volumes, next_token) = ec2.describe_volumes(ids, state, limit, next_token).await?;
 
         Ok(Page {
             items: aws_volumes.into_iter().map(Volume::from).collect(),
@@ -136,9 +142,7 @@ impl Ec2Query {
     ) -> Result<Vec<KeyPair>> {
         let ec2 = ctx.data::<Ec2Client>()?;
 
-        let aws_kps = ec2
-            .describe_key_pairs(ids, name, fingerprint)
-            .await?;
+        let aws_kps = ec2.describe_key_pairs(ids, name, fingerprint).await?;
 
         Ok(aws_kps.into_iter().map(KeyPair::from).collect())
     }
@@ -252,7 +256,9 @@ impl Ec2Query {
 mod tests {
     use super::*;
     use crate::aws::ec2::Ec2Client;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     const ENDPOINT: &str = "https://ec2.us-east-1.amazonaws.com/";
@@ -285,7 +291,10 @@ mod tests {
     #[tokio::test]
     async fn security_groups_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeSecurityGroups&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeSecurityGroups&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeSecurityGroupsResponse><securityGroupInfo>\
@@ -311,7 +320,10 @@ mod tests {
     #[tokio::test]
     async fn vpcs_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeVpcs&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeVpcs&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeVpcsResponse><vpcSet><item><vpcId>vpc-a</vpcId>\
@@ -337,7 +349,10 @@ mod tests {
     #[tokio::test]
     async fn subnets_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeSubnets&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeSubnets&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeSubnetsResponse><subnetSet><item><subnetId>subnet-a</subnetId>\
@@ -363,7 +378,10 @@ mod tests {
     #[tokio::test]
     async fn volumes_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeVolumes&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeVolumes&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeVolumesResponse><volumeSet><item><volumeId>vol-a</volumeId>\
@@ -400,9 +418,7 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(Ec2Query).data(client).finish();
 
-        let res = schema
-            .execute(r#"{ keyPairs { keyPairId name } }"#)
-            .await;
+        let res = schema.execute(r#"{ keyPairs { keyPairId name } }"#).await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
@@ -439,7 +455,10 @@ mod tests {
     #[tokio::test]
     async fn images_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeImages&Version=2016-11-15&Owner.1=self&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeImages&Version=2016-11-15&Owner.1=self&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeImagesResponse><imagesSet><item><imageId>ami-a</imageId>\
@@ -465,7 +484,10 @@ mod tests {
     #[tokio::test]
     async fn launch_templates_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeLaunchTemplates&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeLaunchTemplates&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeLaunchTemplatesResponse><launchTemplates>\
@@ -514,16 +536,28 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["launchTemplateVersions"]["items"][0]["launchTemplateId"], "lt-1");
-        assert_eq!(data["launchTemplateVersions"]["items"][0]["versionNumber"], 1);
-        assert_eq!(data["launchTemplateVersions"]["nextToken"], serde_json::Value::Null);
+        assert_eq!(
+            data["launchTemplateVersions"]["items"][0]["launchTemplateId"],
+            "lt-1"
+        );
+        assert_eq!(
+            data["launchTemplateVersions"]["items"][0]["versionNumber"],
+            1
+        );
+        assert_eq!(
+            data["launchTemplateVersions"]["nextToken"],
+            serde_json::Value::Null
+        );
         http_client.relaxed_requests_match();
     }
 
     #[tokio::test]
     async fn snapshots_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeSnapshots&Version=2016-11-15&MaxResults=1&Owner.1=self"),
+            request(
+                ENDPOINT,
+                "Action=DescribeSnapshots&Version=2016-11-15&MaxResults=1&Owner.1=self",
+            ),
             xml_response(
                 200,
                 "<DescribeSnapshotsResponse><snapshotSet><item><snapshotId>snap-a</snapshotId>\

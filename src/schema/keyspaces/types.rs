@@ -108,7 +108,10 @@ mod tests {
             result.resource_arn,
             "arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace"
         );
-        assert_eq!(result.replication_strategy, Some("SINGLE_REGION".to_string()));
+        assert_eq!(
+            result.replication_strategy,
+            Some("SINGLE_REGION".to_string())
+        );
         assert!(result.replication_regions.is_empty());
     }
 
@@ -122,7 +125,10 @@ mod tests {
             replication_regions: vec!["us-east-1".to_string(), "eu-west-1".to_string()],
         };
         let result = KeyspacesKeyspace::from(info);
-        assert_eq!(result.replication_strategy, Some("MULTI_REGION".to_string()));
+        assert_eq!(
+            result.replication_strategy,
+            Some("MULTI_REGION".to_string())
+        );
         assert_eq!(result.replication_regions.len(), 2);
     }
 
@@ -156,9 +162,7 @@ mod tests {
     fn test_encryption_from() {
         let info = KeyspacesEncryptionInfo {
             type_: "CUSTOMER_MANAGED_KMS_KEY".to_string(),
-            kms_key_identifier: Some(
-                "arn:aws:kms:us-east-1:123456789012:key/abc123".to_string(),
-            ),
+            kms_key_identifier: Some("arn:aws:kms:us-east-1:123456789012:key/abc123".to_string()),
         };
         let result = KeyspacesEncryption::from(info);
         assert_eq!(result.type_, "CUSTOMER_MANAGED_KMS_KEY");
@@ -181,8 +185,9 @@ mod tests {
         let info = KeyspacesTableInfo {
             keyspace_name: "mykeyspace".to_string(),
             table_name: "mytable".to_string(),
-            resource_arn: "arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/mytable"
-                .to_string(),
+            resource_arn:
+                "arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/mytable"
+                    .to_string(),
             status: Some("ACTIVE".to_string()),
             creation_timestamp: Some(SmithyDateTime::from_secs(1_704_067_200)),
             capacity_specification: Some(KeyspacesCapacitySpecInfo {

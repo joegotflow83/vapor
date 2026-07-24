@@ -21,7 +21,9 @@ impl Wafv2Query {
     ) -> Result<Page<WebAcl>> {
         let client = ctx.data::<WafV2Client>()?;
         let sdk_scope = scope.to_sdk();
-        let (summaries, next_token) = client.list_web_acls(sdk_scope.clone(), limit, next_token).await?;
+        let (summaries, next_token) = client
+            .list_web_acls(sdk_scope.clone(), limit, next_token)
+            .await?;
 
         let futures: Vec<_> = summaries
             .iter()
@@ -56,7 +58,9 @@ impl Wafv2Query {
     ) -> Result<Page<WafIpSet>> {
         let client = ctx.data::<WafV2Client>()?;
         let sdk_scope = scope.to_sdk();
-        let (summaries, next_token) = client.list_ip_sets(sdk_scope.clone(), limit, next_token).await?;
+        let (summaries, next_token) = client
+            .list_ip_sets(sdk_scope.clone(), limit, next_token)
+            .await?;
 
         let futures: Vec<_> = summaries
             .iter()
@@ -91,7 +95,9 @@ impl Wafv2Query {
     ) -> Result<Page<WafRuleGroup>> {
         let client = ctx.data::<WafV2Client>()?;
         let sdk_scope = scope.to_sdk();
-        let (summaries, next_token) = client.list_rule_groups(sdk_scope, limit, next_token).await?;
+        let (summaries, next_token) = client
+            .list_rule_groups(sdk_scope, limit, next_token)
+            .await?;
         let items = summaries
             .iter()
             .map(|s| WafRuleGroup::from_summary(s, &scope))
@@ -102,7 +108,9 @@ impl Wafv2Query {
 
 #[cfg(test)]
 mod tests {
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::aws::wafv2::WafV2Client;
     use crate::schema::test_util::build_query_schema;
 
@@ -120,7 +128,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"Scope":"REGIONAL"}"#),
-                json_response(200, r#"{"WebACLs":[{"Name":"acl1","Id":"id1","ARN":"arn:acl1"}]}"#),
+                json_response(
+                    200,
+                    r#"{"WebACLs":[{"Name":"acl1","Id":"id1","ARN":"arn:acl1"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"Name":"acl1","Scope":"REGIONAL","Id":"id1"}"#),
@@ -170,7 +181,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"Scope":"CLOUDFRONT"}"#),
-                json_response(200, r#"{"WebACLs":[{"Name":"acl1","Id":"id1","ARN":"arn:acl1"}]}"#),
+                json_response(
+                    200,
+                    r#"{"WebACLs":[{"Name":"acl1","Id":"id1","ARN":"arn:acl1"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"Name":"acl1","Scope":"CLOUDFRONT","Id":"id1"}"#),

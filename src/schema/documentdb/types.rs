@@ -56,7 +56,10 @@ impl From<DbInstance> for DocDbInstance {
             status: i.db_instance_status().map(|s| s.to_string()),
             cluster_identifier: i.db_cluster_identifier().map(|s| s.to_string()),
             availability_zone: i.availability_zone().map(|s| s.to_string()),
-            endpoint: i.endpoint().and_then(|e| e.address()).map(|s| s.to_string()),
+            endpoint: i
+                .endpoint()
+                .and_then(|e| e.address())
+                .map(|s| s.to_string()),
         }
     }
 }
@@ -73,8 +76,12 @@ mod tests {
             status: Some("available".to_string()),
             engine: Some("docdb".to_string()),
             engine_version: Some("5.0.0".to_string()),
-            endpoint: Some("my-docdb-cluster.cluster-abc123.us-east-1.docdb.amazonaws.com".to_string()),
-            reader_endpoint: Some("my-docdb-cluster.cluster-ro-abc123.us-east-1.docdb.amazonaws.com".to_string()),
+            endpoint: Some(
+                "my-docdb-cluster.cluster-abc123.us-east-1.docdb.amazonaws.com".to_string(),
+            ),
+            reader_endpoint: Some(
+                "my-docdb-cluster.cluster-ro-abc123.us-east-1.docdb.amazonaws.com".to_string(),
+            ),
             port: Some(27017),
             multi_az: true,
             storage_encrypted: true,
@@ -131,7 +138,10 @@ mod tests {
         assert_eq!(instance.instance_identifier, "my-docdb-instance");
         assert_eq!(instance.instance_class, Some("db.r5.large".to_string()));
         assert_eq!(instance.status, Some("available".to_string()));
-        assert_eq!(instance.cluster_identifier, Some("my-docdb-cluster".to_string()));
+        assert_eq!(
+            instance.cluster_identifier,
+            Some("my-docdb-cluster".to_string())
+        );
         assert_eq!(instance.availability_zone, Some("us-east-1a".to_string()));
     }
 

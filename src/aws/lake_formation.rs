@@ -173,44 +173,46 @@ impl LakeFormationClient {
             .await
             .map_err(crate::error::sdk_err)?;
 
-        Ok(output.data_lake_settings().map(|s| LakeFormationSettingsInfo {
-            data_lake_admins: s
-                .data_lake_admins()
-                .iter()
-                .filter_map(|a| a.data_lake_principal_identifier())
-                .map(|s| s.to_string())
-                .collect(),
-            create_database_default_permissions: s
-                .create_database_default_permissions()
-                .iter()
-                .map(|pp| LfDefaultPermissionInfo {
-                    principal: pp
-                        .principal()
-                        .and_then(|p| p.data_lake_principal_identifier())
-                        .map(|s| s.to_string()),
-                    permissions: pp
-                        .permissions()
-                        .iter()
-                        .map(|perm| perm.as_str().to_string())
-                        .collect(),
-                })
-                .collect(),
-            create_table_default_permissions: s
-                .create_table_default_permissions()
-                .iter()
-                .map(|pp| LfDefaultPermissionInfo {
-                    principal: pp
-                        .principal()
-                        .and_then(|p| p.data_lake_principal_identifier())
-                        .map(|s| s.to_string()),
-                    permissions: pp
-                        .permissions()
-                        .iter()
-                        .map(|perm| perm.as_str().to_string())
-                        .collect(),
-                })
-                .collect(),
-        }))
+        Ok(output
+            .data_lake_settings()
+            .map(|s| LakeFormationSettingsInfo {
+                data_lake_admins: s
+                    .data_lake_admins()
+                    .iter()
+                    .filter_map(|a| a.data_lake_principal_identifier())
+                    .map(|s| s.to_string())
+                    .collect(),
+                create_database_default_permissions: s
+                    .create_database_default_permissions()
+                    .iter()
+                    .map(|pp| LfDefaultPermissionInfo {
+                        principal: pp
+                            .principal()
+                            .and_then(|p| p.data_lake_principal_identifier())
+                            .map(|s| s.to_string()),
+                        permissions: pp
+                            .permissions()
+                            .iter()
+                            .map(|perm| perm.as_str().to_string())
+                            .collect(),
+                    })
+                    .collect(),
+                create_table_default_permissions: s
+                    .create_table_default_permissions()
+                    .iter()
+                    .map(|pp| LfDefaultPermissionInfo {
+                        principal: pp
+                            .principal()
+                            .and_then(|p| p.data_lake_principal_identifier())
+                            .map(|s| s.to_string()),
+                        permissions: pp
+                            .permissions()
+                            .iter()
+                            .map(|perm| perm.as_str().to_string())
+                            .collect(),
+                    })
+                    .collect(),
+            }))
     }
 }
 
@@ -246,7 +248,10 @@ mod tests {
             items[0].role_arn.as_deref(),
             Some("arn:aws:iam::111122223333:role/lf-role")
         );
-        assert_eq!(items[0].last_modified, Some(DateTime::from_secs(1_700_000_000)));
+        assert_eq!(
+            items[0].last_modified,
+            Some(DateTime::from_secs(1_700_000_000))
+        );
         assert_eq!(items[0].with_federation, Some(true));
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
@@ -273,7 +278,10 @@ mod tests {
     #[tokio::test]
     async fn list_resources_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/ListResources"), r#"{"NextToken":"cursor-a"}"#),
+            request(
+                &format!("{BASE}/ListResources"),
+                r#"{"NextToken":"cursor-a"}"#,
+            ),
             json_response(200, r#"{"ResourceInfoList":[{"ResourceArn":"arn-3"}]}"#),
         )]);
         let client = LakeFormationClient::new(&sdk_config(http_client.clone()));
@@ -345,7 +353,10 @@ mod tests {
         assert_eq!(resource.table, None);
         assert_eq!(resource.data_location, None);
         assert_eq!(resource.catalog, None);
-        assert_eq!(items[0].permissions, vec!["SELECT".to_string(), "ALTER".to_string()]);
+        assert_eq!(
+            items[0].permissions,
+            vec!["SELECT".to_string(), "ALTER".to_string()]
+        );
         assert_eq!(
             items[0].permissions_with_grant_option,
             vec!["SELECT".to_string()]
@@ -369,10 +380,16 @@ mod tests {
         )]);
         let client = LakeFormationClient::new(&sdk_config(http_client.clone()));
 
-        let (items, _token) = client.list_permissions(None, None, None, None).await.unwrap();
+        let (items, _token) = client
+            .list_permissions(None, None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0].resource.as_ref().unwrap().table.as_deref(), Some("tbl1"));
+        assert_eq!(
+            items[0].resource.as_ref().unwrap().table.as_deref(),
+            Some("tbl1")
+        );
         assert_eq!(
             items[1].resource.as_ref().unwrap().data_location.as_deref(),
             Some("arn:aws:s3:::bucket")
@@ -444,7 +461,9 @@ mod tests {
         );
         assert_eq!(settings.create_database_default_permissions.len(), 1);
         assert_eq!(
-            settings.create_database_default_permissions[0].principal.as_deref(),
+            settings.create_database_default_permissions[0]
+                .principal
+                .as_deref(),
             Some("arn:aws:iam::111122223333:group/IAMAllowedPrincipals")
         );
         assert_eq!(

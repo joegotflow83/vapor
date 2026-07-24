@@ -27,17 +27,9 @@ impl From<Finding> for MacieFinding {
             .and_then(|b| b.name())
             .map(|s| s.to_string());
 
-        let resource_type = if f
-            .resources_affected()
-            .and_then(|r| r.s3_object())
-            .is_some()
-        {
+        let resource_type = if f.resources_affected().and_then(|r| r.s3_object()).is_some() {
             Some("S3Object".to_string())
-        } else if f
-            .resources_affected()
-            .and_then(|r| r.s3_bucket())
-            .is_some()
-        {
+        } else if f.resources_affected().and_then(|r| r.s3_bucket()).is_some() {
             Some("S3Bucket".to_string())
         } else {
             None
@@ -116,10 +108,16 @@ mod tests {
         };
         assert_eq!(finding.id, "abc123");
         assert_eq!(finding.severity, Some("High".to_string()));
-        assert_eq!(finding.finding_type, Some("SensitiveData:S3Object/Personal".to_string()));
+        assert_eq!(
+            finding.finding_type,
+            Some("SensitiveData:S3Object/Personal".to_string())
+        );
         assert_eq!(finding.category, Some("CLASSIFICATION".to_string()));
         assert_eq!(finding.bucket_name, Some("my-bucket".to_string()));
-        assert_eq!(finding.created_at.unwrap().to_rfc3339(), "2024-01-01T00:00:00+00:00");
+        assert_eq!(
+            finding.created_at.unwrap().to_rfc3339(),
+            "2024-01-01T00:00:00+00:00"
+        );
         assert!(!finding.archived);
     }
 

@@ -70,9 +70,10 @@ impl EmrClient {
             .await
             .map_err(crate::error::sdk_err)?;
 
-        output
-            .cluster
-            .ok_or_else(|| VaporError::AwsSdk { code: None, message: format!("No cluster returned for id {cluster_id}") })
+        output.cluster.ok_or_else(|| VaporError::AwsSdk {
+            code: None,
+            message: format!("No cluster returned for id {cluster_id}"),
+        })
     }
 
     /// Lists steps for a cluster, optionally capped at `limit` results

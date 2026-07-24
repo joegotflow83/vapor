@@ -459,7 +459,10 @@ mod tests {
         assert_eq!(m.tier, Some(ParameterTier::Advanced));
         assert_eq!(m.version, Some(3));
         assert!(m.last_modified_date.is_some());
-        assert_eq!(m.description, Some("Connection timeout in seconds".to_string()));
+        assert_eq!(
+            m.description,
+            Some("Connection timeout in seconds".to_string())
+        );
         assert_eq!(
             m.arn,
             Some("arn:aws:ssm:us-east-1:123456789012:parameter/app/config/timeout".to_string())

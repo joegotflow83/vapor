@@ -138,11 +138,19 @@ pub fn distribution_from_summary(
         viewer_certificate,
         web_acl_id: {
             let w = d.web_acl_id();
-            if w.is_empty() { None } else { Some(w.to_string()) }
+            if w.is_empty() {
+                None
+            } else {
+                Some(w.to_string())
+            }
         },
         comment: {
             let c = d.comment();
-            if c.is_empty() { None } else { Some(c.to_string()) }
+            if c.is_empty() {
+                None
+            } else {
+                Some(c.to_string())
+            }
         },
         last_modified_time: to_utc(Some(d.last_modified_time())),
         tags,
@@ -188,11 +196,19 @@ pub fn distribution_from_get(
         default_cache_behavior,
         viewer_certificate,
         web_acl_id: cfg.and_then(|c| c.web_acl_id()).and_then(|w| {
-            if w.is_empty() { None } else { Some(w.to_string()) }
+            if w.is_empty() {
+                None
+            } else {
+                Some(w.to_string())
+            }
         }),
         comment: cfg.and_then(|c| {
             let cc = c.comment();
-            if cc.is_empty() { None } else { Some(cc.to_string()) }
+            if cc.is_empty() {
+                None
+            } else {
+                Some(cc.to_string())
+            }
         }),
         last_modified_time: to_utc(Some(d.last_modified_time())),
         tags,
@@ -275,12 +291,10 @@ mod tests {
     #[test]
     fn test_map_tags_missing_value_becomes_empty_string() {
         // A tag with no value set maps to empty string (not None) in CfDistribution
-        let sdk_tags = vec![
-            aws_sdk_cloudfront::types::Tag::builder()
-                .key("NoValue")
-                .build()
-                .unwrap(),
-        ];
+        let sdk_tags = vec![aws_sdk_cloudfront::types::Tag::builder()
+            .key("NoValue")
+            .build()
+            .unwrap()];
 
         let tags = map_tags(sdk_tags);
         assert_eq!(tags.len(), 1);
@@ -387,7 +401,10 @@ mod tests {
 
         let behavior = map_default_cache_behavior(&dcb);
         assert_eq!(behavior.target_origin_id, Some("my-origin".to_string()));
-        assert_eq!(behavior.viewer_protocol_policy, Some("redirect-to-https".to_string()));
+        assert_eq!(
+            behavior.viewer_protocol_policy,
+            Some("redirect-to-https".to_string())
+        );
         assert_eq!(behavior.compress, Some(true));
         assert!(behavior.allowed_methods.is_empty());
         assert!(behavior.cached_methods.is_empty());
@@ -418,7 +435,10 @@ mod tests {
             .unwrap();
 
         let behavior = map_default_cache_behavior(&dcb);
-        assert_eq!(behavior.viewer_protocol_policy, Some("allow-all".to_string()));
+        assert_eq!(
+            behavior.viewer_protocol_policy,
+            Some("allow-all".to_string())
+        );
         assert_eq!(behavior.allowed_methods.len(), 2);
         assert_eq!(behavior.cached_methods.len(), 2);
     }

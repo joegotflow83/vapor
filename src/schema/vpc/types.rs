@@ -100,88 +100,138 @@ pub struct TransitGateway {
     pub tags: Vec<Tag>,
 }
 
-
 impl From<aws_sdk_ec2::types::RouteTable> for RouteTable {
     fn from(rt: aws_sdk_ec2::types::RouteTable) -> Self {
-        let tags = rt.tags().iter().map(|t| Tag {
-            key: t.key().unwrap_or_default().to_string(),
-            value: t.value().unwrap_or_default().to_string(),
-        }).collect();
-        let routes = rt.routes().iter().map(|r| {
-            let gateway_id = r.gateway_id().map(|s| s.to_string());
-            // The SDK exposes no dedicated `vpc_endpoint_id`; a gateway VPC
-            // endpoint surfaces its `vpce-…` id in the route's `gateway_id`.
-            let vpc_endpoint_id = gateway_id
-                .as_deref()
-                .filter(|g| g.starts_with("vpce-"))
-                .map(|s| s.to_string());
-            Route {
-                destination_cidr: r.destination_cidr_block().map(|s| s.to_string()),
-                destination_ipv6_cidr: r.destination_ipv6_cidr_block().map(|s| s.to_string()),
-                gateway_id,
-                instance_id: r.instance_id().map(|s| s.to_string()),
-                nat_gateway_id: r.nat_gateway_id().map(|s| s.to_string()),
-                transit_gateway_id: r.transit_gateway_id().map(|s| s.to_string()),
-                vpc_endpoint_id,
-                state: r.state().map(|s| s.as_str().to_string()),
-            }
-        }).collect();
-        let associations = rt.associations().iter().map(|a| RouteTableAssociation {
-            id: a.route_table_association_id().map(|s| s.to_string()),
-            subnet_id: a.subnet_id().map(|s| s.to_string()),
-            main: a.main().unwrap_or(false),
-        }).collect();
-        RouteTable { id: rt.route_table_id().unwrap_or_default().to_string(), vpc_id: rt.vpc_id().map(|s| s.to_string()), routes, associations, tags }
+        let tags = rt
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
+        let routes = rt
+            .routes()
+            .iter()
+            .map(|r| {
+                let gateway_id = r.gateway_id().map(|s| s.to_string());
+                // The SDK exposes no dedicated `vpc_endpoint_id`; a gateway VPC
+                // endpoint surfaces its `vpce-…` id in the route's `gateway_id`.
+                let vpc_endpoint_id = gateway_id
+                    .as_deref()
+                    .filter(|g| g.starts_with("vpce-"))
+                    .map(|s| s.to_string());
+                Route {
+                    destination_cidr: r.destination_cidr_block().map(|s| s.to_string()),
+                    destination_ipv6_cidr: r.destination_ipv6_cidr_block().map(|s| s.to_string()),
+                    gateway_id,
+                    instance_id: r.instance_id().map(|s| s.to_string()),
+                    nat_gateway_id: r.nat_gateway_id().map(|s| s.to_string()),
+                    transit_gateway_id: r.transit_gateway_id().map(|s| s.to_string()),
+                    vpc_endpoint_id,
+                    state: r.state().map(|s| s.as_str().to_string()),
+                }
+            })
+            .collect();
+        let associations = rt
+            .associations()
+            .iter()
+            .map(|a| RouteTableAssociation {
+                id: a.route_table_association_id().map(|s| s.to_string()),
+                subnet_id: a.subnet_id().map(|s| s.to_string()),
+                main: a.main().unwrap_or(false),
+            })
+            .collect();
+        RouteTable {
+            id: rt.route_table_id().unwrap_or_default().to_string(),
+            vpc_id: rt.vpc_id().map(|s| s.to_string()),
+            routes,
+            associations,
+            tags,
+        }
     }
 }
 
 impl From<aws_sdk_ec2::types::NetworkAcl> for NetworkAcl {
     fn from(nacl: aws_sdk_ec2::types::NetworkAcl) -> Self {
-        let tags = nacl.tags().iter().map(|t| Tag {
-            key: t.key().unwrap_or_default().to_string(),
-            value: t.value().unwrap_or_default().to_string(),
-        }).collect();
-        let entries = nacl.entries().iter().map(|e| NaclEntry {
-            rule_number: e.rule_number(),
-            protocol: e.protocol().map(|s| s.to_string()),
-            rule_action: e.rule_action().map(|s| s.as_str().to_string()),
-            egress: e.egress().unwrap_or(false),
-            cidr_block: e.cidr_block().map(|s| s.to_string()),
-            ipv6_cidr_block: e.ipv6_cidr_block().map(|s| s.to_string()),
-            from_port: e.port_range().and_then(|p| p.from()),
-            to_port: e.port_range().and_then(|p| p.to()),
-        }).collect();
-        let associations = nacl.associations().iter().filter_map(|a| a.subnet_id().map(|s| s.to_string())).collect();
+        let tags = nacl
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
+        let entries = nacl
+            .entries()
+            .iter()
+            .map(|e| NaclEntry {
+                rule_number: e.rule_number(),
+                protocol: e.protocol().map(|s| s.to_string()),
+                rule_action: e.rule_action().map(|s| s.as_str().to_string()),
+                egress: e.egress().unwrap_or(false),
+                cidr_block: e.cidr_block().map(|s| s.to_string()),
+                ipv6_cidr_block: e.ipv6_cidr_block().map(|s| s.to_string()),
+                from_port: e.port_range().and_then(|p| p.from()),
+                to_port: e.port_range().and_then(|p| p.to()),
+            })
+            .collect();
+        let associations = nacl
+            .associations()
+            .iter()
+            .filter_map(|a| a.subnet_id().map(|s| s.to_string()))
+            .collect();
         NetworkAcl {
             id: nacl.network_acl_id().unwrap_or_default().to_string(),
             vpc_id: nacl.vpc_id().map(|s| s.to_string()),
             is_default: nacl.is_default().unwrap_or(false),
-            entries, associations, tags,
+            entries,
+            associations,
+            tags,
         }
     }
 }
 
 impl From<aws_sdk_ec2::types::InternetGateway> for InternetGateway {
     fn from(igw: aws_sdk_ec2::types::InternetGateway) -> Self {
-        let tags = igw.tags().iter().map(|t| Tag {
-            key: t.key().unwrap_or_default().to_string(),
-            value: t.value().unwrap_or_default().to_string(),
-        }).collect();
-        let attachments = igw.attachments().iter().map(|a| IgwAttachment {
-            vpc_id: a.vpc_id().map(|s| s.to_string()),
-            state: a.state().map(|s| s.as_str().to_string()),
-        }).collect();
-        InternetGateway { id: igw.internet_gateway_id().unwrap_or_default().to_string(), attachments, tags }
+        let tags = igw
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
+        let attachments = igw
+            .attachments()
+            .iter()
+            .map(|a| IgwAttachment {
+                vpc_id: a.vpc_id().map(|s| s.to_string()),
+                state: a.state().map(|s| s.as_str().to_string()),
+            })
+            .collect();
+        InternetGateway {
+            id: igw.internet_gateway_id().unwrap_or_default().to_string(),
+            attachments,
+            tags,
+        }
     }
 }
 
 impl From<aws_sdk_ec2::types::NatGateway> for NatGateway {
     fn from(ng: aws_sdk_ec2::types::NatGateway) -> Self {
-        let tags = ng.tags().iter().map(|t| Tag {
-            key: t.key().unwrap_or_default().to_string(),
-            value: t.value().unwrap_or_default().to_string(),
-        }).collect();
-        let public_ip = ng.nat_gateway_addresses().iter().find_map(|a| a.public_ip().map(|s| s.to_string()));
+        let tags = ng
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
+        let public_ip = ng
+            .nat_gateway_addresses()
+            .iter()
+            .find_map(|a| a.public_ip().map(|s| s.to_string()));
         NatGateway {
             id: ng.nat_gateway_id().unwrap_or_default().to_string(),
             vpc_id: ng.vpc_id().map(|s| s.to_string()),
@@ -196,10 +246,14 @@ impl From<aws_sdk_ec2::types::NatGateway> for NatGateway {
 
 impl From<aws_sdk_ec2::types::VpcEndpoint> for VpcEndpoint {
     fn from(ep: aws_sdk_ec2::types::VpcEndpoint) -> Self {
-        let tags = ep.tags().iter().map(|t| Tag {
-            key: t.key().unwrap_or_default().to_string(),
-            value: t.value().unwrap_or_default().to_string(),
-        }).collect();
+        let tags = ep
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
         VpcEndpoint {
             id: ep.vpc_endpoint_id().unwrap_or_default().to_string(),
             vpc_id: ep.vpc_id().map(|s| s.to_string()),
@@ -215,10 +269,14 @@ impl From<aws_sdk_ec2::types::VpcEndpoint> for VpcEndpoint {
 
 impl From<aws_sdk_ec2::types::TransitGateway> for TransitGateway {
     fn from(tg: aws_sdk_ec2::types::TransitGateway) -> Self {
-        let tags = tg.tags().iter().map(|t| Tag {
-            key: t.key().unwrap_or_default().to_string(),
-            value: t.value().unwrap_or_default().to_string(),
-        }).collect();
+        let tags = tg
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
         TransitGateway {
             id: tg.transit_gateway_id().unwrap_or_default().to_string(),
             arn: tg.transit_gateway_arn().map(|s| s.to_string()),
@@ -248,10 +306,14 @@ pub struct VpcFlowLog {
 
 impl From<aws_sdk_ec2::types::FlowLog> for VpcFlowLog {
     fn from(fl: aws_sdk_ec2::types::FlowLog) -> Self {
-        let tags = fl.tags().iter().map(|t| Tag {
-            key: t.key().unwrap_or_default().to_string(),
-            value: t.value().unwrap_or_default().to_string(),
-        }).collect();
+        let tags = fl
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
         VpcFlowLog {
             flow_log_id: fl.flow_log_id().unwrap_or_default().to_string(),
             flow_log_status: fl.flow_log_status().map(|s| s.to_string()),
@@ -278,9 +340,24 @@ mod tests {
         let sdk = aws_sdk_ec2::types::RouteTable::builder()
             .route_table_id("rtb-123")
             .vpc_id("vpc-abc")
-            .routes(aws_sdk_ec2::types::Route::builder().destination_cidr_block("0.0.0.0/0").gateway_id("igw-1").build())
-            .associations(aws_sdk_ec2::types::RouteTableAssociation::builder().route_table_association_id("rtbassoc-1").main(true).build())
-            .tags(aws_sdk_ec2::types::Tag::builder().key("Name").value("main").build())
+            .routes(
+                aws_sdk_ec2::types::Route::builder()
+                    .destination_cidr_block("0.0.0.0/0")
+                    .gateway_id("igw-1")
+                    .build(),
+            )
+            .associations(
+                aws_sdk_ec2::types::RouteTableAssociation::builder()
+                    .route_table_association_id("rtbassoc-1")
+                    .main(true)
+                    .build(),
+            )
+            .tags(
+                aws_sdk_ec2::types::Tag::builder()
+                    .key("Name")
+                    .value("main")
+                    .build(),
+            )
             .build();
         let rt: RouteTable = sdk.into();
         assert_eq!(rt.id, "rtb-123");
@@ -310,9 +387,26 @@ mod tests {
             .network_acl_id("acl-123")
             .vpc_id("vpc-abc")
             .is_default(true)
-            .entries(aws_sdk_ec2::types::NetworkAclEntry::builder().rule_number(100).protocol("-1").egress(false).cidr_block("0.0.0.0/0").rule_action(aws_sdk_ec2::types::RuleAction::Allow).build())
-            .associations(aws_sdk_ec2::types::NetworkAclAssociation::builder().subnet_id("subnet-1").build())
-            .tags(aws_sdk_ec2::types::Tag::builder().key("Env").value("prod").build())
+            .entries(
+                aws_sdk_ec2::types::NetworkAclEntry::builder()
+                    .rule_number(100)
+                    .protocol("-1")
+                    .egress(false)
+                    .cidr_block("0.0.0.0/0")
+                    .rule_action(aws_sdk_ec2::types::RuleAction::Allow)
+                    .build(),
+            )
+            .associations(
+                aws_sdk_ec2::types::NetworkAclAssociation::builder()
+                    .subnet_id("subnet-1")
+                    .build(),
+            )
+            .tags(
+                aws_sdk_ec2::types::Tag::builder()
+                    .key("Env")
+                    .value("prod")
+                    .build(),
+            )
             .build();
         let nacl: NetworkAcl = sdk.into();
         assert_eq!(nacl.id, "acl-123");
@@ -337,8 +431,18 @@ mod tests {
     fn test_internet_gateway_from_sdk_populated() {
         let sdk = aws_sdk_ec2::types::InternetGateway::builder()
             .internet_gateway_id("igw-123")
-            .attachments(aws_sdk_ec2::types::InternetGatewayAttachment::builder().vpc_id("vpc-abc").state(aws_sdk_ec2::types::AttachmentStatus::Attached).build())
-            .tags(aws_sdk_ec2::types::Tag::builder().key("Name").value("main-igw").build())
+            .attachments(
+                aws_sdk_ec2::types::InternetGatewayAttachment::builder()
+                    .vpc_id("vpc-abc")
+                    .state(aws_sdk_ec2::types::AttachmentStatus::Attached)
+                    .build(),
+            )
+            .tags(
+                aws_sdk_ec2::types::Tag::builder()
+                    .key("Name")
+                    .value("main-igw")
+                    .build(),
+            )
             .build();
         let igw: InternetGateway = sdk.into();
         assert_eq!(igw.id, "igw-123");
@@ -364,8 +468,17 @@ mod tests {
             .subnet_id("subnet-1")
             .state(aws_sdk_ec2::types::NatGatewayState::Available)
             .connectivity_type(aws_sdk_ec2::types::ConnectivityType::Public)
-            .nat_gateway_addresses(aws_sdk_ec2::types::NatGatewayAddress::builder().public_ip("1.2.3.4").build())
-            .tags(aws_sdk_ec2::types::Tag::builder().key("Name").value("nat").build())
+            .nat_gateway_addresses(
+                aws_sdk_ec2::types::NatGatewayAddress::builder()
+                    .public_ip("1.2.3.4")
+                    .build(),
+            )
+            .tags(
+                aws_sdk_ec2::types::Tag::builder()
+                    .key("Name")
+                    .value("nat")
+                    .build(),
+            )
             .build();
         let ng: NatGateway = sdk.into();
         assert_eq!(ng.id, "nat-123");
@@ -392,11 +505,19 @@ mod tests {
             .state(aws_sdk_ec2::types::State::Available)
             .subnet_ids("subnet-1")
             .route_table_ids("rtb-1")
-            .tags(aws_sdk_ec2::types::Tag::builder().key("Name").value("s3-ep").build())
+            .tags(
+                aws_sdk_ec2::types::Tag::builder()
+                    .key("Name")
+                    .value("s3-ep")
+                    .build(),
+            )
             .build();
         let ep: VpcEndpoint = sdk.into();
         assert_eq!(ep.id, "vpce-123");
-        assert_eq!(ep.service_name, Some("com.amazonaws.us-east-1.s3".to_string()));
+        assert_eq!(
+            ep.service_name,
+            Some("com.amazonaws.us-east-1.s3".to_string())
+        );
         assert_eq!(ep.endpoint_type, Some("Gateway".to_string()));
         assert_eq!(ep.subnet_ids, vec!["subnet-1".to_string()]);
         assert_eq!(ep.route_table_ids, vec!["rtb-1".to_string()]);
@@ -419,7 +540,12 @@ mod tests {
             .state(aws_sdk_ec2::types::TransitGatewayState::Available)
             .owner_id("123456789012")
             .description("Main TGW")
-            .tags(aws_sdk_ec2::types::Tag::builder().key("Name").value("main-tgw").build())
+            .tags(
+                aws_sdk_ec2::types::Tag::builder()
+                    .key("Name")
+                    .value("main-tgw")
+                    .build(),
+            )
             .build();
         let tg: TransitGateway = sdk.into();
         assert_eq!(tg.id, "tgw-123");
@@ -450,7 +576,12 @@ mod tests {
             .log_format("${version} ${account-id} ${interface-id}")
             .deliver_logs_status("SUCCESS")
             .creation_time(aws_smithy_types::DateTime::from_secs(0))
-            .tags(aws_sdk_ec2::types::Tag::builder().key("Name").value("my-flow-log").build())
+            .tags(
+                aws_sdk_ec2::types::Tag::builder()
+                    .key("Name")
+                    .value("my-flow-log")
+                    .build(),
+            )
             .build();
         let fl: VpcFlowLog = sdk.into();
         assert_eq!(fl.flow_log_id, "fl-12345");
@@ -458,7 +589,10 @@ mod tests {
         assert_eq!(fl.resource_id, Some("vpc-abc".to_string()));
         assert!(fl.traffic_type.is_some());
         assert!(fl.log_destination_type.is_some());
-        assert_eq!(fl.log_destination, Some("arn:aws:s3:::my-bucket/flow-logs/".to_string()));
+        assert_eq!(
+            fl.log_destination,
+            Some("arn:aws:s3:::my-bucket/flow-logs/".to_string())
+        );
         assert_eq!(fl.log_group_name, Some("my-log-group".to_string()));
         assert_eq!(fl.deliver_logs_status, Some("SUCCESS".to_string()));
         assert_eq!(fl.creation_time, Some(DateTime::<Utc>::UNIX_EPOCH));

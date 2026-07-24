@@ -62,11 +62,7 @@ pub struct StageState {
 
 impl From<&SdkStageState> for StageState {
     fn from(s: &SdkStageState) -> Self {
-        let action_states = s
-            .action_states()
-            .iter()
-            .map(ActionState::from)
-            .collect();
+        let action_states = s.action_states().iter().map(ActionState::from).collect();
         Self {
             stage_name: s.stage_name().map(|v| v.to_string()),
             status: s
@@ -93,7 +89,9 @@ impl From<&SdkActionState> for ActionState {
                 Some(exec) => (
                     exec.status().map(|s| s.as_str().to_string()),
                     to_utc(exec.last_status_change()),
-                    exec.error_details().and_then(|e| e.message()).map(|m| m.to_string()),
+                    exec.error_details()
+                        .and_then(|e| e.message())
+                        .map(|m| m.to_string()),
                     exec.external_execution_url().map(|u| u.to_string()),
                 ),
                 None => (None, None, None, None),
@@ -153,9 +151,7 @@ mod tests {
 
     #[test]
     fn test_stage_state_from_sdk() {
-        let sdk_stage = SdkStageState::builder()
-            .stage_name("Build")
-            .build();
+        let sdk_stage = SdkStageState::builder().stage_name("Build").build();
         let stage = StageState::from(&sdk_stage);
         assert_eq!(stage.stage_name, Some("Build".to_string()));
         assert!(stage.status.is_none());
@@ -164,9 +160,7 @@ mod tests {
 
     #[test]
     fn test_action_state_from_sdk() {
-        let sdk_action = SdkActionState::builder()
-            .action_name("CodeBuild")
-            .build();
+        let sdk_action = SdkActionState::builder().action_name("CodeBuild").build();
         let action = ActionState::from(&sdk_action);
         assert_eq!(action.action_name, Some("CodeBuild".to_string()));
         assert!(action.status.is_none());

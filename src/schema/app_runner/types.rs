@@ -181,7 +181,8 @@ mod tests {
         let info = AppRunnerServiceInfo {
             service_id: None,
             service_name: "my-service".to_string(),
-            service_arn: "arn:aws:apprunner:us-east-1:123456789012:service/my-service/abc123".to_string(),
+            service_arn: "arn:aws:apprunner:us-east-1:123456789012:service/my-service/abc123"
+                .to_string(),
             service_url: None,
             status: "RUNNING".to_string(),
             created_at: None,
@@ -202,7 +203,8 @@ mod tests {
         let info = AppRunnerServiceInfo {
             service_id: Some("abc123".to_string()),
             service_name: "my-api".to_string(),
-            service_arn: "arn:aws:apprunner:us-east-1:123456789012:service/my-api/abc123".to_string(),
+            service_arn: "arn:aws:apprunner:us-east-1:123456789012:service/my-api/abc123"
+                .to_string(),
             service_url: Some("abc123.us-east-1.awsapprunner.com".to_string()),
             status: "RUNNING".to_string(),
             created_at: Some("2024-01-01T00:00:00Z".parse().unwrap()),
@@ -222,7 +224,10 @@ mod tests {
         };
         let result = AppRunnerService::from(info);
         assert_eq!(result.service_id, Some("abc123".to_string()));
-        assert_eq!(result.service_url, Some("abc123.us-east-1.awsapprunner.com".to_string()));
+        assert_eq!(
+            result.service_url,
+            Some("abc123.us-east-1.awsapprunner.com".to_string())
+        );
         let src = result.source_configuration.unwrap();
         let img = src.image_repository.unwrap();
         assert_eq!(img.image_repository_type, "ECR_PUBLIC");
@@ -238,7 +243,8 @@ mod tests {
         let info = AppRunnerServiceInfo {
             service_id: Some("def456".to_string()),
             service_name: "code-service".to_string(),
-            service_arn: "arn:aws:apprunner:us-east-1:123456789012:service/code-service/def456".to_string(),
+            service_arn: "arn:aws:apprunner:us-east-1:123456789012:service/code-service/def456"
+                .to_string(),
             service_url: None,
             status: "CREATE_FAILED".to_string(),
             created_at: None,
@@ -266,7 +272,9 @@ mod tests {
     fn test_app_runner_vpc_connector_from() {
         let info = AppRunnerVpcConnectorInfo {
             vpc_connector_name: "my-connector".to_string(),
-            vpc_connector_arn: "arn:aws:apprunner:us-east-1:123456789012:vpcconnector/my-connector/1/abc123".to_string(),
+            vpc_connector_arn:
+                "arn:aws:apprunner:us-east-1:123456789012:vpcconnector/my-connector/1/abc123"
+                    .to_string(),
             vpc_connector_revision: 1,
             vpc_id: Some("vpc-12345678".to_string()),
             subnets: vec!["subnet-aaa".to_string(), "subnet-bbb".to_string()],
@@ -286,7 +294,8 @@ mod tests {
     fn test_app_runner_vpc_connector_no_vpc_id() {
         let info = AppRunnerVpcConnectorInfo {
             vpc_connector_name: "orphan-connector".to_string(),
-            vpc_connector_arn: "arn:aws:apprunner:us-east-1:123456789012:vpcconnector/orphan/1/xyz".to_string(),
+            vpc_connector_arn: "arn:aws:apprunner:us-east-1:123456789012:vpcconnector/orphan/1/xyz"
+                .to_string(),
             vpc_connector_revision: 2,
             vpc_id: None,
             subnets: vec![],
@@ -304,7 +313,10 @@ mod tests {
     fn test_app_runner_connection_from() {
         let info = AppRunnerConnectionInfo {
             connection_name: Some("my-connection".to_string()),
-            connection_arn: Some("arn:aws:apprunner:us-east-1:123456789012:connection/my-connection/abc123".to_string()),
+            connection_arn: Some(
+                "arn:aws:apprunner:us-east-1:123456789012:connection/my-connection/abc123"
+                    .to_string(),
+            ),
             provider_type: Some("GITHUB".to_string()),
             status: Some("AVAILABLE".to_string()),
             created_at: Some("2024-01-01T00:00:00Z".parse().unwrap()),
@@ -328,7 +340,10 @@ mod tests {
             status: Some("ACTIVE".to_string()),
         };
         let result = AppRunnerObservabilityConfiguration::from(info);
-        assert_eq!(result.observability_configuration_name, Some("my-config".to_string()));
+        assert_eq!(
+            result.observability_configuration_name,
+            Some("my-config".to_string())
+        );
         assert_eq!(result.observability_configuration_revision, 1);
         assert_eq!(result.tracing_vendor, Some("AWSXRAY".to_string()));
         assert!(result.latest);

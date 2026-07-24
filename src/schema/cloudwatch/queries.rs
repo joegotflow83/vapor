@@ -163,10 +163,7 @@ impl CloudWatchQuery {
         let cwl = ctx.data::<CloudWatchLogsClient>()?;
         let (start_ms, end_ms) = if let Some(tr) = time_range {
             let (start, end) = resolve_time_range(&tr)?;
-            (
-                Some(start.timestamp_millis()),
-                Some(end.timestamp_millis()),
-            )
+            (Some(start.timestamp_millis()), Some(end.timestamp_millis()))
         } else {
             (None, None)
         };
@@ -259,9 +256,13 @@ mod tests {
         req.begin_map().str("MetricDataQueries").array(1);
         req.begin_map().str("Id").str("q1").end();
         req.str("StartTime")
-            .timestamp(&aws_sdk_cloudwatch::primitives::DateTime::from_secs(1_704_067_200));
+            .timestamp(&aws_sdk_cloudwatch::primitives::DateTime::from_secs(
+                1_704_067_200,
+            ));
         req.str("EndTime")
-            .timestamp(&aws_sdk_cloudwatch::primitives::DateTime::from_secs(1_704_070_800));
+            .timestamp(&aws_sdk_cloudwatch::primitives::DateTime::from_secs(
+                1_704_070_800,
+            ));
         req.end();
 
         let mut resp = Encoder::new(Vec::new());
@@ -315,7 +316,10 @@ mod tests {
             )
             .await;
 
-        assert!(!res.errors.is_empty(), "expected a GraphQL error for an empty TimeRange");
+        assert!(
+            !res.errors.is_empty(),
+            "expected a GraphQL error for an empty TimeRange"
+        );
     }
 
     #[tokio::test]

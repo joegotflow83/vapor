@@ -34,11 +34,7 @@ impl OpenSearchQuery {
     }
 
     /// Fetch tags for an OpenSearch domain by ARN.
-    async fn opensearch_domain_tags(
-        &self,
-        ctx: &Context<'_>,
-        arn: String,
-    ) -> Result<Vec<Tag>> {
+    async fn opensearch_domain_tags(&self, ctx: &Context<'_>, arn: String) -> Result<Vec<Tag>> {
         let client = ctx.data::<OpenSearchClient>()?;
         let sdk_tags = client.list_tags(&arn).await?;
         Ok(sdk_tags.iter().map(convert_opensearch_tag).collect())

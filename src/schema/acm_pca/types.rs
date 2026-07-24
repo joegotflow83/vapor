@@ -77,10 +77,7 @@ impl From<aws_sdk_acmpca::types::RevocationConfiguration> for PcaRevocationConfi
     fn from(r: aws_sdk_acmpca::types::RevocationConfiguration) -> Self {
         Self {
             crl_enabled: r.crl_configuration().map(|c| c.enabled()).unwrap_or(false),
-            ocsp_enabled: r
-                .ocsp_configuration()
-                .map(|c| c.enabled())
-                .unwrap_or(false),
+            ocsp_enabled: r.ocsp_configuration().map(|c| c.enabled()).unwrap_or(false),
         }
     }
 }
@@ -91,7 +88,10 @@ mod tests {
     use crate::aws::acm_pca::PrivateCaInfo;
 
     fn make_ca_info(ca: aws_sdk_acmpca::types::CertificateAuthority) -> PrivateCaInfo {
-        PrivateCaInfo { inner: ca, tags: vec![] }
+        PrivateCaInfo {
+            inner: ca,
+            tags: vec![],
+        }
     }
 
     fn make_ca_info_with_tags(

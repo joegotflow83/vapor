@@ -1,5 +1,5 @@
 use async_graphql::SimpleObject;
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use chrono::{DateTime, Utc};
 
 use crate::schema::common::types::Tag;
@@ -49,9 +49,7 @@ impl From<aws_sdk_secretsmanager::types::SecretListEntry> for Secret {
 }
 
 impl From<aws_sdk_secretsmanager::operation::describe_secret::DescribeSecretOutput> for Secret {
-    fn from(
-        o: aws_sdk_secretsmanager::operation::describe_secret::DescribeSecretOutput,
-    ) -> Self {
+    fn from(o: aws_sdk_secretsmanager::operation::describe_secret::DescribeSecretOutput) -> Self {
         Self {
             arn: o.arn().map(|s| s.to_string()),
             name: o.name().map(|s| s.to_string()),
@@ -92,9 +90,7 @@ pub struct SecretValue {
 impl From<aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOutput>
     for SecretValue
 {
-    fn from(
-        o: aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOutput,
-    ) -> Self {
+    fn from(o: aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOutput) -> Self {
         let secret_binary = o
             .secret_binary()
             .map(|b| general_purpose::STANDARD.encode(b.as_ref()));
@@ -105,11 +101,7 @@ impl From<aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOut
             version_id: o.version_id().map(|s| s.to_string()),
             secret_string: o.secret_string().map(|s| s.to_string()),
             secret_binary,
-            version_stages: o
-                .version_stages()
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            version_stages: o.version_stages().iter().map(|s| s.to_string()).collect(),
             created_date: to_utc(o.created_date()),
         }
     }
@@ -151,7 +143,9 @@ mod tests {
         let secret = Secret::from(entry);
         assert_eq!(
             secret.arn,
-            Some("arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret-abc123".to_string())
+            Some(
+                "arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret-abc123".to_string()
+            )
         );
         assert_eq!(secret.name, Some("my-secret".to_string()));
         assert_eq!(secret.description, Some("A test secret".to_string()));

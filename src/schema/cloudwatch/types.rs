@@ -119,42 +119,38 @@ pub struct MetricDataQuery {
 
 impl MetricDataQuery {
     pub fn to_sdk(&self) -> aws_sdk_cloudwatch::types::MetricDataQuery {
-        let metric_stat =
-            if let (Some(ns), Some(mn), Some(period), Some(stat)) = (
-                &self.namespace,
-                &self.metric_name,
-                self.period,
-                &self.stat,
-            ) {
-                let dims: Vec<aws_sdk_cloudwatch::types::Dimension> = self
-                    .dimensions
-                    .as_deref()
-                    .unwrap_or(&[])
-                    .iter()
-                    .map(|d| {
-                        aws_sdk_cloudwatch::types::Dimension::builder()
-                            .name(&d.name)
-                            .value(d.value.as_deref().unwrap_or(""))
-                            .build()
-                    })
-                    .collect();
+        let metric_stat = if let (Some(ns), Some(mn), Some(period), Some(stat)) =
+            (&self.namespace, &self.metric_name, self.period, &self.stat)
+        {
+            let dims: Vec<aws_sdk_cloudwatch::types::Dimension> = self
+                .dimensions
+                .as_deref()
+                .unwrap_or(&[])
+                .iter()
+                .map(|d| {
+                    aws_sdk_cloudwatch::types::Dimension::builder()
+                        .name(&d.name)
+                        .value(d.value.as_deref().unwrap_or(""))
+                        .build()
+                })
+                .collect();
 
-                let metric = aws_sdk_cloudwatch::types::Metric::builder()
-                    .namespace(ns)
-                    .metric_name(mn)
-                    .set_dimensions(Some(dims))
-                    .build();
+            let metric = aws_sdk_cloudwatch::types::Metric::builder()
+                .namespace(ns)
+                .metric_name(mn)
+                .set_dimensions(Some(dims))
+                .build();
 
-                Some(
-                    aws_sdk_cloudwatch::types::MetricStat::builder()
-                        .metric(metric)
-                        .period(period)
-                        .stat(stat)
-                        .build(),
-                )
-            } else {
-                None
-            };
+            Some(
+                aws_sdk_cloudwatch::types::MetricStat::builder()
+                    .metric(metric)
+                    .period(period)
+                    .stat(stat)
+                    .build(),
+            )
+        } else {
+            None
+        };
 
         aws_sdk_cloudwatch::types::MetricDataQuery::builder()
             .id(&self.id)
@@ -466,9 +462,7 @@ impl From<aws_sdk_cloudwatchlogs::types::MetricFilter> for MetricFilter {
 
 // === Time range resolver ===
 
-pub fn resolve_time_range(
-    tr: &TimeRange,
-) -> Result<(DateTime<Utc>, DateTime<Utc>), VaporError> {
+pub fn resolve_time_range(tr: &TimeRange) -> Result<(DateTime<Utc>, DateTime<Utc>), VaporError> {
     if let Some(m) = tr.last_minutes {
         if m <= 0 {
             return Err(VaporError::InvalidInput(
@@ -716,9 +710,15 @@ mod tests {
         assert_eq!(alarm.metric.stat, Some("Average".to_string()));
         assert_eq!(alarm.treat_missing_data, Some("missing".to_string()));
         assert!(alarm.actions_enabled);
-        assert_eq!(alarm.alarm_actions, vec!["arn:aws:sns:us-east-1:123:my-topic"]);
+        assert_eq!(
+            alarm.alarm_actions,
+            vec!["arn:aws:sns:us-east-1:123:my-topic"]
+        );
         assert_eq!(alarm.ok_actions, vec!["arn:aws:sns:us-east-1:123:ok-topic"]);
-        assert_eq!(alarm.state_updated_timestamp, Some(DateTime::<Utc>::UNIX_EPOCH));
+        assert_eq!(
+            alarm.state_updated_timestamp,
+            Some(DateTime::<Utc>::UNIX_EPOCH)
+        );
         assert_eq!(alarm.updated_timestamp, Some(DateTime::<Utc>::UNIX_EPOCH));
     }
 
@@ -754,7 +754,9 @@ mod tests {
         assert_eq!(lg.name, "/aws/lambda/my-function");
         assert_eq!(
             lg.arn,
-            Some("arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/my-function".to_string())
+            Some(
+                "arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/my-function".to_string()
+            )
         );
         let ct = lg.creation_time.expect("creation_time should be Some");
         assert!(ct.to_rfc3339().starts_with("2021"), "got: {ct}");
@@ -801,7 +803,9 @@ mod tests {
         let let_ = ls.last_event_time.expect("last_event_time should be Some");
         assert!(let_.to_rfc3339().starts_with("2024"), "got: {let_}");
 
-        let lit = ls.last_ingestion_time.expect("last_ingestion_time should be Some");
+        let lit = ls
+            .last_ingestion_time
+            .expect("last_ingestion_time should be Some");
         assert!(lit.to_rfc3339().starts_with("2024"), "got: {lit}");
 
         assert_eq!(ls.stored_bytes, Some(512i64));
@@ -819,7 +823,11 @@ mod tests {
 
         let ev = LogEvent::from(sdk);
 
-        assert!(ev.timestamp.to_rfc3339().starts_with("2024"), "got: {}", ev.timestamp);
+        assert!(
+            ev.timestamp.to_rfc3339().starts_with("2024"),
+            "got: {}",
+            ev.timestamp
+        );
 
         assert_eq!(ev.message, "ERROR: Something went wrong");
 
@@ -957,10 +965,7 @@ mod tests {
         let f = MetricFilter::from(sdk);
         assert_eq!(f.filter_name, "root-account-usage");
         assert!(f.filter_pattern.contains("Root"));
-        assert_eq!(
-            f.log_group_name,
-            Some("/aws/cloudtrail/logs".to_string())
-        );
+        assert_eq!(f.log_group_name, Some("/aws/cloudtrail/logs".to_string()));
         let ct = f.creation_time.expect("creation_time should be Some");
         assert!(ct.to_rfc3339().starts_with("2021"), "got: {ct}");
         assert_eq!(f.metric_transformations.len(), 1);

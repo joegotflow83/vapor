@@ -2,8 +2,8 @@ use aws_config::SdkConfig;
 use aws_sdk_cloudformation::types::{Export, Stack, StackResourceSummary};
 use aws_smithy_types::error::metadata::ProvideErrorMetadata;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 pub struct CloudFormationClient {
     inner: aws_sdk_cloudformation::Client,
@@ -18,7 +18,13 @@ impl CloudFormationClient {
 
     /// Returns full details for a single named stack, or `None` if it doesn't exist.
     pub async fn describe_stack(&self, stack_name: &str) -> Result<Option<Stack>, VaporError> {
-        match self.inner.describe_stacks().stack_name(stack_name).send().await {
+        match self
+            .inner
+            .describe_stacks()
+            .stack_name(stack_name)
+            .send()
+            .await
+        {
             Ok(output) => Ok(output.stacks.unwrap_or_default().into_iter().next()),
             Err(e) => {
                 let not_found = e.message().unwrap_or_default().contains("does not exist");
@@ -136,7 +142,9 @@ impl CloudFormationClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use aws_sdk_cloudformation::types::StackStatus;
 
     // Query/ec2Query protocol (verified against pinned `aws-sdk-cloudformation`
@@ -173,8 +181,14 @@ mod tests {
     #[tokio::test]
     async fn describe_stack_returns_none_when_stack_does_not_exist() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=missing-stack"),
-            xml_error_response("ValidationError", "Stack with id missing-stack does not exist"),
+            request(
+                ENDPOINT,
+                "Action=DescribeStacks&Version=2010-05-15&StackName=missing-stack",
+            ),
+            xml_error_response(
+                "ValidationError",
+                "Stack with id missing-stack does not exist",
+            ),
         )]);
         let client = CloudFormationClient::new(&sdk_config(http_client.clone()));
 
@@ -187,7 +201,10 @@ mod tests {
     #[tokio::test]
     async fn describe_stack_propagates_other_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=my-stack"),
+            request(
+                ENDPOINT,
+                "Action=DescribeStacks&Version=2010-05-15&StackName=my-stack",
+            ),
             xml_error_response("AccessDenied", "not authorized"),
         )]);
         let client = CloudFormationClient::new(&sdk_config(http_client.clone()));
@@ -255,7 +272,10 @@ mod tests {
     #[tokio::test]
     async fn describe_all_stacks_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&NextToken=cursor-a"),
+            request(
+                ENDPOINT,
+                "Action=DescribeStacks&Version=2010-05-15&NextToken=cursor-a",
+            ),
             xml_response(
                 200,
                 "<DescribeStacksResponse><DescribeStacksResult><Stacks>\
@@ -293,7 +313,10 @@ mod tests {
         )]);
         let client = CloudFormationClient::new(&sdk_config(http_client.clone()));
 
-        let (stacks, token) = client.describe_all_stacks(&[], Some(2), None).await.unwrap();
+        let (stacks, token) = client
+            .describe_all_stacks(&[], Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(stacks.len(), 2);
         assert_eq!(token, Some("page2".to_string()));
@@ -324,7 +347,10 @@ mod tests {
         ]);
         let client = CloudFormationClient::new(&sdk_config(http_client.clone()));
 
-        let (stacks, token) = client.describe_all_stacks(&[], Some(10), None).await.unwrap();
+        let (stacks, token) = client
+            .describe_all_stacks(&[], Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(stacks.len(), 2);
         assert_eq!(token, None);
@@ -339,7 +365,10 @@ mod tests {
         )]);
         let client = CloudFormationClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_all_stacks(&[], None, None).await.unwrap_err();
+        let err = client
+            .describe_all_stacks(&[], None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -353,7 +382,8 @@ mod tests {
 
     #[tokio::test]
     async fn list_stack_resources_happy_path() {
-        let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
+        let http_client =
+            StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, "Action=ListStackResources&Version=2010-05-15&StackName=my-stack"),
             xml_response(
                 200,
@@ -374,7 +404,10 @@ mod tests {
 
         assert_eq!(resources.len(), 1);
         assert_eq!(resources[0].logical_resource_id(), Some("MyBucket"));
-        assert_eq!(resources[0].physical_resource_id(), Some("my-bucket-abc123"));
+        assert_eq!(
+            resources[0].physical_resource_id(),
+            Some("my-bucket-abc123")
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -450,4 +483,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

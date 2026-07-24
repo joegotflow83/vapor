@@ -1,7 +1,9 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::apigateway::ApiGatewayClient;
-use crate::schema::apigateway::types::{ApigwDeployment, ApigwResource, ApigwRestApi, ApigwRestStage};
+use crate::schema::apigateway::types::{
+    ApigwDeployment, ApigwResource, ApigwRestApi, ApigwRestStage,
+};
 use crate::schema::pagination::Page;
 
 #[derive(Default)]
@@ -48,8 +50,9 @@ impl ApiGatewayQuery {
         next_token: Option<String>,
     ) -> Result<Page<ApigwResource>> {
         let client = ctx.data::<ApiGatewayClient>()?;
-        let (resources, next_token) =
-            client.list_rest_resources(&api_id, limit, next_token).await?;
+        let (resources, next_token) = client
+            .list_rest_resources(&api_id, limit, next_token)
+            .await?;
         Ok(Page {
             items: resources.into_iter().map(ApigwResource::from).collect(),
             next_token,
@@ -67,8 +70,9 @@ impl ApiGatewayQuery {
         next_token: Option<String>,
     ) -> Result<Page<ApigwDeployment>> {
         let client = ctx.data::<ApiGatewayClient>()?;
-        let (deployments, next_token) =
-            client.list_rest_deployments(&api_id, limit, next_token).await?;
+        let (deployments, next_token) = client
+            .list_rest_deployments(&api_id, limit, next_token)
+            .await?;
         Ok(Page {
             items: deployments.into_iter().map(ApigwDeployment::from).collect(),
             next_token,
@@ -83,7 +87,9 @@ impl ApiGatewayQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::apigateway::ApiGatewayClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::ApiGatewayQuery;
@@ -120,7 +126,10 @@ mod tests {
     async fn apigw_rest_stages_maps_items() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{APIS}/api1/stages"), ""),
-            json_response(200, r#"{"item":[{"stageName":"prod","deploymentId":"dep1"}]}"#),
+            json_response(
+                200,
+                r#"{"item":[{"stageName":"prod","deploymentId":"dep1"}]}"#,
+            ),
         )]);
         let schema = build_query_schema(ApiGatewayQuery)
             .data(ApiGatewayClient::new(&sdk_config(http_client.clone())))
@@ -170,13 +179,18 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ apigwRestDeployments(apiId: "api1") { items { id description } nextToken } }"#)
+            .execute(
+                r#"{ apigwRestDeployments(apiId: "api1") { items { id description } nextToken } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
         assert_eq!(json["apigwRestDeployments"]["items"][0]["id"], "dep1");
-        assert_eq!(json["apigwRestDeployments"]["items"][0]["description"], "initial");
+        assert_eq!(
+            json["apigwRestDeployments"]["items"][0]["description"],
+            "initial"
+        );
         assert!(json["apigwRestDeployments"]["nextToken"].is_null());
         http_client.relaxed_requests_match();
     }

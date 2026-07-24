@@ -67,7 +67,9 @@ impl RekognitionQuery {
 mod tests {
     use super::*;
     use crate::aws::rekognition::RekognitionClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     // awsJson1.1: POST JSON to a fixed `/` path (same shape as

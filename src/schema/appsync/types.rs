@@ -83,7 +83,10 @@ mod tests {
             .name("MyApi")
             .arn("arn:aws:appsync:us-east-1:123456789012:apis/abc123")
             .authentication_type(aws_sdk_appsync::types::AuthenticationType::ApiKey)
-            .uris("GRAPHQL", "https://abc123.appsync-api.us-east-1.amazonaws.com/graphql")
+            .uris(
+                "GRAPHQL",
+                "https://abc123.appsync-api.us-east-1.amazonaws.com/graphql",
+            )
             .xray_enabled(true)
             .build();
         let result = AppSyncApi::from(api);

@@ -45,7 +45,9 @@ impl From<SdkCluster> for RedshiftCluster {
             cluster_status: c.cluster_status().map(|v| v.to_string()),
             db_name: c.db_name().map(|v| v.to_string()),
             master_username: c.master_username().map(|v| v.to_string()),
-            endpoint_address: c.endpoint().and_then(|e| e.address().map(|v| v.to_string())),
+            endpoint_address: c
+                .endpoint()
+                .and_then(|e| e.address().map(|v| v.to_string())),
             endpoint_port: c.endpoint().and_then(|e| e.port()),
             number_of_nodes: c.number_of_nodes(),
             vpc_id: c.vpc_id().map(|v| v.to_string()),
@@ -94,7 +96,9 @@ impl From<SdkSnapshot> for RedshiftSnapshot {
             number_of_nodes: s.number_of_nodes(),
             cluster_version: s.cluster_version().map(|v| v.to_string()),
             availability_zone: s.availability_zone().map(|v| v.to_string()),
-            total_backup_size_in_mega_bytes: s.total_backup_size_in_mega_bytes().unwrap_or_default(),
+            total_backup_size_in_mega_bytes: s
+                .total_backup_size_in_mega_bytes()
+                .unwrap_or_default(),
             encrypted: s.encrypted().unwrap_or(false),
             master_username: s.master_username().map(|v| v.to_string()),
             created_at: to_utc(s.snapshot_create_time()),

@@ -50,10 +50,8 @@ fn sdk_tag_to_tag(t: &aws_sdk_networkfirewall::types::Tag) -> Tag {
     }
 }
 
-impl
-    From<
-        aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput,
-    > for Firewall
+impl From<aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput>
+    for Firewall
 {
     fn from(
         output: aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput,
@@ -98,9 +96,8 @@ impl
 }
 
 impl
-    From<
-        aws_sdk_networkfirewall::operation::describe_firewall_policy::DescribeFirewallPolicyOutput,
-    > for FirewallPolicy
+    From<aws_sdk_networkfirewall::operation::describe_firewall_policy::DescribeFirewallPolicyOutput>
+    for FirewallPolicy
 {
     fn from(
         output: aws_sdk_networkfirewall::operation::describe_firewall_policy::DescribeFirewallPolicyOutput,
@@ -155,10 +152,8 @@ impl
     }
 }
 
-impl
-    From<
-        aws_sdk_networkfirewall::operation::describe_rule_group::DescribeRuleGroupOutput,
-    > for RuleGroup
+impl From<aws_sdk_networkfirewall::operation::describe_rule_group::DescribeRuleGroupOutput>
+    for RuleGroup
 {
     fn from(
         output: aws_sdk_networkfirewall::operation::describe_rule_group::DescribeRuleGroupOutput,
@@ -193,8 +188,9 @@ mod tests {
     #[test]
     fn test_firewall_from_output_minimal() {
         let output =
-            aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput::builder()
-                .build();
+            aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput::builder(
+            )
+            .build();
         let fw = Firewall::from(output);
         assert_eq!(fw.firewall_name, "");
         assert!(fw.firewall_arn.is_none());
@@ -232,9 +228,10 @@ mod tests {
             .build()
             .expect("fw build");
         let output =
-            aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput::builder()
-                .firewall(sdk_fw)
-                .build();
+            aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput::builder(
+            )
+            .firewall(sdk_fw)
+            .build();
         let fw = Firewall::from(output);
         assert_eq!(fw.firewall_name, "test-fw");
         assert_eq!(
@@ -319,11 +316,11 @@ mod tests {
             .expect("output build");
         let policy = FirewallPolicy::from(output);
         assert_eq!(policy.name, "full-pol");
+        assert_eq!(policy.description, Some("Full policy".to_string()));
         assert_eq!(
-            policy.description,
-            Some("Full policy".to_string())
+            policy.stateless_default_actions,
+            vec!["aws:drop".to_string()]
         );
-        assert_eq!(policy.stateless_default_actions, vec!["aws:drop".to_string()]);
         assert_eq!(
             policy.stateless_rule_group_arns,
             vec!["arn:aws:network-firewall::123:stateless-rulegroup/sl".to_string()]
@@ -332,7 +329,10 @@ mod tests {
             policy.stateful_rule_group_arns,
             vec!["arn:aws:network-firewall::123:stateful-rulegroup/sf".to_string()]
         );
-        assert_eq!(policy.stateful_default_actions, vec!["aws:drop_strict".to_string()]);
+        assert_eq!(
+            policy.stateful_default_actions,
+            vec!["aws:drop_strict".to_string()]
+        );
         assert_eq!(policy.tags.len(), 1);
         assert_eq!(policy.tags[0].key, "team");
     }

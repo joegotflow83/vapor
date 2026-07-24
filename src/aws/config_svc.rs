@@ -1,8 +1,8 @@
 use aws_config::SdkConfig;
 use aws_sdk_config as config_sdk;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 pub struct AwsConfigClient {
     inner: config_sdk::Client,
@@ -67,7 +67,13 @@ impl AwsConfigClient {
         compliance_types: Option<Vec<String>>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<config_sdk::types::ComplianceByConfigRule>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<config_sdk::types::ComplianceByConfigRule>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let ct: Option<Vec<config_sdk::types::ComplianceType>> = compliance_types.map(|types| {
             types
                 .iter()
@@ -160,7 +166,9 @@ impl AwsConfigClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::error::VaporError;
 
     const ENDPOINT: &str = "https://config.us-east-1.amazonaws.com/";
@@ -176,7 +184,10 @@ mod tests {
         )]);
         let client = AwsConfigClient::new(&sdk_config(http_client.clone()));
 
-        let (rules, token) = client.describe_config_rules(None, None, None).await.unwrap();
+        let (rules, token) = client
+            .describe_config_rules(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(rules.len(), 2);
         assert_eq!(rules[0].config_rule_name(), Some("rule1"));
@@ -188,13 +199,20 @@ mod tests {
     #[tokio::test]
     async fn describe_config_rules_filters_by_names_and_resumes_from_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"ConfigRuleNames":["ruleA"],"NextToken":"cursor-a"}"#),
+            request(
+                ENDPOINT,
+                r#"{"ConfigRuleNames":["ruleA"],"NextToken":"cursor-a"}"#,
+            ),
             json_response(200, r#"{"ConfigRules":[{"ConfigRuleName":"ruleA"}]}"#),
         )]);
         let client = AwsConfigClient::new(&sdk_config(http_client.clone()));
 
         let (rules, token) = client
-            .describe_config_rules(Some(vec!["ruleA".to_string()]), None, Some("cursor-a".to_string()))
+            .describe_config_rules(
+                Some(vec!["ruleA".to_string()]),
+                None,
+                Some("cursor-a".to_string()),
+            )
             .await
             .unwrap();
 
@@ -218,7 +236,10 @@ mod tests {
         )]);
         let client = AwsConfigClient::new(&sdk_config(http_client.clone()));
 
-        let (rules, token) = client.describe_config_rules(None, Some(1), None).await.unwrap();
+        let (rules, token) = client
+            .describe_config_rules(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].config_rule_name(), Some("r1"));
@@ -243,7 +264,10 @@ mod tests {
         ]);
         let client = AwsConfigClient::new(&sdk_config(http_client.clone()));
 
-        let (rules, token) = client.describe_config_rules(None, Some(10), None).await.unwrap();
+        let (rules, token) = client
+            .describe_config_rules(None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(rules.len(), 3);
         assert_eq!(token, None);
@@ -477,7 +501,10 @@ mod tests {
         )]);
         let client = AwsConfigClient::new(&sdk_config(http_client.clone()));
 
-        match client.describe_compliance_by_resource(None, None, None, None).await {
+        match client
+            .describe_compliance_by_resource(None, None, None, None)
+            .await
+        {
             Err(VaporError::AwsSdk { code, message }) => {
                 assert_eq!(code, Some("InvalidParameterValueException".to_string()));
                 assert_eq!(message, "bad resource type");
@@ -487,4 +514,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

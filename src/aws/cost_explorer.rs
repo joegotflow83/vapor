@@ -39,7 +39,13 @@ impl CostExplorerClient {
         group_by: Option<Vec<String>>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_costexplorer::types::ResultByTime>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_costexplorer::types::ResultByTime>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let gran = match granularity {
             "HOURLY" => Granularity::Hourly,
             "MONTHLY" => Granularity::Monthly,
@@ -58,7 +64,10 @@ impl CostExplorerClient {
                         .start(start)
                         .end(end)
                         .build()
-                        .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?,
+                        .map_err(|e| VaporError::AwsSdk {
+                            code: None,
+                            message: e.to_string(),
+                        })?,
                 )
                 .granularity(gran.clone())
                 .metrics("UnblendedCost");
@@ -70,12 +79,7 @@ impl CostExplorerClient {
                     } else {
                         (GroupDefinitionType::Dimension, g.clone())
                     };
-                    req = req.group_by(
-                        GroupDefinition::builder()
-                            .r#type(gtype)
-                            .key(key)
-                            .build(),
-                    );
+                    req = req.group_by(GroupDefinition::builder().r#type(gtype).key(key).build());
                 }
             }
 
@@ -121,7 +125,10 @@ impl CostExplorerClient {
                     .start(start)
                     .end(end)
                     .build()
-                    .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?,
+                    .map_err(|e| VaporError::AwsSdk {
+                        code: None,
+                        message: e.to_string(),
+                    })?,
             )
             .granularity(gran)
             .metric(Metric::UnblendedCost)
@@ -136,7 +143,9 @@ impl CostExplorerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://ce.us-east-1.amazonaws.com/";
 
@@ -350,4 +359,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

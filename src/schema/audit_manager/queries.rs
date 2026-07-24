@@ -63,7 +63,10 @@ impl AuditManagerQuery {
             .list_controls(control_type, limit, next_token)
             .await?;
         Ok(Page {
-            items: controls.into_iter().map(AuditManagerControl::from).collect(),
+            items: controls
+                .into_iter()
+                .map(AuditManagerControl::from)
+                .collect(),
             next_token,
         })
     }
@@ -77,7 +80,9 @@ impl AuditManagerQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::audit_manager::AuditManagerClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::AuditManagerQuery;

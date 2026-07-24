@@ -101,7 +101,9 @@ impl From<&aws_sdk_glue::types::Crawler> for GlueCrawler {
             role: c.role().map(|s| s.to_string()),
             database_name: c.database_name().map(|s| s.to_string()),
             state: c.state().map(|s| s.as_str().to_string()),
-            schedule: c.schedule().and_then(|s| s.schedule_expression().map(|e| e.to_string())),
+            schedule: c
+                .schedule()
+                .and_then(|s| s.schedule_expression().map(|e| e.to_string())),
             last_crawl_status: last_crawl.and_then(|l| l.status().map(|s| s.as_str().to_string())),
             last_crawl_time: last_crawl.and_then(|l| to_utc(l.start_time())),
             creation_time: to_utc(c.creation_time()),

@@ -183,14 +183,15 @@ impl TranslateClient {
                     filter_builder = filter_builder.job_name(name);
                 }
                 if let Some(ref status) = f.job_status {
-                    filter_builder = filter_builder.job_status(
-                        aws_sdk_translate::types::JobStatus::from(status.as_str()),
-                    );
+                    filter_builder = filter_builder
+                        .job_status(aws_sdk_translate::types::JobStatus::from(status.as_str()));
                 }
                 if let Some(ref before) = f.submitted_before_time {
                     if let Ok(dt) =
                         DateTime::from_str(before.as_str(), DateTimeFormat::DateTimeWithOffset)
-                            .or_else(|_| DateTime::from_str(before.as_str(), DateTimeFormat::DateTime))
+                            .or_else(|_| {
+                                DateTime::from_str(before.as_str(), DateTimeFormat::DateTime)
+                            })
                     {
                         filter_builder = filter_builder.submitted_before_time(dt);
                     }
@@ -198,7 +199,9 @@ impl TranslateClient {
                 if let Some(ref after) = f.submitted_after_time {
                     if let Ok(dt) =
                         DateTime::from_str(after.as_str(), DateTimeFormat::DateTimeWithOffset)
-                            .or_else(|_| DateTime::from_str(after.as_str(), DateTimeFormat::DateTime))
+                            .or_else(|_| {
+                                DateTime::from_str(after.as_str(), DateTimeFormat::DateTime)
+                            })
                     {
                         filter_builder = filter_builder.submitted_after_time(dt);
                     }
@@ -214,7 +217,10 @@ impl TranslateClient {
 
             let output = req.send().await.map_err(crate::error::sdk_err)?;
             token = output.next_token;
-            for job in output.text_translation_job_properties_list.unwrap_or_default() {
+            for job in output
+                .text_translation_job_properties_list
+                .unwrap_or_default()
+            {
                 items.push(TranslateTextTranslationJobInfo {
                     job_id: job.job_id,
                     job_name: job.job_name,
@@ -265,7 +271,10 @@ mod tests {
         assert_eq!(t1.description.as_deref(), Some("desc1"));
         assert_eq!(t1.arn.as_deref(), Some("arn:t1"));
         assert_eq!(t1.source_language_code.as_deref(), Some("en"));
-        assert_eq!(t1.target_language_codes, vec!["es".to_string(), "fr".to_string()]);
+        assert_eq!(
+            t1.target_language_codes,
+            vec!["es".to_string(), "fr".to_string()]
+        );
         assert_eq!(t1.term_count, Some(5));
         assert!(t1.created_at.is_some());
         assert!(t1.last_updated_at.is_some());
@@ -285,7 +294,10 @@ mod tests {
     async fn list_terminologies_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"NextToken":"cursor-a"}"#),
-            json_response(200, r#"{"TerminologyPropertiesList":[{"Name":"t3","Arn":"arn:t3"}]}"#),
+            json_response(
+                200,
+                r#"{"TerminologyPropertiesList":[{"Name":"t3","Arn":"arn:t3"}]}"#,
+            ),
         )]);
         let client = TranslateClient::new(&sdk_config(http_client.clone()));
 
@@ -329,7 +341,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"MaxResults":8,"NextToken":"p2"}"#),
-                json_response(200, r#"{"TerminologyPropertiesList":[{"Name":"t3","Arn":"arn:t3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"TerminologyPropertiesList":[{"Name":"t3","Arn":"arn:t3"}]}"#,
+                ),
             ),
         ]);
         let client = TranslateClient::new(&sdk_config(http_client.clone()));
@@ -400,7 +415,10 @@ mod tests {
     async fn list_parallel_data_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"NextToken":"cursor-a"}"#),
-            json_response(200, r#"{"ParallelDataPropertiesList":[{"Name":"pd3","Arn":"arn:pd3"}]}"#),
+            json_response(
+                200,
+                r#"{"ParallelDataPropertiesList":[{"Name":"pd3","Arn":"arn:pd3"}]}"#,
+            ),
         )]);
         let client = TranslateClient::new(&sdk_config(http_client.clone()));
 
@@ -444,7 +462,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"MaxResults":8,"NextToken":"p2"}"#),
-                json_response(200, r#"{"ParallelDataPropertiesList":[{"Name":"pd3","Arn":"arn:pd3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"ParallelDataPropertiesList":[{"Name":"pd3","Arn":"arn:pd3"}]}"#,
+                ),
             ),
         ]);
         let client = TranslateClient::new(&sdk_config(http_client.clone()));
@@ -487,7 +508,10 @@ mod tests {
         )]);
         let client = TranslateClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_text_translation_jobs(None, None, None).await.unwrap();
+        let (items, token) = client
+            .list_text_translation_jobs(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         let j1 = &items[0];
@@ -542,7 +566,10 @@ mod tests {
     async fn list_text_translation_jobs_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"NextToken":"cursor-a"}"#),
-            json_response(200, r#"{"TextTranslationJobPropertiesList":[{"JobId":"j3"}]}"#),
+            json_response(
+                200,
+                r#"{"TextTranslationJobPropertiesList":[{"JobId":"j3"}]}"#,
+            ),
         )]);
         let client = TranslateClient::new(&sdk_config(http_client.clone()));
 
@@ -589,7 +616,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"MaxResults":8,"NextToken":"p2"}"#),
-                json_response(200, r#"{"TextTranslationJobPropertiesList":[{"JobId":"j3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"TextTranslationJobPropertiesList":[{"JobId":"j3"}]}"#,
+                ),
             ),
         ]);
         let client = TranslateClient::new(&sdk_config(http_client.clone()));
@@ -628,4 +658,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

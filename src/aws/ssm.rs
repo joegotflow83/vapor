@@ -39,7 +39,10 @@ impl SsmClient {
                         .key("InstanceIds")
                         .set_values(Some(ids))
                         .build()
-                        .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?,
+                        .map_err(|e| VaporError::AwsSdk {
+                            code: None,
+                            message: e.to_string(),
+                        })?,
                 );
             }
         }
@@ -50,7 +53,10 @@ impl SsmClient {
                     .key("PingStatus")
                     .values(status)
                     .build()
-                    .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?,
+                    .map_err(|e| VaporError::AwsSdk {
+                        code: None,
+                        message: e.to_string(),
+                    })?,
             );
         }
 
@@ -60,7 +66,10 @@ impl SsmClient {
                     .key("PlatformType")
                     .values(platform)
                     .build()
-                    .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?,
+                    .map_err(|e| VaporError::AwsSdk {
+                        code: None,
+                        message: e.to_string(),
+                    })?,
             );
         }
 
@@ -171,7 +180,10 @@ impl SsmClient {
         let mut token = next_token;
 
         loop {
-            let mut request = self.inner.describe_parameters().set_parameter_filters(filters.clone());
+            let mut request = self
+                .inner
+                .describe_parameters()
+                .set_parameter_filters(filters.clone());
             if let Some(ref t) = token {
                 request = request.next_token(t);
             }
@@ -199,7 +211,8 @@ impl SsmClient {
     pub async fn get_parameter_tiers(
         &self,
         names: &[String],
-    ) -> Result<std::collections::HashMap<String, aws_sdk_ssm::types::ParameterTier>, VaporError> {
+    ) -> Result<std::collections::HashMap<String, aws_sdk_ssm::types::ParameterTier>, VaporError>
+    {
         if names.is_empty() {
             return Ok(std::collections::HashMap::new());
         }
@@ -355,7 +368,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn describe_instance_information_builds_filters_from_instance_ids_ping_status_and_platform_type() {
+    async fn describe_instance_information_builds_filters_from_instance_ids_ping_status_and_platform_type(
+    ) {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(
                 BASE,
@@ -477,7 +491,10 @@ mod tests {
     #[tokio::test]
     async fn get_parameters_fetches_named_parameters_with_decryption() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(BASE, r#"{"Names":["/app/db-password"],"WithDecryption":true}"#),
+            request(
+                BASE,
+                r#"{"Names":["/app/db-password"],"WithDecryption":true}"#,
+            ),
             json_response(
                 200,
                 r#"{"Parameters":[{"Name":"/app/db-password","Type":"SecureString","Value":"hunter2"}]}"#,
@@ -492,10 +509,7 @@ mod tests {
 
         assert_eq!(params.len(), 1);
         assert_eq!(params[0].name(), Some("/app/db-password"));
-        assert_eq!(
-            params[0].r#type().map(|t| t.as_str()),
-            Some("SecureString")
-        );
+        assert_eq!(params[0].r#type().map(|t| t.as_str()), Some("SecureString"));
         assert_eq!(params[0].value(), Some("hunter2"));
         http_client.relaxed_requests_match();
     }
@@ -525,7 +539,9 @@ mod tests {
         )]);
         let client = SsmClient::new(&sdk_config(http_client.clone()));
 
-        let result = client.get_parameters(vec!["/app/x".to_string()], false).await;
+        let result = client
+            .get_parameters(vec!["/app/x".to_string()], false)
+            .await;
 
         match result {
             Err(VaporError::AwsSdk { code, message }) => {
@@ -762,14 +778,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(
-            tiers.get("/app/x").map(|t| t.as_str()),
-            Some("Standard")
-        );
-        assert_eq!(
-            tiers.get("/app/y").map(|t| t.as_str()),
-            Some("Advanced")
-        );
+        assert_eq!(tiers.get("/app/x").map(|t| t.as_str()), Some("Standard"));
+        assert_eq!(tiers.get("/app/y").map(|t| t.as_str()), Some("Advanced"));
         assert_eq!(tiers.len(), 2);
         http_client.relaxed_requests_match();
     }

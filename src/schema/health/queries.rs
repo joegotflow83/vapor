@@ -33,7 +33,9 @@ impl HealthQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::health::HealthClient;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::HealthQuery;
@@ -119,7 +121,9 @@ mod tests {
         let client = HealthClient::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(HealthQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ healthEvents { items { arn } } }"#).await;
+        let res = schema
+            .execute(r#"{ healthEvents { items { arn } } }"#)
+            .await;
 
         assert_eq!(res.errors.len(), 1);
         assert!(res.errors[0].message.contains("bad request"));

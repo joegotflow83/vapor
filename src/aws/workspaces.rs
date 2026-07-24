@@ -1,7 +1,7 @@
 use aws_config::SdkConfig;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 #[derive(Debug)]
 pub struct WorkspaceInfo {
@@ -158,11 +158,13 @@ impl WorkspacesClient {
             let output = req.send().await.map_err(crate::error::sdk_err)?;
             for dir in output.directories.unwrap_or_default() {
                 let creation_props =
-                    dir.workspace_creation_properties.map(|p| WorkspaceCreationPropsInfo {
-                        enable_internet_access: p.enable_internet_access,
-                        enable_maintenance_mode: p.enable_maintenance_mode,
-                        user_enabled_as_local_administrator: p.user_enabled_as_local_administrator,
-                    });
+                    dir.workspace_creation_properties
+                        .map(|p| WorkspaceCreationPropsInfo {
+                            enable_internet_access: p.enable_internet_access,
+                            enable_maintenance_mode: p.enable_maintenance_mode,
+                            user_enabled_as_local_administrator: p
+                                .user_enabled_as_local_administrator,
+                        });
                 items.push(WorkspaceDirectoryInfo {
                     directory_id: dir.directory_id,
                     directory_name: dir.directory_name,
@@ -396,7 +398,10 @@ mod tests {
 
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].directory_id, Some("d-1".to_string()));
-        assert_eq!(items[0].directory_name, Some("corp.example.com".to_string()));
+        assert_eq!(
+            items[0].directory_name,
+            Some("corp.example.com".to_string())
+        );
         assert_eq!(items[0].directory_type, Some("SIMPLE_AD".to_string()));
         assert_eq!(
             items[0].dns_ip_addresses,
@@ -578,10 +583,7 @@ mod tests {
     async fn describe_workspace_bundles_empty_next_token_treated_as_none() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{}"#),
-            json_response(
-                200,
-                r#"{"Bundles":[{"BundleId":"wsb-1"}],"NextToken":""}"#,
-            ),
+            json_response(200, r#"{"Bundles":[{"BundleId":"wsb-1"}],"NextToken":""}"#),
         )]);
         let client = WorkspacesClient::new(&sdk_config(http_client.clone()));
 

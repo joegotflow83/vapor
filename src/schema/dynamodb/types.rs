@@ -55,7 +55,9 @@ pub struct DynamoGlobalSecondaryIndex {
     pub index_arn: Option<String>,
 }
 
-impl From<&aws_sdk_dynamodb::types::GlobalSecondaryIndexDescription> for DynamoGlobalSecondaryIndex {
+impl From<&aws_sdk_dynamodb::types::GlobalSecondaryIndexDescription>
+    for DynamoGlobalSecondaryIndex
+{
     fn from(gsi: &aws_sdk_dynamodb::types::GlobalSecondaryIndexDescription) -> Self {
         let key_schema = gsi.key_schema().iter().map(DynamoKeySchema::from).collect();
         let projection_type = gsi
@@ -64,7 +66,12 @@ impl From<&aws_sdk_dynamodb::types::GlobalSecondaryIndexDescription> for DynamoG
             .map(|pt| pt.as_str().to_string());
         let non_key_attributes = gsi
             .projection()
-            .map(|p| p.non_key_attributes().iter().map(|s| s.to_string()).collect())
+            .map(|p| {
+                p.non_key_attributes()
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect()
+            })
             .unwrap_or_default();
         let read_capacity_units = gsi
             .provisioned_throughput()
@@ -107,7 +114,12 @@ impl From<&aws_sdk_dynamodb::types::LocalSecondaryIndexDescription> for DynamoLo
             .map(|pt| pt.as_str().to_string());
         let non_key_attributes = lsi
             .projection()
-            .map(|p| p.non_key_attributes().iter().map(|s| s.to_string()).collect())
+            .map(|p| {
+                p.non_key_attributes()
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect()
+            })
             .unwrap_or_default();
 
         Self {
@@ -257,7 +269,10 @@ mod tests {
     #[test]
     fn test_attribute_value_string() {
         let av = AttributeValue::S("hello".to_string());
-        assert_eq!(attribute_value_to_json(&av), serde_json::Value::String("hello".to_string()));
+        assert_eq!(
+            attribute_value_to_json(&av),
+            serde_json::Value::String("hello".to_string())
+        );
     }
 
     #[test]
@@ -395,7 +410,10 @@ mod tests {
         let result = DynamoScanResult::from_scan_output(output);
         let lek_json: serde_json::Value =
             serde_json::from_str(&result.last_evaluated_key.unwrap()).unwrap();
-        assert_eq!(lek_json["id"], serde_json::Value::String("row1".to_string()));
+        assert_eq!(
+            lek_json["id"],
+            serde_json::Value::String("row1".to_string())
+        );
     }
 
     #[test]

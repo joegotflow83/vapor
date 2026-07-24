@@ -63,7 +63,9 @@ impl MemoryDbClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     // Crate name `aws-sdk-memorydb` doesn't match the endpoint hostname
     // `memory-db.*` (durable gotcha 3) — verified against the pinned SDK's
@@ -266,7 +268,10 @@ mod tests {
     #[tokio::test]
     async fn list_tags_returns_tags() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"ResourceArn":"arn:aws:memorydb:us-east-1:123456789012:cluster/my-cluster"}"#),
+            request(
+                ENDPOINT,
+                r#"{"ResourceArn":"arn:aws:memorydb:us-east-1:123456789012:cluster/my-cluster"}"#,
+            ),
             json_response(200, r#"{"TagList":[{"Key":"env","Value":"prod"}]}"#),
         )]);
         let client = MemoryDbClient::new(&sdk_config(http_client.clone()));
@@ -285,7 +290,10 @@ mod tests {
     #[tokio::test]
     async fn list_tags_returns_empty_when_response_omits_tag_list_field() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"ResourceArn":"arn:aws:memorydb:us-east-1:123456789012:cluster/my-cluster"}"#),
+            request(
+                ENDPOINT,
+                r#"{"ResourceArn":"arn:aws:memorydb:us-east-1:123456789012:cluster/my-cluster"}"#,
+            ),
             json_response(200, "{}"),
         )]);
         let client = MemoryDbClient::new(&sdk_config(http_client.clone()));
@@ -302,7 +310,10 @@ mod tests {
     #[tokio::test]
     async fn list_tags_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"ResourceArn":"arn:aws:memorydb:us-east-1:123456789012:cluster/missing"}"#),
+            request(
+                ENDPOINT,
+                r#"{"ResourceArn":"arn:aws:memorydb:us-east-1:123456789012:cluster/missing"}"#,
+            ),
             json_error_response("ClusterNotFoundFault", "cluster not found"),
         )]);
         let client = MemoryDbClient::new(&sdk_config(http_client.clone()));
@@ -322,4 +333,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

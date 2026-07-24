@@ -21,7 +21,13 @@ impl IotQuery {
     ) -> Result<Page<IotThing>> {
         let client = ctx.data::<IotClient>()?;
         let (items, next_token) = client
-            .list_things(thing_type_name, attribute_name, attribute_value, limit, next_token)
+            .list_things(
+                thing_type_name,
+                attribute_name,
+                attribute_value,
+                limit,
+                next_token,
+            )
             .await?;
         Ok(Page {
             items: items.into_iter().map(IotThing::from).collect(),
@@ -38,7 +44,9 @@ impl IotQuery {
         next_token: Option<String>,
     ) -> Result<Page<IotThingGroup>> {
         let client = ctx.data::<IotClient>()?;
-        let (items, next_token) = client.list_thing_groups(parent_group, limit, next_token).await?;
+        let (items, next_token) = client
+            .list_thing_groups(parent_group, limit, next_token)
+            .await?;
         Ok(Page {
             items: items.into_iter().map(IotThingGroup::from).collect(),
             next_token,
@@ -100,7 +108,9 @@ impl IotQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::iot::IotClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::IotQuery;

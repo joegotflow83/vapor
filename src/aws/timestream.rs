@@ -309,7 +309,10 @@ mod tests {
                     &format!("{DISCOVERED_BASE}/"),
                     r#"{"NextToken":"p2","MaxResults":8}"#,
                 ),
-                json_response(200, r#"{"Databases":[{"DatabaseName":"db3","TableCount":3}]}"#),
+                json_response(
+                    200,
+                    r#"{"Databases":[{"DatabaseName":"db3","TableCount":3}]}"#,
+                ),
             ),
         ]);
         let client = TimestreamClient::new(&discovery_sdk_config(http_client.clone()));
@@ -326,7 +329,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             describe_endpoints_event(),
             ReplayEvent::new(
-                request(&format!("{DISCOVERED_BASE}/"), r#"{"NextToken":"cursor-a"}"#),
+                request(
+                    &format!("{DISCOVERED_BASE}/"),
+                    r#"{"NextToken":"cursor-a"}"#,
+                ),
                 json_response(200, r#"{"Databases":[]}"#),
             ),
         ]);
@@ -491,7 +497,10 @@ mod tests {
                     &format!("{DISCOVERED_BASE}/"),
                     r#"{"DatabaseName":"db1","NextToken":"p2","MaxResults":8}"#,
                 ),
-                json_response(200, r#"{"Tables":[{"TableName":"t3","DatabaseName":"db1"}]}"#),
+                json_response(
+                    200,
+                    r#"{"Tables":[{"TableName":"t3","DatabaseName":"db1"}]}"#,
+                ),
             ),
         ]);
         let client = TimestreamClient::new(&discovery_sdk_config(http_client.clone()));
@@ -574,4 +583,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

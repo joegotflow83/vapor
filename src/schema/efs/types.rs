@@ -100,7 +100,9 @@ impl From<&aws_sdk_efs::types::AccessPointDescription> for EfsAccessPoint {
             file_system_id: ap.file_system_id().unwrap_or_default().to_string(),
             name: ap.name().map(|s| s.to_string()),
             life_cycle_state: ap.life_cycle_state().map(|s| s.as_str().to_string()),
-            root_directory_path: ap.root_directory().and_then(|r| r.path().map(|s| s.to_string())),
+            root_directory_path: ap
+                .root_directory()
+                .and_then(|r| r.path().map(|s| s.to_string())),
             posix_uid: ap.posix_user().map(|u| u.uid()),
             posix_gid: ap.posix_user().map(|u| u.gid()),
         }
@@ -124,7 +126,9 @@ mod tests {
         let fs = aws_sdk_efs::types::FileSystemDescription::builder()
             .owner_id("123456789012")
             .file_system_id("fs-12345")
-            .file_system_arn("arn:aws:elasticfilesystem:us-east-1:123456789012:file-system/fs-12345")
+            .file_system_arn(
+                "arn:aws:elasticfilesystem:us-east-1:123456789012:file-system/fs-12345",
+            )
             .name("my-fs")
             .life_cycle_state(aws_sdk_efs::types::LifeCycleState::Available)
             .performance_mode(aws_sdk_efs::types::PerformanceMode::GeneralPurpose)
@@ -141,7 +145,12 @@ mod tests {
 
         let result = EfsFileSystem::from(&fs);
         assert_eq!(result.file_system_id, "fs-12345");
-        assert_eq!(result.arn, Some("arn:aws:elasticfilesystem:us-east-1:123456789012:file-system/fs-12345".to_string()));
+        assert_eq!(
+            result.arn,
+            Some(
+                "arn:aws:elasticfilesystem:us-east-1:123456789012:file-system/fs-12345".to_string()
+            )
+        );
         assert_eq!(result.name, Some("my-fs".to_string()));
         assert_eq!(result.life_cycle_state, Some("available".to_string()));
         assert_eq!(result.performance_mode, Some("generalPurpose".to_string()));
@@ -151,10 +160,7 @@ mod tests {
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Name");
         assert_eq!(result.tags[0].value, "my-fs");
-        assert_eq!(
-            result.creation_time,
-            DateTime::from_timestamp(1_000_000, 0)
-        );
+        assert_eq!(result.creation_time, DateTime::from_timestamp(1_000_000, 0));
     }
 
     #[test]
@@ -167,7 +173,13 @@ mod tests {
             .number_of_mount_targets(0)
             .creation_time(aws_sdk_efs::primitives::DateTime::from_secs(0))
             .creation_token("tok")
-            .tags(aws_sdk_efs::types::Tag::builder().key("k").value("v").build().unwrap())
+            .tags(
+                aws_sdk_efs::types::Tag::builder()
+                    .key("k")
+                    .value("v")
+                    .build()
+                    .unwrap(),
+            )
             .build()
             .unwrap();
 
@@ -214,7 +226,9 @@ mod tests {
             .build();
         let ap = aws_sdk_efs::types::AccessPointDescription::builder()
             .access_point_id("fsap-12345")
-            .access_point_arn("arn:aws:elasticfilesystem:us-east-1:123456789012:access-point/fsap-12345")
+            .access_point_arn(
+                "arn:aws:elasticfilesystem:us-east-1:123456789012:access-point/fsap-12345",
+            )
             .file_system_id("fs-12345")
             .name("my-ap")
             .life_cycle_state(aws_sdk_efs::types::LifeCycleState::Available)
@@ -224,7 +238,13 @@ mod tests {
 
         let result = EfsAccessPoint::from(&ap);
         assert_eq!(result.access_point_id, "fsap-12345");
-        assert_eq!(result.arn, Some("arn:aws:elasticfilesystem:us-east-1:123456789012:access-point/fsap-12345".to_string()));
+        assert_eq!(
+            result.arn,
+            Some(
+                "arn:aws:elasticfilesystem:us-east-1:123456789012:access-point/fsap-12345"
+                    .to_string()
+            )
+        );
         assert_eq!(result.file_system_id, "fs-12345");
         assert_eq!(result.name, Some("my-ap".to_string()));
         assert_eq!(result.root_directory_path, Some("/data".to_string()));

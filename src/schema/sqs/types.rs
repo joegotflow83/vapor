@@ -42,12 +42,9 @@ impl SqsQueue {
         attrs: HashMap<String, String>,
         tag_map: HashMap<String, String>,
     ) -> Self {
-        let parse_i64 = |key: &str| -> Option<i64> {
-            attrs.get(key).and_then(|v| v.parse::<i64>().ok())
-        };
-        let parse_bool = |key: &str| -> Option<bool> {
-            attrs.get(key).map(|v| v == "true")
-        };
+        let parse_i64 =
+            |key: &str| -> Option<i64> { attrs.get(key).and_then(|v| v.parse::<i64>().ok()) };
+        let parse_bool = |key: &str| -> Option<bool> { attrs.get(key).map(|v| v == "true") };
 
         let name = url.split('/').next_back().map(|s| s.to_string());
         let arn = attrs.get("QueueArn").map(|s| s.to_string());
@@ -70,9 +67,7 @@ impl SqsQueue {
             approximate_number_of_messages_not_visible: parse_i64(
                 "ApproximateNumberOfMessagesNotVisible",
             ),
-            approximate_number_of_messages_delayed: parse_i64(
-                "ApproximateNumberOfMessagesDelayed",
-            ),
+            approximate_number_of_messages_delayed: parse_i64("ApproximateNumberOfMessagesDelayed"),
             visibility_timeout_seconds: parse_i64("VisibilityTimeout"),
             message_retention_period_seconds: parse_i64("MessageRetentionPeriod"),
             maximum_message_size: parse_i64("MaximumMessageSize"),
@@ -96,7 +91,10 @@ mod tests {
     use super::*;
 
     fn make_attrs(pairs: &[(&str, &str)]) -> HashMap<String, String> {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
     }
 
     #[test]
@@ -124,7 +122,10 @@ mod tests {
         let url = "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue".to_string();
         let q = SqsQueue::from_parts(url, attrs, HashMap::new());
 
-        assert_eq!(q.arn, Some("arn:aws:sqs:us-east-1:123456789012:my-queue".to_string()));
+        assert_eq!(
+            q.arn,
+            Some("arn:aws:sqs:us-east-1:123456789012:my-queue".to_string())
+        );
         assert_eq!(q.approximate_number_of_messages, Some(5));
         assert_eq!(q.approximate_number_of_messages_not_visible, Some(2));
         assert_eq!(q.approximate_number_of_messages_delayed, Some(0));

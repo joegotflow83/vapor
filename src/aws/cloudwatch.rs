@@ -1,7 +1,7 @@
 use aws_config::SdkConfig;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 pub struct CloudWatchClient {
     inner: aws_sdk_cloudwatch::Client,
@@ -69,7 +69,13 @@ impl CloudWatchClient {
         end_time: aws_sdk_cloudwatch::primitives::DateTime,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_cloudwatch::types::MetricDataResult>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_cloudwatch::types::MetricDataResult>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut all_results: Vec<aws_sdk_cloudwatch::types::MetricDataResult> = Vec::new();
         let mut token = next_token;
 
@@ -146,7 +152,10 @@ impl CloudWatchClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{cbor_error_response, cbor_request, cbor_response, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        cbor_error_response, cbor_request, cbor_response, sdk_config, ReplayEvent,
+        StaticReplayClient,
+    };
     use aws_sdk_cloudwatch::primitives::DateTime as AwsDateTime;
     use aws_sdk_cloudwatch::types::{DimensionFilter, MetricDataQuery, StateValue};
     use aws_smithy_cbor::Encoder;
@@ -202,7 +211,12 @@ mod tests {
             .str("CPUUtilization")
             .str("Dimensions")
             .array(1);
-        req.begin_map().str("Name").str("InstanceId").str("Value").str("i-123").end();
+        req.begin_map()
+            .str("Name")
+            .str("InstanceId")
+            .str("Value")
+            .str("i-123")
+            .end();
         req.end();
 
         let mut resp = Encoder::new(Vec::new());
@@ -214,7 +228,12 @@ mod tests {
             .str("CPUUtilization")
             .str("Dimensions")
             .array(1);
-        resp.begin_map().str("Name").str("InstanceId").str("Value").str("i-123").end();
+        resp.begin_map()
+            .str("Name")
+            .str("InstanceId")
+            .str("Value")
+            .str("i-123")
+            .end();
         resp.end();
         resp.end();
 
@@ -224,7 +243,10 @@ mod tests {
         )]);
         let client = CloudWatchClient::new(&sdk_config(http_client.clone()));
 
-        let dims = vec![DimensionFilter::builder().name("InstanceId").value("i-123").build()];
+        let dims = vec![DimensionFilter::builder()
+            .name("InstanceId")
+            .value("i-123")
+            .build()];
         let (metrics, token) = client
             .list_metrics(
                 Some("AWS/EC2".to_string()),
@@ -285,7 +307,10 @@ mod tests {
         )]);
         let client = CloudWatchClient::new(&sdk_config(http_client.clone()));
 
-        let (metrics, token) = client.list_metrics(None, None, None, Some(2), None).await.unwrap();
+        let (metrics, token) = client
+            .list_metrics(None, None, None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(metrics.len(), 2);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -309,12 +334,21 @@ mod tests {
         resp2.end();
 
         let http_client = StaticReplayClient::new(vec![
-            ReplayEvent::new(cbor_request(&list_metrics_uri(), empty_map()), cbor_response(200, resp1.into_writer())),
-            ReplayEvent::new(cbor_request(&list_metrics_uri(), req2.into_writer()), cbor_response(200, resp2.into_writer())),
+            ReplayEvent::new(
+                cbor_request(&list_metrics_uri(), empty_map()),
+                cbor_response(200, resp1.into_writer()),
+            ),
+            ReplayEvent::new(
+                cbor_request(&list_metrics_uri(), req2.into_writer()),
+                cbor_response(200, resp2.into_writer()),
+            ),
         ]);
         let client = CloudWatchClient::new(&sdk_config(http_client.clone()));
 
-        let (metrics, token) = client.list_metrics(None, None, None, Some(10), None).await.unwrap();
+        let (metrics, token) = client
+            .list_metrics(None, None, None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(metrics.len(), 2);
         assert_eq!(token, None);
@@ -344,18 +378,35 @@ mod tests {
 
     #[tokio::test]
     async fn get_metric_data_lists_all_when_no_limit() {
-        let query = MetricDataQuery::builder().id("q1").expression("SELECT AVG(CPUUtilization)").build();
+        let query = MetricDataQuery::builder()
+            .id("q1")
+            .expression("SELECT AVG(CPUUtilization)")
+            .build();
 
         let mut req = Encoder::new(Vec::new());
         req.begin_map().str("MetricDataQueries").array(1);
-        req.begin_map().str("Id").str("q1").str("Expression").str("SELECT AVG(CPUUtilization)").end();
-        req.str("StartTime").timestamp(&AwsDateTime::from_secs(1_700_000_000));
-        req.str("EndTime").timestamp(&AwsDateTime::from_secs(1_700_003_600));
+        req.begin_map()
+            .str("Id")
+            .str("q1")
+            .str("Expression")
+            .str("SELECT AVG(CPUUtilization)")
+            .end();
+        req.str("StartTime")
+            .timestamp(&AwsDateTime::from_secs(1_700_000_000));
+        req.str("EndTime")
+            .timestamp(&AwsDateTime::from_secs(1_700_003_600));
         req.end();
 
         let mut resp = Encoder::new(Vec::new());
         resp.begin_map().str("MetricDataResults").array(1);
-        resp.begin_map().str("Id").str("q1").str("Label").str("CPU Avg").str("StatusCode").str("Complete").end();
+        resp.begin_map()
+            .str("Id")
+            .str("q1")
+            .str("Label")
+            .str("CPU Avg")
+            .str("StatusCode")
+            .str("Complete")
+            .end();
         resp.end();
 
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
@@ -386,13 +437,23 @@ mod tests {
     async fn get_metric_data_stops_at_limit_and_returns_resume_token() {
         // Same no-MaxResults-equivalent-field shape as list_metrics — `limit`
         // never appears in the request body, only one page is fetched.
-        let query = MetricDataQuery::builder().id("q1").expression("SELECT SUM(Errors)").build();
+        let query = MetricDataQuery::builder()
+            .id("q1")
+            .expression("SELECT SUM(Errors)")
+            .build();
 
         let mut req = Encoder::new(Vec::new());
         req.begin_map().str("MetricDataQueries").array(1);
-        req.begin_map().str("Id").str("q1").str("Expression").str("SELECT SUM(Errors)").end();
-        req.str("StartTime").timestamp(&AwsDateTime::from_secs(1_700_000_000));
-        req.str("EndTime").timestamp(&AwsDateTime::from_secs(1_700_003_600));
+        req.begin_map()
+            .str("Id")
+            .str("q1")
+            .str("Expression")
+            .str("SELECT SUM(Errors)")
+            .end();
+        req.str("StartTime")
+            .timestamp(&AwsDateTime::from_secs(1_700_000_000));
+        req.str("EndTime")
+            .timestamp(&AwsDateTime::from_secs(1_700_003_600));
         req.end();
 
         let mut resp = Encoder::new(Vec::new());
@@ -451,7 +512,10 @@ mod tests {
         )]);
         let client = CloudWatchClient::new(&sdk_config(http_client.clone()));
 
-        let (alarms, token) = client.describe_alarms(None, None, None, None, None).await.unwrap();
+        let (alarms, token) = client
+            .describe_alarms(None, None, None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(alarms.len(), 1);
         assert_eq!(alarms[0].alarm_name(), Some("cpu-high"));
@@ -491,7 +555,13 @@ mod tests {
         let client = CloudWatchClient::new(&sdk_config(http_client.clone()));
 
         let (alarms, token) = client
-            .describe_alarms(None, Some("cpu-".to_string()), Some(StateValue::Alarm), Some(2), None)
+            .describe_alarms(
+                None,
+                Some("cpu-".to_string()),
+                Some(StateValue::Alarm),
+                Some(2),
+                None,
+            )
             .await
             .unwrap();
 
@@ -521,4 +591,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

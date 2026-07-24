@@ -81,12 +81,17 @@ mod tests {
             .email("prod@example.com")
             .status(aws_sdk_organizations::types::AccountStatus::Active)
             .joined_method(aws_sdk_organizations::types::AccountJoinedMethod::Created)
-            .joined_timestamp(aws_sdk_organizations::primitives::DateTime::from_secs(1_000_000))
+            .joined_timestamp(aws_sdk_organizations::primitives::DateTime::from_secs(
+                1_000_000,
+            ))
             .build();
 
         let result = OrgAccount::from(&account);
         assert_eq!(result.id, "123456789012");
-        assert_eq!(result.arn, Some("arn:aws:organizations::123456789012:account/o-abc/123456789012".to_string()));
+        assert_eq!(
+            result.arn,
+            Some("arn:aws:organizations::123456789012:account/o-abc/123456789012".to_string())
+        );
         assert_eq!(result.name, Some("Production".to_string()));
         assert_eq!(result.email, Some("prod@example.com".to_string()));
         assert_eq!(result.status, Some("ACTIVE".to_string()));
@@ -117,7 +122,10 @@ mod tests {
 
         let result = OrganizationalUnit::from(&ou);
         assert_eq!(result.id, "ou-abc-12345");
-        assert_eq!(result.arn, Some("arn:aws:organizations::123456789012:ou/o-abc/ou-abc-12345".to_string()));
+        assert_eq!(
+            result.arn,
+            Some("arn:aws:organizations::123456789012:ou/o-abc/ou-abc-12345".to_string())
+        );
         assert_eq!(result.name, Some("Engineering".to_string()));
     }
 
@@ -143,10 +151,19 @@ mod tests {
 
         let result = OrgPolicy::from(&policy);
         assert_eq!(result.id, "p-12345");
-        assert_eq!(result.arn, Some("arn:aws:organizations::123456789012:policy/o-abc/service_control_policy/p-12345".to_string()));
+        assert_eq!(
+            result.arn,
+            Some(
+                "arn:aws:organizations::123456789012:policy/o-abc/service_control_policy/p-12345"
+                    .to_string()
+            )
+        );
         assert_eq!(result.name, Some("DenyAll".to_string()));
         assert_eq!(result.description, Some("Deny all actions".to_string()));
-        assert_eq!(result.policy_type, Some("SERVICE_CONTROL_POLICY".to_string()));
+        assert_eq!(
+            result.policy_type,
+            Some("SERVICE_CONTROL_POLICY".to_string())
+        );
         assert!(!result.aws_managed);
     }
 

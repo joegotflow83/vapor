@@ -54,7 +54,10 @@ impl AthenaQuery {
             .list_named_queries(workgroup.as_deref(), limit, next_token)
             .await?;
         if ids.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token,
+            });
         }
         let queries = client.batch_get_named_query(ids).await?;
         Ok(Page {
@@ -77,11 +80,17 @@ impl AthenaQuery {
             .list_query_executions(workgroup.as_deref(), limit, next_token)
             .await?;
         if ids.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token,
+            });
         }
         let executions = client.batch_get_query_execution(ids).await?;
         Ok(Page {
-            items: executions.into_iter().map(AthenaQueryExecution::from).collect(),
+            items: executions
+                .into_iter()
+                .map(AthenaQueryExecution::from)
+                .collect(),
             next_token,
         })
     }
@@ -144,7 +153,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"WorkGroups":[{"Name":"wg1"},{"Name":"wg-denied"}]}"#),
+                json_response(
+                    200,
+                    r#"{"WorkGroups":[{"Name":"wg1"},{"Name":"wg-denied"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"WorkGroup":"wg1"}"#),
@@ -159,7 +171,9 @@ mod tests {
             .data(AthenaClient::new(&sdk_config(http_client.clone())))
             .finish();
 
-        let res = schema.execute("{ athenaWorkgroups { items { name } } }").await;
+        let res = schema
+            .execute("{ athenaWorkgroups { items { name } } }")
+            .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
@@ -244,7 +258,13 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["athenaNamedQueries"]["items"].as_array().unwrap().len(), 0);
+        assert_eq!(
+            json["athenaNamedQueries"]["items"]
+                .as_array()
+                .unwrap()
+                .len(),
+            0
+        );
         http_client.relaxed_requests_match();
     }
 
@@ -268,7 +288,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ athenaQueryExecutions(workgroup: "wg1") { items { id query } nextToken } }"#)
+            .execute(
+                r#"{ athenaQueryExecutions(workgroup: "wg1") { items { id query } nextToken } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -296,7 +318,13 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["athenaQueryExecutions"]["items"].as_array().unwrap().len(), 0);
+        assert_eq!(
+            json["athenaQueryExecutions"]["items"]
+                .as_array()
+                .unwrap()
+                .len(),
+            0
+        );
         http_client.relaxed_requests_match();
     }
 }

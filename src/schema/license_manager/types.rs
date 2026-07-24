@@ -110,7 +110,10 @@ mod tests {
             product_information_list: vec!["Windows Server".to_string()],
         };
         let result = LicenseConfiguration::from(info);
-        assert_eq!(result.license_configuration_id, Some("lc-abc123".to_string()));
+        assert_eq!(
+            result.license_configuration_id,
+            Some("lc-abc123".to_string())
+        );
         assert_eq!(result.name, Some("MyLicenseConfig".to_string()));
         assert_eq!(result.license_counting_type, Some("vCPU".to_string()));
         assert_eq!(result.license_count, Some(100));
@@ -179,9 +182,7 @@ mod tests {
     #[test]
     fn test_license_from_full() {
         let info = LicenseInfo {
-            license_arn: Some(
-                "arn:aws:license-manager::123456789012:license:l-abc123".to_string(),
-            ),
+            license_arn: Some("arn:aws:license-manager::123456789012:license:l-abc123".to_string()),
             license_name: Some("MyLicense".to_string()),
             product_name: Some("Windows Server 2022".to_string()),
             product_sku: Some("BYOL-WS2022".to_string()),

@@ -112,14 +112,20 @@ mod tests {
         let cluster = EmrCluster {
             id: "j-ABC123".to_string(),
             name: Some("my-cluster".to_string()),
-            arn: Some("arn:aws:elasticmapreduce:us-east-1:123456789012:cluster/j-ABC123".to_string()),
+            arn: Some(
+                "arn:aws:elasticmapreduce:us-east-1:123456789012:cluster/j-ABC123".to_string(),
+            ),
             status: Some("RUNNING".to_string()),
             state_change_reason: Some("User requested".to_string()),
             release_label: Some("emr-6.10.0".to_string()),
             applications: vec!["Spark".to_string(), "Hive".to_string()],
             instance_count: Some(5),
             master_public_dns: Some("ec2-1-2-3-4.compute-1.amazonaws.com".to_string()),
-            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
+            creation_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
             termination_protected: true,
             auto_terminate: false,
         };
@@ -128,9 +134,15 @@ mod tests {
         assert_eq!(cluster.name, Some("my-cluster".to_string()));
         assert_eq!(cluster.status, Some("RUNNING".to_string()));
         assert_eq!(cluster.release_label, Some("emr-6.10.0".to_string()));
-        assert_eq!(cluster.applications, vec!["Spark".to_string(), "Hive".to_string()]);
+        assert_eq!(
+            cluster.applications,
+            vec!["Spark".to_string(), "Hive".to_string()]
+        );
         assert_eq!(cluster.instance_count, Some(5));
-        assert_eq!(cluster.creation_time.unwrap().to_rfc3339(), "2024-01-01T00:00:00+00:00");
+        assert_eq!(
+            cluster.creation_time.unwrap().to_rfc3339(),
+            "2024-01-01T00:00:00+00:00"
+        );
         assert!(cluster.termination_protected);
         assert!(!cluster.auto_terminate);
     }
@@ -170,8 +182,16 @@ mod tests {
             name: Some("my-step".to_string()),
             status: Some("COMPLETED".to_string()),
             action_on_failure: Some("CONTINUE".to_string()),
-            creation_time: Some(DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap().with_timezone(&Utc)),
-            end_time: Some(DateTime::parse_from_rfc3339("2024-01-01T01:00:00Z").unwrap().with_timezone(&Utc)),
+            creation_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
+            end_time: Some(
+                DateTime::parse_from_rfc3339("2024-01-01T01:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
         };
 
         assert_eq!(step.id, "s-STEP123");

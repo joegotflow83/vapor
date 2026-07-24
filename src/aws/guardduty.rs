@@ -121,7 +121,9 @@ impl GuardDutyClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use aws_sdk_guardduty::types::{Condition, DetectorStatus, FindingPublishingFrequency};
 
     const BASE: &str = "https://guardduty.us-east-1.amazonaws.com";
@@ -429,10 +431,7 @@ mod tests {
 
         assert_eq!(findings.len(), 2);
         assert_eq!(findings[0].id(), Some("f1"));
-        assert_eq!(
-            findings[0].r#type(),
-            Some("Trojan:EC2/DNSDataExfiltration")
-        );
+        assert_eq!(findings[0].r#type(), Some("Trojan:EC2/DNSDataExfiltration"));
         assert_eq!(findings[0].severity(), Some(8.5));
         assert_eq!(findings[0].title(), Some("first"));
         assert_eq!(findings[1].id(), Some("f2"));
@@ -465,4 +464,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

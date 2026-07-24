@@ -49,7 +49,10 @@ impl AppRunnerQuery {
         let client = ctx.data::<AppRunnerClient>()?;
         let (connectors, next_token) = client.list_vpc_connectors(limit, next_token).await?;
         Ok(Page {
-            items: connectors.into_iter().map(AppRunnerVpcConnector::from).collect(),
+            items: connectors
+                .into_iter()
+                .map(AppRunnerVpcConnector::from)
+                .collect(),
             next_token,
         })
     }
@@ -66,7 +69,10 @@ impl AppRunnerQuery {
         let client = ctx.data::<AppRunnerClient>()?;
         let (connections, next_token) = client.list_connections(limit, next_token).await?;
         Ok(Page {
-            items: connections.into_iter().map(AppRunnerConnection::from).collect(),
+            items: connections
+                .into_iter()
+                .map(AppRunnerConnection::from)
+                .collect(),
             next_token,
         })
     }
@@ -133,7 +139,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ appRunnerServices(limit: 1) { items { serviceName status } nextToken } }"#)
+            .execute(
+                r#"{ appRunnerServices(limit: 1) { items { serviceName status } nextToken } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -197,7 +205,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ appRunnerVpcConnectors { items { vpcConnectorName status } nextToken } }"#)
+            .execute(
+                r#"{ appRunnerVpcConnectors { items { vpcConnectorName status } nextToken } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);

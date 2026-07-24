@@ -30,8 +30,7 @@ impl AthenaWorkgroup {
             enforce_workgroup_configuration: config
                 .and_then(|c| c.enforce_work_group_configuration())
                 .unwrap_or(false),
-            bytes_scanned_cutoff: config
-                .and_then(|c| c.bytes_scanned_cutoff_per_query()),
+            bytes_scanned_cutoff: config.and_then(|c| c.bytes_scanned_cutoff_per_query()),
             engine_version: config
                 .and_then(|c| c.engine_version())
                 .and_then(|e| e.effective_engine_version())
@@ -84,14 +83,22 @@ impl From<aws_sdk_athena::types::QueryExecution> for AthenaQueryExecution {
         Self {
             id: qe.query_execution_id().unwrap_or_default().to_string(),
             query: qe.query().map(|s| s.to_string()),
-            database: qe.query_execution_context().and_then(|c| c.database()).map(|s| s.to_string()),
+            database: qe
+                .query_execution_context()
+                .and_then(|c| c.database())
+                .map(|s| s.to_string()),
             workgroup: qe.work_group().map(|s| s.to_string()),
-            state: status.and_then(|s| s.state()).map(|s| s.as_str().to_string()),
+            state: status
+                .and_then(|s| s.state())
+                .map(|s| s.as_str().to_string()),
             submission_time: to_utc(status.and_then(|s| s.submission_date_time())),
             completion_time: to_utc(status.and_then(|s| s.completion_date_time())),
             data_scanned_bytes: stats.and_then(|s| s.data_scanned_in_bytes()),
             execution_time_ms: stats.and_then(|s| s.engine_execution_time_in_millis()),
-            output_location: qe.result_configuration().and_then(|r| r.output_location()).map(|s| s.to_string()),
+            output_location: qe
+                .result_configuration()
+                .and_then(|r| r.output_location())
+                .map(|s| s.to_string()),
         }
     }
 }
@@ -102,7 +109,10 @@ mod tests {
 
     #[test]
     fn test_workgroup_from_sdk_minimal() {
-        let wg = aws_sdk_athena::types::WorkGroup::builder().name("").build().unwrap();
+        let wg = aws_sdk_athena::types::WorkGroup::builder()
+            .name("")
+            .build()
+            .unwrap();
         let result = AthenaWorkgroup::from_sdk(&wg);
         assert_eq!(result.name, "");
         assert!(result.state.is_none());
@@ -142,8 +152,14 @@ mod tests {
         assert_eq!(result.description, Some("Primary workgroup".to_string()));
         assert!(result.enforce_workgroup_configuration);
         assert_eq!(result.bytes_scanned_cutoff, Some(1_000_000));
-        assert_eq!(result.output_location, Some("s3://my-bucket/output/".to_string()));
-        assert_eq!(result.engine_version, Some("Athena engine version 3".to_string()));
+        assert_eq!(
+            result.output_location,
+            Some("s3://my-bucket/output/".to_string())
+        );
+        assert_eq!(
+            result.engine_version,
+            Some("Athena engine version 3".to_string())
+        );
         assert_eq!(
             result.creation_time,
             Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))
@@ -214,7 +230,10 @@ mod tests {
         assert_eq!(result.state, Some("SUCCEEDED".to_string()));
         assert_eq!(result.data_scanned_bytes, Some(1024));
         assert_eq!(result.execution_time_ms, Some(500));
-        assert_eq!(result.output_location, Some("s3://results/query-123.csv".to_string()));
+        assert_eq!(
+            result.output_location,
+            Some("s3://results/query-123.csv".to_string())
+        );
         assert_eq!(
             result.submission_time,
             Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1_700_000_000))

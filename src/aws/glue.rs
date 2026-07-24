@@ -188,10 +188,7 @@ mod tests {
     async fn get_databases_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, "{}"),
-            json_response(
-                200,
-                r#"{"DatabaseList":[{"Name":"db-a"},{"Name":"db-b"}]}"#,
-            ),
+            json_response(200, r#"{"DatabaseList":[{"Name":"db-a"},{"Name":"db-b"}]}"#),
         )]);
         let client = GlueClient::new(&sdk_config(http_client.clone()));
 
@@ -289,10 +286,7 @@ mod tests {
     async fn get_tables_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"DatabaseName":"db-1"}"#),
-            json_response(
-                200,
-                r#"{"TableList":[{"Name":"tbl-a"},{"Name":"tbl-b"}]}"#,
-            ),
+            json_response(200, r#"{"TableList":[{"Name":"tbl-a"},{"Name":"tbl-b"}]}"#),
         )]);
         let client = GlueClient::new(&sdk_config(http_client.clone()));
 

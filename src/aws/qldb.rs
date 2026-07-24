@@ -153,7 +153,10 @@ impl QldbClient {
         let mut token = next_token;
 
         loop {
-            let mut req = self.inner.list_journal_s3_exports_for_ledger().name(ledger_name);
+            let mut req = self
+                .inner
+                .list_journal_s3_exports_for_ledger()
+                .name(ledger_name);
             if let Some(l) = limit {
                 req = req.max_results(l - items.len() as i32);
             }
@@ -187,8 +190,10 @@ impl QldbClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use aws_smithy_types::DateTime;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
 
     const BASE: &str = "https://qldb.us-east-1.amazonaws.com";
 
@@ -233,7 +238,10 @@ mod tests {
             Some("arn:aws:qldb:us-east-1:123456789012:ledger/ledger-a".to_string())
         );
         assert_eq!(l.state, Some("ACTIVE".to_string()));
-        assert_eq!(l.creation_date_time, Some(DateTime::from_secs(1_700_000_000)));
+        assert_eq!(
+            l.creation_date_time,
+            Some(DateTime::from_secs(1_700_000_000))
+        );
         assert_eq!(l.permissions_mode, Some("STANDARD".to_string()));
         assert_eq!(l.deletion_protection, Some(true));
         assert_eq!(
@@ -306,7 +314,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{BASE}/ledgers?max_results=1"), ""),
-                json_response(200, r#"{"Ledgers":[{"Name":"ledger-d"}],"NextToken":"page2-token"}"#),
+                json_response(
+                    200,
+                    r#"{"Ledgers":[{"Name":"ledger-d"}],"NextToken":"page2-token"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/ledgers/ledger-d"), ""),
@@ -395,7 +406,9 @@ mod tests {
         let err = client.list_ledgers(None, None).await.unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("ResourceNotFoundException".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("ResourceNotFoundException".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -475,16 +488,28 @@ mod tests {
         )]);
         let client = QldbClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_journal_s3_exports("ledger-j", None, None).await.unwrap();
+        let (items, token) = client
+            .list_journal_s3_exports("ledger-j", None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         let e = &items[0];
         assert_eq!(e.ledger_name, "ledger-j");
         assert_eq!(e.export_id, "export-1");
-        assert_eq!(e.export_creation_time, Some(DateTime::from_secs(1_700_000_000)));
+        assert_eq!(
+            e.export_creation_time,
+            Some(DateTime::from_secs(1_700_000_000))
+        );
         assert_eq!(e.status, Some("COMPLETED".to_string()));
-        assert_eq!(e.inclusive_start_time, Some(DateTime::from_secs(1_699_990_000)));
-        assert_eq!(e.exclusive_end_time, Some(DateTime::from_secs(1_700_000_000)));
+        assert_eq!(
+            e.inclusive_start_time,
+            Some(DateTime::from_secs(1_699_990_000))
+        );
+        assert_eq!(
+            e.exclusive_end_time,
+            Some(DateTime::from_secs(1_700_000_000))
+        );
         assert_eq!(e.output_format, Some("JSON".to_string()));
 
         assert_eq!(token, None);
@@ -494,7 +519,10 @@ mod tests {
     #[tokio::test]
     async fn list_journal_s3_exports_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/ledgers/ledger-k/journal-s3-exports?next_token=cursor-a"), ""),
+            request(
+                &format!("{BASE}/ledgers/ledger-k/journal-s3-exports?next_token=cursor-a"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"JournalS3Exports":[{"LedgerName":"ledger-k","ExportId":"export-2"}]}"#,
@@ -519,7 +547,10 @@ mod tests {
         // `max_results`, so the canned page must return exactly `limit`
         // items.
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/ledgers/ledger-l/journal-s3-exports?max_results=1"), ""),
+            request(
+                &format!("{BASE}/ledgers/ledger-l/journal-s3-exports?max_results=1"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"JournalS3Exports":[{"LedgerName":"ledger-l","ExportId":"export-3"}],"NextToken":"page2-token"}"#,
@@ -541,7 +572,10 @@ mod tests {
     async fn list_journal_s3_exports_pages_through_until_exhausted_when_limit_not_reached() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/ledgers/ledger-m/journal-s3-exports?max_results=10"), ""),
+                request(
+                    &format!("{BASE}/ledgers/ledger-m/journal-s3-exports?max_results=10"),
+                    "",
+                ),
                 json_response(
                     200,
                     r#"{"JournalS3Exports":[{"LedgerName":"ledger-m","ExportId":"export-4"}],"NextToken":"p2"}"#,
@@ -549,7 +583,9 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(
-                    &format!("{BASE}/ledgers/ledger-m/journal-s3-exports?max_results=9&next_token=p2"),
+                    &format!(
+                        "{BASE}/ledgers/ledger-m/journal-s3-exports?max_results=9&next_token=p2"
+                    ),
                     "",
                 ),
                 json_response(
@@ -586,7 +622,10 @@ mod tests {
         )]);
         let client = QldbClient::new(&sdk_config(http_client.clone()));
 
-        let (items, _token) = client.list_journal_s3_exports("ledger-o", None, None).await.unwrap();
+        let (items, _token) = client
+            .list_journal_s3_exports("ledger-o", None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         let e = &items[0];
@@ -622,4 +661,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

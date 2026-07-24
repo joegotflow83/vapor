@@ -130,7 +130,10 @@ mod tests {
             ingest_state: Some("STARTED".to_string()),
         };
         let result = DetectiveDatasourcePackage::from(info);
-        assert_eq!(result.datasource_package, Some("DETECTIVE_CORE".to_string()));
+        assert_eq!(
+            result.datasource_package,
+            Some("DETECTIVE_CORE".to_string())
+        );
         assert_eq!(result.ingest_state, Some("STARTED".to_string()));
     }
 

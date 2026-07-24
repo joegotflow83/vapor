@@ -1,8 +1,6 @@
 use async_graphql::SimpleObject;
 use aws_sdk_kinesis::types::{
-    Shard as SdkShard,
-    StreamDescriptionSummary as SdkStreamSummary,
-    Tag as SdkKinesisTag,
+    Shard as SdkShard, StreamDescriptionSummary as SdkStreamSummary, Tag as SdkKinesisTag,
 };
 use chrono::{DateTime, Utc};
 
@@ -44,7 +42,9 @@ impl DataStream {
             name: s.stream_name().to_string(),
             arn: Some(s.stream_arn().to_string()),
             status: Some(s.stream_status().as_str().to_string()),
-            stream_mode: s.stream_mode_details().map(|m| m.stream_mode().as_str().to_string()),
+            stream_mode: s
+                .stream_mode_details()
+                .map(|m| m.stream_mode().as_str().to_string()),
             shard_count: Some(s.open_shard_count() as i32),
             retention_period_hours: Some(s.retention_period_hours() as i32),
             encryption_type: s.encryption_type().map(|e| e.as_str().to_string()),
@@ -98,7 +98,11 @@ mod tests {
 
     #[test]
     fn test_tag_from_kinesis() {
-        let sdk_tag = SdkKinesisTag::builder().key("env").value("prod").build().unwrap();
+        let sdk_tag = SdkKinesisTag::builder()
+            .key("env")
+            .value("prod")
+            .build()
+            .unwrap();
         let tag = Tag::from(sdk_tag);
         assert_eq!(tag.key, "env");
         assert_eq!(tag.value, "prod");
@@ -128,7 +132,10 @@ mod tests {
             shard.ending_hash_key,
             Some("170141183460469231731687303715884105727".to_string())
         );
-        assert_eq!(shard.starting_sequence_number, Some("49600000000000000000".to_string()));
+        assert_eq!(
+            shard.starting_sequence_number,
+            Some("49600000000000000000".to_string())
+        );
         assert!(shard.ending_sequence_number.is_none());
         assert!(shard.parent_shard_id.is_none());
     }
@@ -169,12 +176,17 @@ mod tests {
             .unwrap();
         let ds = DataStream::from_summary(summary, vec![]);
         assert_eq!(ds.name, "my-stream");
-        assert_eq!(ds.arn, Some("arn:aws:kinesis:us-east-1:123456789012:stream/my-stream".to_string()));
+        assert_eq!(
+            ds.arn,
+            Some("arn:aws:kinesis:us-east-1:123456789012:stream/my-stream".to_string())
+        );
         assert_eq!(ds.status, Some("ACTIVE".to_string()));
         assert_eq!(ds.shard_count, Some(4));
         assert_eq!(ds.retention_period_hours, Some(24));
-        assert_eq!(ds.created_at, Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1700000000)));
+        assert_eq!(
+            ds.created_at,
+            Some(DateTime::<Utc>::UNIX_EPOCH + chrono::Duration::seconds(1700000000))
+        );
         assert!(ds.tags.is_empty());
     }
-
 }

@@ -31,7 +31,10 @@ mod tests {
             .build();
         let identity = CallerIdentity::from(output);
         assert_eq!(identity.account.as_deref(), Some("123456789012"));
-        assert_eq!(identity.arn.as_deref(), Some("arn:aws:iam::123456789012:user/testuser"));
+        assert_eq!(
+            identity.arn.as_deref(),
+            Some("arn:aws:iam::123456789012:user/testuser")
+        );
         assert_eq!(identity.user_id.as_deref(), Some("AIDAJEXAMPLE"));
     }
 

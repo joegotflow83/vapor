@@ -49,7 +49,11 @@ impl FirehoseClient {
             }
             let last = names.last().map(|s| s.to_string());
             items.extend(names.iter().map(|s| s.to_string()));
-            token = if output.has_more_delivery_streams() { last } else { None };
+            token = if output.has_more_delivery_streams() {
+                last
+            } else {
+                None
+            };
 
             match (&token, limit) {
                 (None, _) => break,
@@ -75,7 +79,10 @@ impl FirehoseClient {
         output
             .delivery_stream_description()
             .cloned()
-            .ok_or_else(|| VaporError::AwsSdk { code: None, message: "No delivery stream description".to_string() })
+            .ok_or_else(|| VaporError::AwsSdk {
+                code: None,
+                message: "No delivery stream description".to_string(),
+            })
     }
 
     pub async fn list_tags_for_delivery_stream(
@@ -86,7 +93,10 @@ impl FirehoseClient {
         let mut exclusive_start_key: Option<String> = None;
 
         loop {
-            let mut req = self.inner.list_tags_for_delivery_stream().delivery_stream_name(name);
+            let mut req = self
+                .inner
+                .list_tags_for_delivery_stream()
+                .delivery_stream_name(name);
             if let Some(ref key) = exclusive_start_key {
                 req = req.exclusive_start_tag_key(key);
             }
@@ -141,7 +151,10 @@ mod tests {
     #[tokio::test]
     async fn list_delivery_streams_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"ExclusiveStartDeliveryStreamName":"stream-a"}"#),
+            request(
+                ENDPOINT,
+                r#"{"ExclusiveStartDeliveryStreamName":"stream-a"}"#,
+            ),
             json_response(
                 200,
                 r#"{"DeliveryStreamNames":["stream-b"],"HasMoreDeliveryStreams":false}"#,
@@ -188,7 +201,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"Limit":8,"ExclusiveStartDeliveryStreamName":"stream-b"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"Limit":8,"ExclusiveStartDeliveryStreamName":"stream-b"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"DeliveryStreamNames":["stream-c"],"HasMoreDeliveryStreams":false}"#,
@@ -201,7 +217,11 @@ mod tests {
 
         assert_eq!(
             names,
-            vec!["stream-a".to_string(), "stream-b".to_string(), "stream-c".to_string()]
+            vec![
+                "stream-a".to_string(),
+                "stream-b".to_string(),
+                "stream-c".to_string()
+            ]
         );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
@@ -245,8 +265,14 @@ mod tests {
             description.delivery_stream_arn(),
             "arn:aws:firehose:us-east-1:1:deliverystream/my-stream"
         );
-        assert_eq!(description.delivery_stream_status(), &DeliveryStreamStatus::Active);
-        assert_eq!(description.delivery_stream_type(), &DeliveryStreamType::DirectPut);
+        assert_eq!(
+            description.delivery_stream_status(),
+            &DeliveryStreamStatus::Active
+        );
+        assert_eq!(
+            description.delivery_stream_type(),
+            &DeliveryStreamType::DirectPut
+        );
         assert_eq!(description.version_id(), "1");
         http_client.relaxed_requests_match();
     }

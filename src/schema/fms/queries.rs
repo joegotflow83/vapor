@@ -67,7 +67,9 @@ impl FmsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::fms::FmsClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::FmsQuery;
@@ -153,7 +155,10 @@ mod tests {
     async fn fms_member_accounts_maps_items_and_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"MaxResults":1}"#),
-            json_response(200, r#"{"MemberAccounts":["111111111111"],"NextToken":"tok-4"}"#),
+            json_response(
+                200,
+                r#"{"MemberAccounts":["111111111111"],"NextToken":"tok-4"}"#,
+            ),
         )]);
         let schema = build_query_schema(FmsQuery)
             .data(FmsClient::new(&sdk_config(http_client.clone())))

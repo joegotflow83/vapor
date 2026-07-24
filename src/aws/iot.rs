@@ -339,7 +339,9 @@ impl IotClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::error::VaporError;
 
     const BASE: &str = "https://iot.us-east-1.amazonaws.com";
@@ -433,7 +435,10 @@ mod tests {
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_things(None, None, None, Some(1), None).await.unwrap();
+        let (items, token) = client
+            .list_things(None, None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, Some("page2".to_string()));
@@ -451,7 +456,10 @@ mod tests {
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_things(None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .list_things(None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -468,7 +476,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{BASE}/thing-groups"), ""),
-                json_response(200, r#"{"thingGroups":[{"groupName":"g1","groupArn":"garn1"}]}"#),
+                json_response(
+                    200,
+                    r#"{"thingGroups":[{"groupName":"g1","groupArn":"garn1"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/thing-groups/g1"), ""),
@@ -593,7 +604,10 @@ mod tests {
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_thing_groups(None, None, None).await.unwrap_err();
+        let err = client
+            .list_thing_groups(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -609,7 +623,10 @@ mod tests {
     async fn list_policies_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{BASE}/policies"), ""),
-            json_response(200, r#"{"policies":[{"policyName":"p1","policyArn":"parn1"}]}"#),
+            json_response(
+                200,
+                r#"{"policies":[{"policyName":"p1","policyArn":"parn1"}]}"#,
+            ),
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 
@@ -698,7 +715,10 @@ mod tests {
         assert_eq!(items[0].certificate_id, Some("c1".to_string()));
         assert_eq!(items[0].certificate_arn, Some("carn1".to_string()));
         assert_eq!(items[0].status, Some("ACTIVE".to_string()));
-        assert_eq!(items[0].creation_date, Some(DateTime::from_secs(1_700_000_000)));
+        assert_eq!(
+            items[0].creation_date,
+            Some(DateTime::from_secs(1_700_000_000))
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -711,7 +731,10 @@ mod tests {
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_certificates(Some(true), None, None).await.unwrap();
+        let (items, token) = client
+            .list_certificates(Some(true), None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 0);
         assert_eq!(token, None);
@@ -747,7 +770,10 @@ mod tests {
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_certificates(None, None, None).await.unwrap_err();
+        let err = client
+            .list_certificates(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -775,7 +801,10 @@ mod tests {
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].rule_name, Some("r1".to_string()));
         assert_eq!(items[0].topic_pattern, Some("sensors/+/temp".to_string()));
-        assert_eq!(items[0].created_at, Some(DateTime::from_secs(1_700_000_000)));
+        assert_eq!(
+            items[0].created_at,
+            Some(DateTime::from_secs(1_700_000_000))
+        );
         assert_eq!(items[0].rule_disabled, Some(false));
         assert_eq!(items[0].rule_arn, Some("rarn1".to_string()));
         assert_eq!(token, None);
@@ -790,7 +819,10 @@ mod tests {
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_topic_rules(Some(true), None, None).await.unwrap();
+        let (items, token) = client
+            .list_topic_rules(Some(true), None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 0);
         assert_eq!(token, None);
@@ -819,10 +851,7 @@ mod tests {
     async fn list_topic_rules_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{BASE}/rules?maxResults=1"), ""),
-            json_response(
-                200,
-                r#"{"rules":[{"ruleName":"r1"}],"nextToken":"page2"}"#,
-            ),
+            json_response(200, r#"{"rules":[{"ruleName":"r1"}],"nextToken":"page2"}"#),
         )]);
         let client = IotClient::new(&sdk_config(http_client.clone()));
 

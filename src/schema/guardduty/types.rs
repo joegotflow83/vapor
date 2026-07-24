@@ -59,11 +59,10 @@ pub struct Finding {
 
 impl From<aws_sdk_guardduty::types::Finding> for Finding {
     fn from(f: aws_sdk_guardduty::types::Finding) -> Self {
-        let resource_type = f.resource().and_then(|r| r.resource_type().map(|s| s.to_string()));
-        let archived = f
-            .service()
-            .and_then(|s| s.archived)
-            .unwrap_or(false);
+        let resource_type = f
+            .resource()
+            .and_then(|r| r.resource_type().map(|s| s.to_string()));
+        let archived = f.service().and_then(|s| s.archived).unwrap_or(false);
 
         Self {
             id: f.id().unwrap_or_default().to_string(),
@@ -112,8 +111,14 @@ mod tests {
             .build();
         let detector = Detector::from_output("det-1".to_string(), output);
         assert_eq!(detector.id, "det-1");
-        assert_eq!(detector.created_at, Some("2024-01-01T00:00:00Z".to_string()));
-        assert_eq!(detector.updated_at, Some("2024-06-01T00:00:00Z".to_string()));
+        assert_eq!(
+            detector.created_at,
+            Some("2024-01-01T00:00:00Z".to_string())
+        );
+        assert_eq!(
+            detector.updated_at,
+            Some("2024-06-01T00:00:00Z".to_string())
+        );
         assert_eq!(
             detector.finding_publishing_frequency,
             Some("SIX_HOURS".to_string())

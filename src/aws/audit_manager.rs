@@ -223,7 +223,10 @@ impl AuditManagerClient {
         let mut items = Vec::new();
         let mut token = next_token;
         loop {
-            let mut req = self.inner.list_controls().control_type(control_type.clone());
+            let mut req = self
+                .inner
+                .list_controls()
+                .control_type(control_type.clone());
             if let Some(ref t) = token {
                 req = req.next_token(t);
             }
@@ -286,7 +289,10 @@ mod tests {
     async fn list_assessments_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{ASSESSMENTS}?nextToken=cursor-a"), ""),
-            json_response(200, r#"{"assessmentMetadata":[{"id":"a3","name":"Assessment Three"}]}"#),
+            json_response(
+                200,
+                r#"{"assessmentMetadata":[{"id":"a3","name":"Assessment Three"}]}"#,
+            ),
         )]);
         let client = AuditManagerClient::new(&sdk_config(http_client.clone()));
 
@@ -380,7 +386,10 @@ mod tests {
     #[tokio::test]
     async fn list_frameworks_with_standard_type_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{FRAMEWORKS}?frameworkType=Standard&maxResults=2"), ""),
+            request(
+                &format!("{FRAMEWORKS}?frameworkType=Standard&maxResults=2"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"frameworkMetadataList":[{"id":"f1","name":"Framework One","type":"Standard"},{"id":"f2","name":"Framework Two","type":"Standard"}],"nextToken":"fpage2"}"#,
@@ -402,7 +411,10 @@ mod tests {
     #[tokio::test]
     async fn list_frameworks_with_custom_type_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{FRAMEWORKS}?frameworkType=Custom&nextToken=cursor-b"), ""),
+            request(
+                &format!("{FRAMEWORKS}?frameworkType=Custom&nextToken=cursor-b"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"frameworkMetadataList":[{"id":"f3","name":"Custom Framework","type":"Custom"}]}"#,
@@ -411,7 +423,11 @@ mod tests {
         let client = AuditManagerClient::new(&sdk_config(http_client.clone()));
 
         let (items, token) = client
-            .list_frameworks(Some("Custom".to_string()), None, Some("cursor-b".to_string()))
+            .list_frameworks(
+                Some("Custom".to_string()),
+                None,
+                Some("cursor-b".to_string()),
+            )
             .await
             .unwrap();
 

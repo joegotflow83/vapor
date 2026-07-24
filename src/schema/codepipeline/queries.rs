@@ -26,7 +26,10 @@ impl CodePipelineQuery {
             Pipeline::from_summary(s, arn)
         }))
         .await;
-        Ok(Page { items: pipelines, next_token: token })
+        Ok(Page {
+            items: pipelines,
+            next_token: token,
+        })
     }
 
     /// Lists executions for a pipeline, optionally capped at `limit` results
@@ -46,7 +49,10 @@ impl CodePipelineQuery {
             .iter()
             .map(|s| PipelineExecution::from_summary(&pipeline_name, s))
             .collect();
-        Ok(Page { items, next_token: token })
+        Ok(Page {
+            items,
+            next_token: token,
+        })
     }
 
     async fn pipeline_state(
@@ -175,7 +181,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ pipelines(limit: 5, nextToken: "cursor-a") { items { name } nextToken } }"#)
+            .execute(
+                r#"{ pipelines(limit: 5, nextToken: "cursor-a") { items { name } nextToken } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -249,7 +257,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ pipelineExecutions(pipelineName: "my-pipeline") { items { executionId } } }"#)
+            .execute(
+                r#"{ pipelineExecutions(pipelineName: "my-pipeline") { items { executionId } } }"#,
+            )
             .await;
 
         assert_eq!(res.errors.len(), 1);
@@ -288,7 +298,10 @@ mod tests {
         assert_eq!(actions[0]["status"], "Failed");
         assert_eq!(actions[0]["lastStatusChange"], "2023-11-14T22:13:20+00:00");
         assert_eq!(actions[0]["errorDetails"], "boom");
-        assert_eq!(actions[0]["externalExecutionUrl"], "https://example.com/build/1");
+        assert_eq!(
+            actions[0]["externalExecutionUrl"],
+            "https://example.com/build/1"
+        );
         http_client.relaxed_requests_match();
     }
 

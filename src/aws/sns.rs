@@ -1,8 +1,8 @@
 use aws_config::SdkConfig;
 use std::collections::HashMap;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 pub struct SnsClient {
     inner: aws_sdk_sns::Client,
@@ -131,7 +131,9 @@ impl SnsClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://sns.us-east-1.amazonaws.com/";
     const TOPIC_ARN: &str = "arn:aws:sns:us-east-1:123456789012:my-topic";
@@ -154,7 +156,9 @@ mod tests {
             ReplayEvent::new(
                 request(
                     ENDPOINT,
-                    format!("Action=GetTopicAttributes&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"),
+                    format!(
+                        "Action=GetTopicAttributes&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"
+                    ),
                 ),
                 xml_response(
                     200,
@@ -166,11 +170,17 @@ mod tests {
         ]);
         let client = SnsClient::new(&sdk_config(http_client.clone()));
 
-        let (result, token) = client.list_topics_with_attributes(None, None).await.unwrap();
+        let (result, token) = client
+            .list_topics_with_attributes(None, None)
+            .await
+            .unwrap();
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].0, TOPIC_ARN);
-        assert_eq!(result[0].1.get("DisplayName"), Some(&"My Topic".to_string()));
+        assert_eq!(
+            result[0].1.get("DisplayName"),
+            Some(&"My Topic".to_string())
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -178,7 +188,10 @@ mod tests {
     #[tokio::test]
     async fn list_topics_with_attributes_resumes_from_provided_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListTopics&Version=2010-03-31&NextToken=cursor-a"),
+            request(
+                ENDPOINT,
+                "Action=ListTopics&Version=2010-03-31&NextToken=cursor-a",
+            ),
             xml_response(
                 200,
                 "<ListTopicsResponse><ListTopicsResult><Topics>\
@@ -236,7 +249,10 @@ mod tests {
         ]);
         let client = SnsClient::new(&sdk_config(http_client.clone()));
 
-        let (result, token) = client.list_topics_with_attributes(None, Some(2)).await.unwrap();
+        let (result, token) = client
+            .list_topics_with_attributes(None, Some(2))
+            .await
+            .unwrap();
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].0, "arn:a");
@@ -256,7 +272,10 @@ mod tests {
         )]);
         let client = SnsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_topics_with_attributes(None, None).await.unwrap_err();
+        let err = client
+            .list_topics_with_attributes(None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -285,7 +304,9 @@ mod tests {
             ReplayEvent::new(
                 request(
                     ENDPOINT,
-                    format!("Action=GetTopicAttributes&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"),
+                    format!(
+                        "Action=GetTopicAttributes&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"
+                    ),
                 ),
                 xml_error_response("NotFound", "topic not found"),
             ),
@@ -294,7 +315,10 @@ mod tests {
 
         // The per-topic attribute fetch uses `?`, not `.ok()` — a fan-out
         // failure must propagate, not be swallowed into an empty map.
-        let err = client.list_topics_with_attributes(None, None).await.unwrap_err();
+        let err = client
+            .list_topics_with_attributes(None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -470,7 +494,10 @@ mod tests {
         )]);
         let client = SnsClient::new(&sdk_config(http_client.clone()));
 
-        let (subs, token) = client.list_subscriptions(None, None, Some(2)).await.unwrap();
+        let (subs, token) = client
+            .list_subscriptions(None, None, Some(2))
+            .await
+            .unwrap();
 
         assert_eq!(subs.len(), 2);
         assert_eq!(subs[0].subscription_arn(), Some("sub-a"));
@@ -518,7 +545,10 @@ mod tests {
         )]);
         let client = SnsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_subscriptions(None, None, None).await.unwrap_err();
+        let err = client
+            .list_subscriptions(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -535,7 +565,9 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(
                 ENDPOINT,
-                format!("Action=ListSubscriptionsByTopic&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"),
+                format!(
+                    "Action=ListSubscriptionsByTopic&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"
+                ),
             ),
             xml_error_response("NotFound", "topic not found"),
         )]);
@@ -556,4 +588,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

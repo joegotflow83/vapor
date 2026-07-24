@@ -33,7 +33,11 @@ impl From<FsxFileSystemInfo> for FsxFileSystem {
             dns_name: info.dns_name,
             kms_key_id: info.kms_key_id,
             creation_time: to_utc(info.creation_time.as_ref()),
-            tags: info.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: info
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -58,7 +62,11 @@ impl From<FsxBackupInfo> for FsxBackup {
             creation_time: to_utc(info.creation_time.as_ref()),
             file_system_id: info.file_system_id,
             resource_arn: info.resource_arn,
-            tags: info.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: info
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -83,7 +91,11 @@ impl From<FsxStorageVirtualMachineInfo> for FsxStorageVirtualMachine {
             lifecycle: info.lifecycle,
             subtype: info.subtype,
             creation_time: to_utc(info.creation_time.as_ref()),
-            tags: info.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: info
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -138,7 +150,10 @@ mod tests {
         assert_eq!(result.storage_type, Some("SSD".to_string()));
         assert_eq!(result.vpc_id, Some("vpc-12345678".to_string()));
         assert_eq!(result.subnet_ids, vec!["subnet-aaa"]);
-        assert_eq!(result.dns_name, Some("fs-abc123.fsx.us-east-1.amazonaws.com".to_string()));
+        assert_eq!(
+            result.dns_name,
+            Some("fs-abc123.fsx.us-east-1.amazonaws.com".to_string())
+        );
         assert_eq!(
             result.creation_time.map(|d| d.to_rfc3339()),
             Some("2024-01-01T00:00:00+00:00".to_string())
@@ -176,7 +191,9 @@ mod tests {
             backup_type: "USER_INITIATED".to_string(),
             creation_time: Some(SmithyDateTime::from_secs(1_717_200_000)),
             file_system_id: Some("fs-abc123".to_string()),
-            resource_arn: Some("arn:aws:fsx:us-east-1:123456789012:backup/backup-abc123".to_string()),
+            resource_arn: Some(
+                "arn:aws:fsx:us-east-1:123456789012:backup/backup-abc123".to_string(),
+            ),
             tags: vec![("Env".to_string(), "prod".to_string())],
         };
         let result = FsxBackup::from(info);
@@ -185,7 +202,10 @@ mod tests {
             Some("2024-06-01T00:00:00+00:00".to_string())
         );
         assert_eq!(result.file_system_id, Some("fs-abc123".to_string()));
-        assert_eq!(result.resource_arn, Some("arn:aws:fsx:us-east-1:123456789012:backup/backup-abc123".to_string()));
+        assert_eq!(
+            result.resource_arn,
+            Some("arn:aws:fsx:us-east-1:123456789012:backup/backup-abc123".to_string())
+        );
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Env");
     }

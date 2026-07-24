@@ -22,7 +22,10 @@ impl StorageGatewayQuery {
         let client = ctx.data::<StorageGatewayClient>()?;
         let (gateways, token) = client.list_gateways(limit, next_token).await?;
         Ok(Page {
-            items: gateways.into_iter().map(StorageGatewayGateway::from).collect(),
+            items: gateways
+                .into_iter()
+                .map(StorageGatewayGateway::from)
+                .collect(),
             next_token: token,
         })
     }
@@ -39,7 +42,10 @@ impl StorageGatewayQuery {
         let client = ctx.data::<StorageGatewayClient>()?;
         let (volumes, token) = client.list_volumes(gateway_arn, limit, next_token).await?;
         Ok(Page {
-            items: volumes.into_iter().map(StorageGatewayVolume::from).collect(),
+            items: volumes
+                .into_iter()
+                .map(StorageGatewayVolume::from)
+                .collect(),
             next_token: token,
         })
     }
@@ -54,9 +60,14 @@ impl StorageGatewayQuery {
         next_token: Option<String>,
     ) -> Result<Page<StorageGatewayFileShare>> {
         let client = ctx.data::<StorageGatewayClient>()?;
-        let (shares, token) = client.list_file_shares(gateway_arn, limit, next_token).await?;
+        let (shares, token) = client
+            .list_file_shares(gateway_arn, limit, next_token)
+            .await?;
         Ok(Page {
-            items: shares.into_iter().map(StorageGatewayFileShare::from).collect(),
+            items: shares
+                .into_iter()
+                .map(StorageGatewayFileShare::from)
+                .collect(),
             next_token: token,
         })
     }
@@ -72,7 +83,9 @@ impl StorageGatewayQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::storage_gateway::StorageGatewayClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::StorageGatewayQuery;
@@ -146,10 +159,7 @@ mod tests {
         assert_eq!(items[0]["volumeType"], "CACHED iSCSI");
         assert_eq!(items[0]["volumeSizeInBytes"], 1024);
         assert_eq!(items[0]["volumeStatus"], "ATTACHED");
-        assert_eq!(
-            json["storageGatewayVolumes"]["nextToken"],
-            "page2-token"
-        );
+        assert_eq!(json["storageGatewayVolumes"]["nextToken"], "page2-token");
         http_client.relaxed_requests_match();
     }
 
@@ -186,10 +196,7 @@ mod tests {
         assert!(items[0]["path"].is_null());
         assert_eq!(items[0]["fileShareStatus"], "AVAILABLE");
         assert!(items[0]["locationArn"].is_null());
-        assert_eq!(
-            json["storageGatewayFileShares"]["nextToken"],
-            "page2-token"
-        );
+        assert_eq!(json["storageGatewayFileShares"]["nextToken"], "page2-token");
         http_client.relaxed_requests_match();
     }
 }

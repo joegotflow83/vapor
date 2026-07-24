@@ -75,7 +75,9 @@ impl ElasticBeanstalkQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::elastic_beanstalk::ElasticBeanstalkClient;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::ElasticBeanstalkQuery;
@@ -97,7 +99,9 @@ mod tests {
             ),
         )]);
         let schema = build_query_schema(ElasticBeanstalkQuery)
-            .data(ElasticBeanstalkClient::new(&sdk_config(http_client.clone())))
+            .data(ElasticBeanstalkClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema
@@ -112,7 +116,10 @@ mod tests {
         assert_eq!(items[0]["applicationName"], "my-app");
         assert_eq!(items[0]["description"], "desc");
         assert_eq!(items[0]["versions"], serde_json::json!(["v1", "v2"]));
-        assert_eq!(items[0]["configurationTemplates"], serde_json::json!(["tmpl1"]));
+        assert_eq!(
+            items[0]["configurationTemplates"],
+            serde_json::json!(["tmpl1"])
+        );
         http_client.relaxed_requests_match();
     }
 
@@ -132,7 +139,9 @@ mod tests {
             ),
         )]);
         let schema = build_query_schema(ElasticBeanstalkQuery)
-            .data(ElasticBeanstalkClient::new(&sdk_config(http_client.clone())))
+            .data(ElasticBeanstalkClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema
@@ -170,7 +179,9 @@ mod tests {
             ),
         )]);
         let schema = build_query_schema(ElasticBeanstalkQuery)
-            .data(ElasticBeanstalkClient::new(&sdk_config(http_client.clone())))
+            .data(ElasticBeanstalkClient::new(&sdk_config(
+                http_client.clone(),
+            )))
             .finish();
 
         let res = schema

@@ -133,7 +133,10 @@ impl ElasticBeanstalkClient {
                     date_updated: env.date_updated().cloned(),
                 });
             }
-            token = output.next_token().filter(|t| !t.is_empty()).map(|t| t.to_string());
+            token = output
+                .next_token()
+                .filter(|t| !t.is_empty())
+                .map(|t| t.to_string());
 
             match (&token, limit) {
                 (None, _) => break,
@@ -193,7 +196,10 @@ impl ElasticBeanstalkClient {
                     date_updated: ver.date_updated().cloned(),
                 });
             }
-            token = output.next_token().filter(|t| !t.is_empty()).map(|t| t.to_string());
+            token = output
+                .next_token()
+                .filter(|t| !t.is_empty())
+                .map(|t| t.to_string());
 
             match (&token, limit) {
                 (None, _) => break,
@@ -208,16 +214,20 @@ impl ElasticBeanstalkClient {
 
 fn parse_datetime(s: &str) -> Option<aws_sdk_elasticbeanstalk::primitives::DateTime> {
     let dt = chrono::DateTime::parse_from_rfc3339(s).ok()?;
-    Some(aws_sdk_elasticbeanstalk::primitives::DateTime::from_secs_and_nanos(
-        dt.timestamp(),
-        dt.timestamp_subsec_nanos(),
-    ))
+    Some(
+        aws_sdk_elasticbeanstalk::primitives::DateTime::from_secs_and_nanos(
+            dt.timestamp(),
+            dt.timestamp_subsec_nanos(),
+        ),
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::error::VaporError;
 
     const ENDPOINT: &str = "https://elasticbeanstalk.us-east-1.amazonaws.com/";
@@ -244,8 +254,14 @@ mod tests {
         let app = &apps[0];
         assert_eq!(app.application_name, "my-app");
         assert_eq!(app.description, Some("desc".to_string()));
-        assert_eq!(app.date_created.as_ref().map(|d| d.secs()), Some(1705312800));
-        assert_eq!(app.date_updated.as_ref().map(|d| d.secs()), Some(1705399200));
+        assert_eq!(
+            app.date_created.as_ref().map(|d| d.secs()),
+            Some(1705312800)
+        );
+        assert_eq!(
+            app.date_updated.as_ref().map(|d| d.secs()),
+            Some(1705399200)
+        );
         assert_eq!(app.versions, vec!["v1".to_string(), "v2".to_string()]);
         assert_eq!(app.configuration_templates, vec!["tmpl1".to_string()]);
         http_client.relaxed_requests_match();
@@ -323,11 +339,17 @@ mod tests {
         assert_eq!(env.environment_id.as_deref(), Some("e-123"));
         assert_eq!(env.environment_name.as_deref(), Some("my-env"));
         assert_eq!(env.application_name.as_deref(), Some("my-app"));
-        assert_eq!(env.solution_stack_name.as_deref(), Some("64bit Amazon Linux"));
+        assert_eq!(
+            env.solution_stack_name.as_deref(),
+            Some("64bit Amazon Linux")
+        );
         assert_eq!(env.status.as_deref(), Some("Ready"));
         assert_eq!(env.health.as_deref(), Some("Green"));
         assert_eq!(env.health_status.as_deref(), Some("Ok"));
-        assert_eq!(env.cname.as_deref(), Some("my-env.us-east-1.elasticbeanstalk.com"));
+        assert_eq!(
+            env.cname.as_deref(),
+            Some("my-env.us-east-1.elasticbeanstalk.com")
+        );
         assert_eq!(env.endpoint_url.as_deref(), Some("10.0.0.1"));
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
@@ -443,7 +465,13 @@ mod tests {
         let client = ElasticBeanstalkClient::new(&sdk_config(http_client.clone()));
 
         let (envs, token) = client
-            .describe_environments(None, None, Some("2024-01-15T10:00:00Z".to_string()), None, None)
+            .describe_environments(
+                None,
+                None,
+                Some("2024-01-15T10:00:00Z".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -524,7 +552,12 @@ mod tests {
         let client = ElasticBeanstalkClient::new(&sdk_config(http_client.clone()));
 
         let (versions, _token) = client
-            .describe_application_versions(None, Some(vec!["v1".to_string(), "v2".to_string()]), None, None)
+            .describe_application_versions(
+                None,
+                Some(vec!["v1".to_string(), "v2".to_string()]),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -625,7 +658,10 @@ mod tests {
     #[tokio::test]
     async fn describe_application_versions_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeApplicationVersions&Version=2010-12-01"),
+            request(
+                ENDPOINT,
+                "Action=DescribeApplicationVersions&Version=2010-12-01",
+            ),
             xml_error_response("TooManyApplicationVersionsException", "limit exceeded"),
         )]);
         let client = ElasticBeanstalkClient::new(&sdk_config(http_client.clone()));
@@ -645,4 +681,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

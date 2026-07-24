@@ -104,7 +104,10 @@ mod tests {
             creation_time: None,
         };
         let result = DataSyncAgent::from(info);
-        assert_eq!(result.agent_arn, "arn:aws:datasync:us-east-1:123:agent/agent-01");
+        assert_eq!(
+            result.agent_arn,
+            "arn:aws:datasync:us-east-1:123:agent/agent-01"
+        );
         assert_eq!(result.name, Some("my-agent".to_string()));
         assert_eq!(result.status, Some("ONLINE".to_string()));
         assert!(result.creation_time.is_none());
@@ -131,8 +134,14 @@ mod tests {
             creation_time: None,
         };
         let result = DataSyncLocation::from(info);
-        assert_eq!(result.location_arn, "arn:aws:datasync:us-east-1:123:location/loc-01");
-        assert_eq!(result.location_uri, Some("s3://my-bucket/prefix/".to_string()));
+        assert_eq!(
+            result.location_arn,
+            "arn:aws:datasync:us-east-1:123:location/loc-01"
+        );
+        assert_eq!(
+            result.location_uri,
+            Some("s3://my-bucket/prefix/".to_string())
+        );
     }
 
     #[test]
@@ -153,11 +162,16 @@ mod tests {
             name: Some("my-task".to_string()),
             status: Some("AVAILABLE".to_string()),
             source_location_arn: Some("arn:aws:datasync:us-east-1:123:location/src".to_string()),
-            destination_location_arn: Some("arn:aws:datasync:us-east-1:123:location/dst".to_string()),
+            destination_location_arn: Some(
+                "arn:aws:datasync:us-east-1:123:location/dst".to_string(),
+            ),
             creation_time: None,
         };
         let result = DataSyncTask::from(info);
-        assert_eq!(result.task_arn, "arn:aws:datasync:us-east-1:123:task/task-01");
+        assert_eq!(
+            result.task_arn,
+            "arn:aws:datasync:us-east-1:123:task/task-01"
+        );
         assert_eq!(result.name, Some("my-task".to_string()));
         assert_eq!(result.status, Some("AVAILABLE".to_string()));
         assert!(result.source_location_arn.is_some());

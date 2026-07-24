@@ -318,10 +318,7 @@ mod tests {
         ]);
         let client = EcsClient::new(&sdk_config(http_client.clone()));
 
-        let (clusters, token) = client
-            .describe_clusters(None, Some(1), None)
-            .await
-            .unwrap();
+        let (clusters, token) = client.describe_clusters(None, Some(1), None).await.unwrap();
 
         assert_eq!(clusters.len(), 1);
         assert_eq!(token.as_deref(), Some("cursor-a"));
@@ -375,7 +372,10 @@ mod tests {
         )]);
         let client = EcsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_clusters(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_clusters(None, None, None)
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, VaporError::AwsSdk { .. }));
         http_client.relaxed_requests_match();
@@ -398,7 +398,10 @@ mod tests {
         ]);
         let client = EcsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_clusters(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_clusters(None, None, None)
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, VaporError::AwsSdk { .. }));
         http_client.relaxed_requests_match();
@@ -478,14 +481,18 @@ mod tests {
             ReplayEvent::new(
                 request(
                     ENDPOINT,
-                    format!(r#"{{"cluster":"my-cluster","services":[{first_chunk}],"include":["TAGS"]}}"#),
+                    format!(
+                        r#"{{"cluster":"my-cluster","services":[{first_chunk}],"include":["TAGS"]}}"#
+                    ),
                 ),
                 json_response(200, r#"{"services":[{"serviceArn":"arn:svc-0"}]}"#),
             ),
             ReplayEvent::new(
                 request(
                     ENDPOINT,
-                    format!(r#"{{"cluster":"my-cluster","services":[{second_chunk}],"include":["TAGS"]}}"#),
+                    format!(
+                        r#"{{"cluster":"my-cluster","services":[{second_chunk}],"include":["TAGS"]}}"#
+                    ),
                 ),
                 json_response(200, r#"{"services":[{"serviceArn":"arn:svc-10"}]}"#),
             ),
@@ -563,10 +570,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"cluster":"my-cluster","maxResults":1}"#),
-                json_response(
-                    200,
-                    r#"{"taskArns":["arn:task-a"],"nextToken":"cursor-a"}"#,
-                ),
+                json_response(200, r#"{"taskArns":["arn:task-a"],"nextToken":"cursor-a"}"#),
             ),
             ReplayEvent::new(
                 request(
@@ -760,4 +764,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

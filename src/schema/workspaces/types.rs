@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
 
-use crate::aws::workspaces::{WorkspaceBundleInfo, WorkspaceCreationPropsInfo, WorkspaceDirectoryInfo, WorkspaceInfo};
+use crate::aws::workspaces::{
+    WorkspaceBundleInfo, WorkspaceCreationPropsInfo, WorkspaceDirectoryInfo, WorkspaceInfo,
+};
 
 #[derive(SimpleObject, Clone)]
 pub struct Workspace {
@@ -74,7 +76,9 @@ impl From<WorkspaceDirectoryInfo> for WorkspaceDirectory {
             dns_ip_addresses: i.dns_ip_addresses,
             alias: i.alias,
             state: i.state,
-            workspace_creation_properties: i.workspace_creation_properties.map(WorkspaceCreationProps::from),
+            workspace_creation_properties: i
+                .workspace_creation_properties
+                .map(WorkspaceCreationProps::from),
         }
     }
 }
@@ -109,7 +113,9 @@ impl From<WorkspaceBundleInfo> for WorkspaceBundle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::workspaces::{WorkspaceBundleInfo, WorkspaceCreationPropsInfo, WorkspaceDirectoryInfo, WorkspaceInfo};
+    use crate::aws::workspaces::{
+        WorkspaceBundleInfo, WorkspaceCreationPropsInfo, WorkspaceDirectoryInfo, WorkspaceInfo,
+    };
 
     #[test]
     fn test_workspace_from() {

@@ -149,7 +149,9 @@ impl ComprehendClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://comprehend.us-east-1.amazonaws.com/";
 
@@ -180,7 +182,10 @@ mod tests {
     async fn list_entity_recognizers_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"NextToken":"cursor-a"}"#),
-            json_response(200, r#"{"EntityRecognizerPropertiesList":[{"EntityRecognizerArn":"arn3"}]}"#),
+            json_response(
+                200,
+                r#"{"EntityRecognizerPropertiesList":[{"EntityRecognizerArn":"arn3"}]}"#,
+            ),
         )]);
         let client = ComprehendClient::new(&sdk_config(http_client.clone()));
 
@@ -206,7 +211,10 @@ mod tests {
         )]);
         let client = ComprehendClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_entity_recognizers(None, Some(2), None).await.unwrap();
+        let (items, token) = client
+            .list_entity_recognizers(None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -225,12 +233,18 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"NextToken":"p2","MaxResults":8}"#),
-                json_response(200, r#"{"EntityRecognizerPropertiesList":[{"EntityRecognizerArn":"a3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"EntityRecognizerPropertiesList":[{"EntityRecognizerArn":"a3"}]}"#,
+                ),
             ),
         ]);
         let client = ComprehendClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_entity_recognizers(None, Some(10), None).await.unwrap();
+        let (items, token) = client
+            .list_entity_recognizers(None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 3);
         assert_eq!(token, None);
@@ -289,7 +303,10 @@ mod tests {
         )]);
         let client = ComprehendClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_document_classifiers(None, Some(1), None).await.unwrap();
+        let (items, token) = client
+            .list_document_classifiers(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, Some("page2-token".to_string()));

@@ -21,7 +21,10 @@ impl LakeFormationQuery {
         let client = ctx.data::<LakeFormationClient>()?;
         let (resources, next_token) = client.list_resources(limit, next_token).await?;
         Ok(Page {
-            items: resources.into_iter().map(LakeFormationResource::from).collect(),
+            items: resources
+                .into_iter()
+                .map(LakeFormationResource::from)
+                .collect(),
             next_token,
         })
     }
@@ -61,7 +64,9 @@ impl LakeFormationQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::lake_formation::LakeFormationClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::LakeFormationQuery;
@@ -100,7 +105,10 @@ mod tests {
             data["lakeFormationResources"]["items"][0]["lastModified"],
             "2023-11-14T22:13:20+00:00"
         );
-        assert_eq!(data["lakeFormationResources"]["items"][0]["withFederation"], true);
+        assert_eq!(
+            data["lakeFormationResources"]["items"][0]["withFederation"],
+            true
+        );
         assert_eq!(data["lakeFormationResources"]["nextToken"], "page2");
         http_client.relaxed_requests_match();
     }
@@ -133,7 +141,10 @@ mod tests {
         assert_eq!(item["resource"]["database"], "sales_db");
         assert!(item["resource"]["table"].is_null());
         assert_eq!(item["permissions"], serde_json::json!(["SELECT", "ALTER"]));
-        assert_eq!(item["permissionsWithGrantOption"], serde_json::json!(["SELECT"]));
+        assert_eq!(
+            item["permissionsWithGrantOption"],
+            serde_json::json!(["SELECT"])
+        );
         assert!(data["lakeFormationPermissions"]["nextToken"].is_null());
         http_client.relaxed_requests_match();
     }
@@ -170,10 +181,12 @@ mod tests {
             data["lakeFormationSettings"]["createDatabaseDefaultPermissions"][0]["permissions"],
             serde_json::json!(["ALL"])
         );
-        assert!(data["lakeFormationSettings"]["createTableDefaultPermissions"]
-            .as_array()
-            .unwrap()
-            .is_empty());
+        assert!(
+            data["lakeFormationSettings"]["createTableDefaultPermissions"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
         http_client.relaxed_requests_match();
     }
 }

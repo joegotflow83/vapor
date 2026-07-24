@@ -89,7 +89,9 @@ impl TransferClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://transfer.us-east-1.amazonaws.com/";
 
@@ -294,7 +296,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(BASE, r#"{"MaxResults":8,"NextToken":"p2","ServerId":"s-123"}"#),
+                request(
+                    BASE,
+                    r#"{"MaxResults":8,"NextToken":"p2","ServerId":"s-123"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"ServerId":"s-123","Users":[{"Arn":"arn:u3","UserName":"carol"}]}"#,

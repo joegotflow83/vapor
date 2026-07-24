@@ -51,10 +51,18 @@ impl From<MqBrokerInfo> for MqBroker {
             deployment_mode: b.deployment_mode,
             host_instance_type: b.host_instance_type,
             publicly_accessible: b.publicly_accessible,
-            broker_instances: b.broker_instances.into_iter().map(MqBrokerInstance::from).collect(),
+            broker_instances: b
+                .broker_instances
+                .into_iter()
+                .map(MqBrokerInstance::from)
+                .collect(),
             subnet_ids: b.subnet_ids,
             security_groups: b.security_groups,
-            tags: b.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: b
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -83,7 +91,11 @@ impl From<MqConfigurationInfo> for MqConfiguration {
             description: c.description,
             latest_revision: c.latest_revision,
             created: to_utc(c.created.as_ref()),
-            tags: c.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: c
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -98,7 +110,9 @@ mod tests {
     fn test_mq_broker_from_minimal() {
         let info = MqBrokerInfo {
             broker_id: Some("b-abc123".to_string()),
-            broker_arn: Some("arn:aws:mq:us-east-1:123456789012:broker:my-broker:b-abc123".to_string()),
+            broker_arn: Some(
+                "arn:aws:mq:us-east-1:123456789012:broker:my-broker:b-abc123".to_string(),
+            ),
             broker_name: Some("my-broker".to_string()),
             broker_state: Some("RUNNING".to_string()),
             engine_type: Some("ACTIVEMQ".to_string()),
@@ -134,13 +148,11 @@ mod tests {
             deployment_mode: Some("CLUSTER_MULTI_AZ".to_string()),
             host_instance_type: None,
             publicly_accessible: Some(true),
-            broker_instances: vec![
-                MqBrokerInstanceInfo {
-                    console_url: Some("https://console.mq.us-east-1.amazonaws.com/".to_string()),
-                    endpoints: vec!["amqps://b-def456.mq.us-east-1.amazonaws.com:5671".to_string()],
-                    ip_address: Some("10.0.1.100".to_string()),
-                },
-            ],
+            broker_instances: vec![MqBrokerInstanceInfo {
+                console_url: Some("https://console.mq.us-east-1.amazonaws.com/".to_string()),
+                endpoints: vec!["amqps://b-def456.mq.us-east-1.amazonaws.com:5671".to_string()],
+                ip_address: Some("10.0.1.100".to_string()),
+            }],
             subnet_ids: vec!["subnet-aaa".to_string(), "subnet-bbb".to_string()],
             security_groups: vec![],
             tags: vec![("Env".to_string(), "prod".to_string())],
@@ -165,7 +177,10 @@ mod tests {
             ip_address: None,
         };
         let result = MqBrokerInstance::from(info);
-        assert_eq!(result.console_url, Some("https://console.mq.amazonaws.com/".to_string()));
+        assert_eq!(
+            result.console_url,
+            Some("https://console.mq.amazonaws.com/".to_string())
+        );
         assert_eq!(result.endpoints.len(), 1);
         assert!(result.ip_address.is_none());
     }
@@ -174,7 +189,9 @@ mod tests {
     fn test_mq_configuration_from() {
         let info = MqConfigurationInfo {
             id: Some("c-abc123".to_string()),
-            arn: Some("arn:aws:mq:us-east-1:123456789012:configuration:my-config:c-abc123".to_string()),
+            arn: Some(
+                "arn:aws:mq:us-east-1:123456789012:configuration:my-config:c-abc123".to_string(),
+            ),
             name: Some("my-config".to_string()),
             engine_type: Some("ACTIVEMQ".to_string()),
             engine_version: Some("5.15.14".to_string()),
@@ -187,8 +204,14 @@ mod tests {
         assert_eq!(result.id, Some("c-abc123".to_string()));
         assert_eq!(result.name, Some("my-config".to_string()));
         assert_eq!(result.latest_revision, Some(3));
-        assert_eq!(result.description, Some("Production ActiveMQ config".to_string()));
-        assert_eq!(result.created.map(|d| d.to_rfc3339()), Some("2024-01-01T00:00:00+00:00".to_string()));
+        assert_eq!(
+            result.description,
+            Some("Production ActiveMQ config".to_string())
+        );
+        assert_eq!(
+            result.created.map(|d| d.to_rfc3339()),
+            Some("2024-01-01T00:00:00+00:00".to_string())
+        );
         assert_eq!(result.tags.len(), 1);
         assert_eq!(result.tags[0].key, "Project");
     }

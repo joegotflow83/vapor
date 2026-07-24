@@ -132,7 +132,10 @@ mod tests {
         // executor), so replay events must mirror that order exactly.
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=stack-1"),
+                request(
+                    ENDPOINT,
+                    "Action=DescribeStacks&Version=2010-05-15&StackName=stack-1",
+                ),
                 xml_response(
                     200,
                     "<DescribeStacksResponse><DescribeStacksResult><Stacks><member>\
@@ -141,7 +144,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=missing"),
+                request(
+                    ENDPOINT,
+                    "Action=DescribeStacks&Version=2010-05-15&StackName=missing",
+                ),
                 xml_error_response("ValidationError", "Stack with id missing does not exist"),
             ),
         ]);
@@ -170,7 +176,10 @@ mod tests {
     async fn cfn_stacks_with_names_applies_status_filter_then_limit_client_side() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=s1"),
+                request(
+                    ENDPOINT,
+                    "Action=DescribeStacks&Version=2010-05-15&StackName=s1",
+                ),
                 xml_response(
                     200,
                     "<DescribeStacksResponse><DescribeStacksResult><Stacks><member>\
@@ -179,7 +188,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=s2"),
+                request(
+                    ENDPOINT,
+                    "Action=DescribeStacks&Version=2010-05-15&StackName=s2",
+                ),
                 xml_response(
                     200,
                     "<DescribeStacksResponse><DescribeStacksResult><Stacks><member>\
@@ -188,7 +200,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=s3"),
+                request(
+                    ENDPOINT,
+                    "Action=DescribeStacks&Version=2010-05-15&StackName=s3",
+                ),
                 xml_response(
                     200,
                     "<DescribeStacksResponse><DescribeStacksResult><Stacks><member>\
@@ -224,7 +239,10 @@ mod tests {
     async fn cfn_stacks_with_names_propagates_non_not_found_describe_error() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=s1"),
+                request(
+                    ENDPOINT,
+                    "Action=DescribeStacks&Version=2010-05-15&StackName=s1",
+                ),
                 xml_response(
                     200,
                     "<DescribeStacksResponse><DescribeStacksResult><Stacks><member>\
@@ -233,7 +251,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, "Action=DescribeStacks&Version=2010-05-15&StackName=bad"),
+                request(
+                    ENDPOINT,
+                    "Action=DescribeStacks&Version=2010-05-15&StackName=bad",
+                ),
                 xml_error_response("AccessDenied", "not authorized"),
             ),
         ]);
@@ -315,8 +336,14 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["cfnStackResources"]["items"][0]["logicalResourceId"], "MyBucket");
-        assert_eq!(json["cfnStackResources"]["items"][0]["resourceType"], "AWS::S3::Bucket");
+        assert_eq!(
+            json["cfnStackResources"]["items"][0]["logicalResourceId"],
+            "MyBucket"
+        );
+        assert_eq!(
+            json["cfnStackResources"]["items"][0]["resourceType"],
+            "AWS::S3::Bucket"
+        );
         assert_eq!(json["cfnStackResources"]["nextToken"], "next-res");
         http_client.relaxed_requests_match();
     }

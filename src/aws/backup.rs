@@ -24,7 +24,13 @@ impl BackupClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_backup::types::BackupVaultListMember>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_backup::types::BackupVaultListMember>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut vaults = Vec::new();
         let mut token = next_token;
 
@@ -61,7 +67,13 @@ impl BackupClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_backup::types::BackupPlansListMember>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_backup::types::BackupPlansListMember>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut plans = Vec::new();
         let mut token = next_token;
 
@@ -99,7 +111,13 @@ impl BackupClient {
         vault_name: &str,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_backup::types::RecoveryPointByBackupVault>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_backup::types::RecoveryPointByBackupVault>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut points = Vec::new();
         let mut token = next_token;
 
@@ -339,4 +357,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

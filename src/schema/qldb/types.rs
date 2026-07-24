@@ -27,7 +27,11 @@ impl From<QldbLedgerInfo> for QldbLedger {
             permissions_mode: l.permissions_mode,
             deletion_protection: l.deletion_protection,
             kms_key_arn: l.kms_key_arn,
-            tags: l.tags.into_iter().map(|(k, v)| Tag { key: k, value: v }).collect(),
+            tags: l
+                .tags
+                .into_iter()
+                .map(|(k, v)| Tag { key: k, value: v })
+                .collect(),
         }
     }
 }
@@ -76,7 +80,10 @@ mod tests {
         };
         let result = QldbLedger::from(info);
         assert_eq!(result.name, Some("my-ledger".to_string()));
-        assert_eq!(result.arn, Some("arn:aws:qldb:us-east-1:123456789:ledger/my-ledger".to_string()));
+        assert_eq!(
+            result.arn,
+            Some("arn:aws:qldb:us-east-1:123456789:ledger/my-ledger".to_string())
+        );
         assert_eq!(result.state, Some("ACTIVE".to_string()));
         assert_eq!(result.creation_date_time, Some(DateTime::<Utc>::UNIX_EPOCH));
         assert_eq!(result.permissions_mode, Some("STANDARD".to_string()));
@@ -122,9 +129,15 @@ mod tests {
         let result = QldbJournalExport::from(info);
         assert_eq!(result.ledger_name, "my-ledger");
         assert_eq!(result.export_id, "export-abc123");
-        assert_eq!(result.export_creation_time, Some(DateTime::<Utc>::UNIX_EPOCH));
+        assert_eq!(
+            result.export_creation_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH)
+        );
         assert_eq!(result.status, Some("COMPLETED".to_string()));
-        assert_eq!(result.inclusive_start_time, Some(DateTime::<Utc>::UNIX_EPOCH));
+        assert_eq!(
+            result.inclusive_start_time,
+            Some(DateTime::<Utc>::UNIX_EPOCH)
+        );
         assert_eq!(result.exclusive_end_time, Some(DateTime::<Utc>::UNIX_EPOCH));
         assert_eq!(result.output_format, Some("ION_BINARY".to_string()));
     }

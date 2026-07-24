@@ -116,7 +116,9 @@ mod tests {
     fn test_user_from_full() {
         let info = QuickSightUserInfo {
             user_name: Some("john.doe".to_string()),
-            arn: Some("arn:aws:quicksight:us-east-1:123456789012:user/default/john.doe".to_string()),
+            arn: Some(
+                "arn:aws:quicksight:us-east-1:123456789012:user/default/john.doe".to_string(),
+            ),
             email: Some("john.doe@example.com".to_string()),
             role: Some("ADMIN".to_string()),
             identity_type: Some("IAM".to_string()),
@@ -151,7 +153,9 @@ mod tests {
     fn test_dashboard_from_full() {
         let info = QuickSightDashboardInfo {
             dashboard_id: Some("sales-overview".to_string()),
-            arn: Some("arn:aws:quicksight:us-east-1:123456789012:dashboard/sales-overview".to_string()),
+            arn: Some(
+                "arn:aws:quicksight:us-east-1:123456789012:dashboard/sales-overview".to_string(),
+            ),
             name: Some("Sales Overview".to_string()),
             created_time: Some(aws_smithy_types::DateTime::from_secs(1705314600)),
             last_updated_time: Some(aws_smithy_types::DateTime::from_secs(1706788800)),
@@ -186,7 +190,9 @@ mod tests {
     fn test_data_set_from_full() {
         let info = QuickSightDataSetInfo {
             data_set_id: Some("customer-orders".to_string()),
-            arn: Some("arn:aws:quicksight:us-east-1:123456789012:dataset/customer-orders".to_string()),
+            arn: Some(
+                "arn:aws:quicksight:us-east-1:123456789012:dataset/customer-orders".to_string(),
+            ),
             name: Some("Customer Orders".to_string()),
             created_time: Some(aws_smithy_types::DateTime::from_secs(1705314600)),
             last_updated_time: Some(aws_smithy_types::DateTime::from_secs(1706788800)),
@@ -216,7 +222,9 @@ mod tests {
     fn test_data_source_from_full() {
         let info = QuickSightDataSourceInfo {
             data_source_id: Some("prod-redshift".to_string()),
-            arn: Some("arn:aws:quicksight:us-east-1:123456789012:datasource/prod-redshift".to_string()),
+            arn: Some(
+                "arn:aws:quicksight:us-east-1:123456789012:datasource/prod-redshift".to_string(),
+            ),
             name: Some("Production Redshift".to_string()),
             type_: Some("REDSHIFT".to_string()),
             status: Some("CREATION_SUCCESSFUL".to_string()),

@@ -68,7 +68,9 @@ impl BackupQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::backup::BackupClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::BackupQuery;
@@ -120,9 +122,7 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(
-                "{ backupPlans { items { planId planName arn versionId } nextToken } }",
-            )
+            .execute("{ backupPlans { items { planId planName arn versionId } nextToken } }")
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -139,10 +139,7 @@ mod tests {
     #[tokio::test]
     async fn backup_recovery_points_maps_items_for_given_vault() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(
-                &format!("{VAULTS}/my-vault/recovery-points"),
-                "",
-            ),
+            request(&format!("{VAULTS}/my-vault/recovery-points"), ""),
             json_response(
                 200,
                 r#"{"RecoveryPoints":[{"RecoveryPointArn":"arn:rp1","ResourceArn":"arn:vol1","ResourceType":"EBS","Status":"COMPLETED","IsEncrypted":true,"BackupSizeInBytes":1024}]}"#,

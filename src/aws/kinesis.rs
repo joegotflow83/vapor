@@ -64,7 +64,10 @@ impl KinesisClient {
         output
             .stream_description_summary()
             .cloned()
-            .ok_or_else(|| VaporError::AwsSdk { code: None, message: "No stream description summary".to_string() })
+            .ok_or_else(|| VaporError::AwsSdk {
+                code: None,
+                message: "No stream description summary".to_string(),
+            })
     }
 
     /// Lists shards for a stream, optionally capped at `limit` results (default
@@ -111,7 +114,10 @@ impl KinesisClient {
         Ok((items, token))
     }
 
-    pub async fn list_tags_for_stream(&self, name: &str) -> Result<Vec<aws_sdk_kinesis::types::Tag>, VaporError> {
+    pub async fn list_tags_for_stream(
+        &self,
+        name: &str,
+    ) -> Result<Vec<aws_sdk_kinesis::types::Tag>, VaporError> {
         let mut tags = Vec::new();
         let mut exclusive_start_key: Option<String> = None;
 
@@ -143,7 +149,9 @@ impl KinesisClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://kinesis.us-east-1.amazonaws.com/";
 
@@ -151,7 +159,10 @@ mod tests {
     async fn list_streams_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, "{}"),
-            json_response(200, r#"{"StreamNames":["stream-a","stream-b"],"HasMoreStreams":false}"#),
+            json_response(
+                200,
+                r#"{"StreamNames":["stream-a","stream-b"],"HasMoreStreams":false}"#,
+            ),
         )]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
 
@@ -166,11 +177,17 @@ mod tests {
     async fn list_streams_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"NextToken":"cursor-a"}"#),
-            json_response(200, r#"{"StreamNames":["stream-c"],"HasMoreStreams":false}"#),
+            json_response(
+                200,
+                r#"{"StreamNames":["stream-c"],"HasMoreStreams":false}"#,
+            ),
         )]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_streams(None, Some("cursor-a".to_string())).await.unwrap();
+        let (items, token) = client
+            .list_streams(None, Some("cursor-a".to_string()))
+            .await
+            .unwrap();
 
         assert_eq!(items, vec!["stream-c".to_string()]);
         assert_eq!(token, None);
@@ -210,7 +227,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"NextToken":"p2","Limit":8}"#),
-                json_response(200, r#"{"StreamNames":["stream-c"],"HasMoreStreams":false}"#),
+                json_response(
+                    200,
+                    r#"{"StreamNames":["stream-c"],"HasMoreStreams":false}"#,
+                ),
             ),
         ]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
@@ -263,7 +283,10 @@ mod tests {
             summary.stream_arn(),
             "arn:aws:kinesis:us-east-1:123456789012:stream/my-stream"
         );
-        assert_eq!(summary.stream_status(), &aws_sdk_kinesis::types::StreamStatus::Active);
+        assert_eq!(
+            summary.stream_status(),
+            &aws_sdk_kinesis::types::StreamStatus::Active
+        );
         assert_eq!(summary.retention_period_hours(), 24);
         assert_eq!(summary.open_shard_count(), 4);
         http_client.relaxed_requests_match();
@@ -277,7 +300,10 @@ mod tests {
         )]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_stream_summary("missing-stream").await.unwrap_err();
+        let err = client
+            .describe_stream_summary("missing-stream")
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -334,11 +360,17 @@ mod tests {
         // response must return exactly the requested count.
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"StreamName":"my-stream","MaxResults":2}"#),
-            json_response(200, r#"{"Shards":[{"ShardId":"s1"},{"ShardId":"s2"}],"NextToken":"page2"}"#),
+            json_response(
+                200,
+                r#"{"Shards":[{"ShardId":"s1"},{"ShardId":"s2"}],"NextToken":"page2"}"#,
+            ),
         )]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_shards("my-stream", Some(2), None).await.unwrap();
+        let (items, token) = client
+            .list_shards("my-stream", Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(token, Some("page2".to_string()));
@@ -350,7 +382,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"StreamName":"my-stream","MaxResults":10}"#),
-                json_response(200, r#"{"Shards":[{"ShardId":"s1"},{"ShardId":"s2"}],"NextToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"Shards":[{"ShardId":"s1"},{"ShardId":"s2"}],"NextToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"NextToken":"p2","MaxResults":8}"#),
@@ -359,7 +394,10 @@ mod tests {
         ]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_shards("my-stream", Some(10), None).await.unwrap();
+        let (items, token) = client
+            .list_shards("my-stream", Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 3);
         assert_eq!(token, None);
@@ -374,7 +412,10 @@ mod tests {
         )]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_shards("my-stream", None, None).await.unwrap_err();
+        let err = client
+            .list_shards("my-stream", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -390,7 +431,10 @@ mod tests {
     async fn list_tags_for_stream_returns_all_tags_single_page() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"StreamName":"my-stream"}"#),
-            json_response(200, r#"{"Tags":[{"Key":"env","Value":"prod"}],"HasMoreTags":false}"#),
+            json_response(
+                200,
+                r#"{"Tags":[{"Key":"env","Value":"prod"}],"HasMoreTags":false}"#,
+            ),
         )]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
 
@@ -430,8 +474,14 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"StreamName":"my-stream","ExclusiveStartTagKey":"b"}"#),
-                json_response(200, r#"{"Tags":[{"Key":"c","Value":"3"}],"HasMoreTags":false}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"StreamName":"my-stream","ExclusiveStartTagKey":"b"}"#,
+                ),
+                json_response(
+                    200,
+                    r#"{"Tags":[{"Key":"c","Value":"3"}],"HasMoreTags":false}"#,
+                ),
             ),
         ]);
         let client = KinesisClient::new(&sdk_config(http_client.clone()));
@@ -463,4 +513,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

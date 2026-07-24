@@ -35,7 +35,9 @@ impl KeyspacesQuery {
         next_token: Option<String>,
     ) -> Result<Page<KeyspacesTable>> {
         let client = ctx.data::<KeyspacesClient>()?;
-        let (tables, next_token) = client.list_tables(&keyspace_name, limit, next_token).await?;
+        let (tables, next_token) = client
+            .list_tables(&keyspace_name, limit, next_token)
+            .await?;
         Ok(Page {
             items: tables.into_iter().map(KeyspacesTable::from).collect(),
             next_token,
@@ -57,7 +59,9 @@ impl KeyspacesQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::keyspaces::KeyspacesClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::KeyspacesQuery;
@@ -92,7 +96,10 @@ mod tests {
             "arn:aws:cassandra:us-east-1:123456789012:/keyspace/ks1"
         );
         assert_eq!(items[0]["replicationStrategy"], "MULTI_REGION");
-        assert_eq!(items[0]["replicationRegions"], serde_json::json!(["us-east-1", "eu-west-1"]));
+        assert_eq!(
+            items[0]["replicationRegions"],
+            serde_json::json!(["us-east-1", "eu-west-1"])
+        );
         assert_eq!(json["keyspacesKeyspaces"]["nextToken"], "page2");
         http_client.relaxed_requests_match();
     }
@@ -113,7 +120,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"keyspaceName":"mykeyspace","tableName":"t1","resourceArn":"arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/t1","status":"ACTIVE","creationTimestamp":1704067200,"capacitySpecification":{"throughputMode":"PAY_PER_REQUEST"},"encryptionSpecification":{"type":"AWS_OWNED_KMS_KEY"},"pointInTimeRecovery":{"status":"ENABLED"}}"#,
@@ -137,8 +147,14 @@ mod tests {
         assert_eq!(items[0]["tableName"], "t1");
         assert_eq!(items[0]["status"], "ACTIVE");
         assert_eq!(items[0]["creationTimestamp"], "2024-01-01T00:00:00+00:00");
-        assert_eq!(items[0]["capacitySpecification"]["throughputMode"], "PAY_PER_REQUEST");
-        assert_eq!(items[0]["encryptionSpecification"]["type"], "AWS_OWNED_KMS_KEY");
+        assert_eq!(
+            items[0]["capacitySpecification"]["throughputMode"],
+            "PAY_PER_REQUEST"
+        );
+        assert_eq!(
+            items[0]["encryptionSpecification"]["type"],
+            "AWS_OWNED_KMS_KEY"
+        );
         assert!(items[0]["encryptionSpecification"]["kmsKeyIdentifier"].is_null());
         assert_eq!(items[0]["pointInTimeRecovery"], true);
         assert_eq!(json["keyspacesTables"]["nextToken"], "page2");
@@ -148,7 +164,10 @@ mod tests {
     #[tokio::test]
     async fn keyspaces_table_maps_single_table() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#),
+            request(
+                ENDPOINT,
+                r#"{"keyspaceName":"mykeyspace","tableName":"t1"}"#,
+            ),
             json_response(
                 200,
                 r#"{"keyspaceName":"mykeyspace","tableName":"t1","resourceArn":"arn:aws:cassandra:us-east-1:123456789012:/keyspace/mykeyspace/table/t1","status":"ACTIVE"}"#,

@@ -141,7 +141,10 @@ mod tests {
         };
         let result = IotThing::from(info);
         assert_eq!(result.thing_name, Some("sensor-01".to_string()));
-        assert_eq!(result.thing_type_name, Some("TemperatureSensor".to_string()));
+        assert_eq!(
+            result.thing_type_name,
+            Some("TemperatureSensor".to_string())
+        );
         assert_eq!(result.attributes.len(), 1);
         assert_eq!(result.attributes[0].key, "location");
         assert_eq!(result.attributes[0].value, "building-a");
@@ -168,7 +171,9 @@ mod tests {
     fn test_thing_group_from() {
         let info = IotThingGroupInfo {
             group_name: Some("factory-floor".to_string()),
-            group_arn: Some("arn:aws:iot:us-east-1:123456789012:thinggroup/factory-floor".to_string()),
+            group_arn: Some(
+                "arn:aws:iot:us-east-1:123456789012:thinggroup/factory-floor".to_string(),
+            ),
             group_id: Some("group-abc123".to_string()),
             status: Some("ACTIVE".to_string()),
         };
@@ -182,7 +187,9 @@ mod tests {
     fn test_thing_group_from_no_extras() {
         let info = IotThingGroupInfo {
             group_name: Some("basic-group".to_string()),
-            group_arn: Some("arn:aws:iot:us-east-1:123456789012:thinggroup/basic-group".to_string()),
+            group_arn: Some(
+                "arn:aws:iot:us-east-1:123456789012:thinggroup/basic-group".to_string(),
+            ),
             group_id: None,
             status: None,
         };
@@ -242,7 +249,10 @@ mod tests {
         };
         let result = IotTopicRule::from(info);
         assert_eq!(result.rule_name, Some("temperature-alert".to_string()));
-        assert_eq!(result.topic_pattern, Some("sensors/+/temperature".to_string()));
+        assert_eq!(
+            result.topic_pattern,
+            Some("sensors/+/temperature".to_string())
+        );
         assert_eq!(result.rule_disabled, Some(false));
         assert!(result.rule_arn.is_some());
         assert!(result.created_at.is_some());

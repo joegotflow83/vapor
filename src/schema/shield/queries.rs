@@ -2,7 +2,9 @@ use async_graphql::{Context, Object, Result};
 
 use crate::aws::shield::ShieldClient;
 use crate::schema::pagination::Page;
-use crate::schema::shield::types::{AttackSummary, ProtectionGroup, ShieldProtection, ShieldSubscription};
+use crate::schema::shield::types::{
+    AttackSummary, ProtectionGroup, ShieldProtection, ShieldSubscription,
+};
 
 #[derive(Default)]
 pub struct ShieldQuery;
@@ -78,7 +80,9 @@ impl ShieldQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::shield::ShieldClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::ShieldQuery;

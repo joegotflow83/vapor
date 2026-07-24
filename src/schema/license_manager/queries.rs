@@ -18,7 +18,9 @@ impl LicenseManagerQuery {
         next_token: Option<String>,
     ) -> Result<Page<LicenseConfiguration>> {
         let client = ctx.data::<LicenseManagerClient>()?;
-        let (items, next_token) = client.list_license_configurations(limit, next_token).await?;
+        let (items, next_token) = client
+            .list_license_configurations(limit, next_token)
+            .await?;
         Ok(Page {
             items: items.into_iter().map(LicenseConfiguration::from).collect(),
             next_token,
@@ -61,7 +63,9 @@ impl LicenseManagerQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::license_manager::LicenseManagerClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::LicenseManagerQuery;
@@ -78,7 +82,9 @@ mod tests {
             ),
         )]);
         let client = LicenseManagerClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(LicenseManagerQuery).data(client).finish();
+        let schema = build_query_schema(LicenseManagerQuery)
+            .data(client)
+            .finish();
 
         let res = schema
             .execute(
@@ -88,12 +94,30 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["licenseConfigurations"]["items"][0]["licenseConfigurationId"], "lic-conf-1");
-        assert_eq!(data["licenseConfigurations"]["items"][0]["name"], "my-config");
-        assert_eq!(data["licenseConfigurations"]["items"][0]["licenseCountingType"], "vCPU");
-        assert_eq!(data["licenseConfigurations"]["items"][0]["licenseCount"], 10);
-        assert_eq!(data["licenseConfigurations"]["items"][0]["status"], "AVAILABLE");
-        assert_eq!(data["licenseConfigurations"]["items"][0]["productInformationList"][0], "SSM_MANAGED");
+        assert_eq!(
+            data["licenseConfigurations"]["items"][0]["licenseConfigurationId"],
+            "lic-conf-1"
+        );
+        assert_eq!(
+            data["licenseConfigurations"]["items"][0]["name"],
+            "my-config"
+        );
+        assert_eq!(
+            data["licenseConfigurations"]["items"][0]["licenseCountingType"],
+            "vCPU"
+        );
+        assert_eq!(
+            data["licenseConfigurations"]["items"][0]["licenseCount"],
+            10
+        );
+        assert_eq!(
+            data["licenseConfigurations"]["items"][0]["status"],
+            "AVAILABLE"
+        );
+        assert_eq!(
+            data["licenseConfigurations"]["items"][0]["productInformationList"][0],
+            "SSM_MANAGED"
+        );
         assert_eq!(data["licenseConfigurations"]["nextToken"], "cursor-a");
         http_client.relaxed_requests_match();
     }
@@ -108,7 +132,9 @@ mod tests {
             ),
         )]);
         let client = LicenseManagerClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(LicenseManagerQuery).data(client).finish();
+        let schema = build_query_schema(LicenseManagerQuery)
+            .data(client)
+            .finish();
 
         let res = schema
             .execute(
@@ -118,14 +144,23 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["licenses"]["items"][0]["licenseArn"], "arn:aws:license-manager::123456789012:license:l-1");
+        assert_eq!(
+            data["licenses"]["items"][0]["licenseArn"],
+            "arn:aws:license-manager::123456789012:license:l-1"
+        );
         assert_eq!(data["licenses"]["items"][0]["licenseName"], "my-license");
         assert_eq!(data["licenses"]["items"][0]["productName"], "my-product");
         assert_eq!(data["licenses"]["items"][0]["productSku"], "sku-1");
         assert_eq!(data["licenses"]["items"][0]["issuer"], "issuer-1");
         assert_eq!(data["licenses"]["items"][0]["status"], "AVAILABLE");
-        assert_eq!(data["licenses"]["items"][0]["validityPeriodStart"], "2026-01-01T00:00:00Z");
-        assert_eq!(data["licenses"]["items"][0]["validityPeriodEnd"], "2027-01-01T00:00:00Z");
+        assert_eq!(
+            data["licenses"]["items"][0]["validityPeriodStart"],
+            "2026-01-01T00:00:00Z"
+        );
+        assert_eq!(
+            data["licenses"]["items"][0]["validityPeriodEnd"],
+            "2027-01-01T00:00:00Z"
+        );
         assert_eq!(data["licenses"]["nextToken"], "cursor-b");
         http_client.relaxed_requests_match();
     }
@@ -140,7 +175,9 @@ mod tests {
             ),
         )]);
         let client = LicenseManagerClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(LicenseManagerQuery).data(client).finish();
+        let schema = build_query_schema(LicenseManagerQuery)
+            .data(client)
+            .finish();
 
         let res = schema
             .execute(
@@ -150,11 +187,23 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["licenseGrants"]["items"][0]["grantArn"], "arn:aws:license-manager::123456789012:grant:g-1");
+        assert_eq!(
+            data["licenseGrants"]["items"][0]["grantArn"],
+            "arn:aws:license-manager::123456789012:grant:g-1"
+        );
         assert_eq!(data["licenseGrants"]["items"][0]["grantName"], "my-grant");
-        assert_eq!(data["licenseGrants"]["items"][0]["parentArn"], "arn:aws:license-manager::123456789012:license:l-1");
-        assert_eq!(data["licenseGrants"]["items"][0]["licenseArn"], "arn:aws:license-manager::123456789012:license:l-1");
-        assert_eq!(data["licenseGrants"]["items"][0]["granteePrincipalArn"], "arn:aws:iam::123456789012:root");
+        assert_eq!(
+            data["licenseGrants"]["items"][0]["parentArn"],
+            "arn:aws:license-manager::123456789012:license:l-1"
+        );
+        assert_eq!(
+            data["licenseGrants"]["items"][0]["licenseArn"],
+            "arn:aws:license-manager::123456789012:license:l-1"
+        );
+        assert_eq!(
+            data["licenseGrants"]["items"][0]["granteePrincipalArn"],
+            "arn:aws:iam::123456789012:root"
+        );
         assert_eq!(data["licenseGrants"]["items"][0]["homeRegion"], "us-east-1");
         assert_eq!(data["licenseGrants"]["items"][0]["grantStatus"], "ACTIVE");
         assert_eq!(data["licenseGrants"]["items"][0]["version"], "1");

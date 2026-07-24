@@ -143,7 +143,10 @@ mod tests {
         assert_eq!(p.name, Some("FeatureFlags".to_string()));
         assert_eq!(p.description, Some("Feature flag config".to_string()));
         assert_eq!(p.location_uri, Some("hosted".to_string()));
-        assert_eq!(p.profile_type, Some("AWS.AppConfig.FeatureFlags".to_string()));
+        assert_eq!(
+            p.profile_type,
+            Some("AWS.AppConfig.FeatureFlags".to_string())
+        );
     }
 
     #[test]

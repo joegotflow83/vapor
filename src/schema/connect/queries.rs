@@ -1,7 +1,9 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::connect::ConnectClient;
-use crate::schema::connect::types::{ConnectContactFlow, ConnectInstance, ConnectQueue, ConnectUser};
+use crate::schema::connect::types::{
+    ConnectContactFlow, ConnectInstance, ConnectQueue, ConnectUser,
+};
 use crate::schema::pagination::Page;
 
 #[derive(Default)]
@@ -96,7 +98,9 @@ impl ConnectQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::connect::ConnectClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::ConnectQuery;
@@ -182,7 +186,10 @@ mod tests {
     async fn connect_contact_flows_maps_items_and_next_token() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/contact-flows-summary/inst1?maxResults=1"), ""),
+                request(
+                    &format!("{BASE}/contact-flows-summary/inst1?maxResults=1"),
+                    "",
+                ),
                 json_response(
                     200,
                     r#"{"ContactFlowSummaryList":[{"Id":"f1","Arn":"farn1","Name":"flow-one","ContactFlowType":"CONTACT_FLOW"}],"NextToken":"cursor-c"}"#,
@@ -190,7 +197,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/contact-flows/inst1/f1"), ""),
-                json_response(200, r#"{"ContactFlow":{"Id":"f1","Description":"first flow"}}"#),
+                json_response(
+                    200,
+                    r#"{"ContactFlow":{"Id":"f1","Description":"first flow"}}"#,
+                ),
             ),
         ]);
         let schema = build_query_schema(ConnectQuery)

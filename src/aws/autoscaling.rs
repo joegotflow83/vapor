@@ -28,8 +28,13 @@ impl AutoscalingClient {
         names: Option<Vec<String>>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_autoscaling::types::AutoScalingGroup>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_autoscaling::types::AutoScalingGroup>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -107,7 +112,9 @@ impl AutoscalingClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://autoscaling.us-east-1.amazonaws.com/";
 
@@ -179,7 +186,10 @@ mod tests {
         )]);
         let client = AutoscalingClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.describe_auto_scaling_groups(None, Some(1), None).await.unwrap();
+        let (items, token) = client
+            .describe_auto_scaling_groups(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, Some("next-page".to_string()));
@@ -221,7 +231,10 @@ mod tests {
         ]);
         let client = AutoscalingClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.describe_auto_scaling_groups(None, Some(10), None).await.unwrap();
+        let (items, token) = client
+            .describe_auto_scaling_groups(None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 5);
         assert_eq!(token, None);
@@ -231,12 +244,18 @@ mod tests {
     #[tokio::test]
     async fn describe_auto_scaling_groups_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeAutoScalingGroups&Version=2011-01-01"),
+            request(
+                ENDPOINT,
+                "Action=DescribeAutoScalingGroups&Version=2011-01-01",
+            ),
             xml_error_response("AccessDeniedException", "not authorized"),
         )]);
         let client = AutoscalingClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_auto_scaling_groups(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_auto_scaling_groups(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -278,7 +297,8 @@ mod tests {
 
     #[tokio::test]
     async fn describe_scaling_activities_stops_at_limit_and_returns_resume_token() {
-        let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
+        let http_client =
+            StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, "Action=DescribeScalingActivities&Version=2011-01-01&MaxRecords=1"),
             xml_response(
                 200,
@@ -290,7 +310,10 @@ mod tests {
         )]);
         let client = AutoscalingClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.describe_scaling_activities(None, Some(1), None).await.unwrap();
+        let (items, token) = client
+            .describe_scaling_activities(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, Some("act-page2".to_string()));
@@ -330,12 +353,18 @@ mod tests {
     #[tokio::test]
     async fn describe_scaling_activities_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeScalingActivities&Version=2011-01-01"),
+            request(
+                ENDPOINT,
+                "Action=DescribeScalingActivities&Version=2011-01-01",
+            ),
             xml_error_response("ResourceContention", "concurrent update in progress"),
         )]);
         let client = AutoscalingClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_scaling_activities(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_scaling_activities(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -347,4 +376,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

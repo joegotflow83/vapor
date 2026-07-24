@@ -1,8 +1,8 @@
 use aws_config::SdkConfig;
 use aws_sdk_codedeploy::types::{ApplicationInfo, DeploymentGroupInfo, DeploymentInfo};
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 pub struct CodeDeployClient {
     inner: aws_sdk_codedeploy::Client,
@@ -53,7 +53,10 @@ impl CodeDeployClient {
         Ok((items, token))
     }
 
-    pub async fn batch_get_applications(&self, names: Vec<String>) -> Result<Vec<ApplicationInfo>, VaporError> {
+    pub async fn batch_get_applications(
+        &self,
+        names: Vec<String>,
+    ) -> Result<Vec<ApplicationInfo>, VaporError> {
         let mut all = Vec::new();
         for chunk in names.chunks(100) {
             let output = self
@@ -82,7 +85,10 @@ impl CodeDeployClient {
         let mut token = next_token;
 
         loop {
-            let mut req = self.inner.list_deployment_groups().application_name(app_name);
+            let mut req = self
+                .inner
+                .list_deployment_groups()
+                .application_name(app_name);
             if let Some(ref t) = token {
                 req = req.next_token(t);
             }
@@ -102,7 +108,11 @@ impl CodeDeployClient {
         Ok((items, token))
     }
 
-    pub async fn batch_get_deployment_groups(&self, app_name: &str, group_names: Vec<String>) -> Result<Vec<DeploymentGroupInfo>, VaporError> {
+    pub async fn batch_get_deployment_groups(
+        &self,
+        app_name: &str,
+        group_names: Vec<String>,
+    ) -> Result<Vec<DeploymentGroupInfo>, VaporError> {
         let mut all = Vec::new();
         for chunk in group_names.chunks(100) {
             let output = self
@@ -159,7 +169,10 @@ impl CodeDeployClient {
         Ok((items, token))
     }
 
-    pub async fn batch_get_deployments(&self, ids: Vec<String>) -> Result<Vec<DeploymentInfo>, VaporError> {
+    pub async fn batch_get_deployments(
+        &self,
+        ids: Vec<String>,
+    ) -> Result<Vec<DeploymentInfo>, VaporError> {
         let mut all = Vec::new();
         for chunk in ids.chunks(100) {
             let output = self
@@ -332,7 +345,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, second_body),
-                json_response(200, r#"{"applicationsInfo":[{"applicationName":"app-100"}]}"#),
+                json_response(
+                    200,
+                    r#"{"applicationsInfo":[{"applicationName":"app-100"}]}"#,
+                ),
             ),
         ]);
         let client = CodeDeployClient::new(&sdk_config(http_client.clone()));
@@ -408,7 +424,10 @@ mod tests {
     #[tokio::test]
     async fn list_deployment_groups_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"applicationName":"my-app","nextToken":"cursor-a"}"#),
+            request(
+                ENDPOINT,
+                r#"{"applicationName":"my-app","nextToken":"cursor-a"}"#,
+            ),
             json_response(200, r#"{"deploymentGroups":["group-3"]}"#),
         )]);
         let client = CodeDeployClient::new(&sdk_config(http_client.clone()));
@@ -498,11 +517,17 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, first_body),
-                json_response(200, r#"{"deploymentGroupsInfo":[{"deploymentGroupName":"group-0"}]}"#),
+                json_response(
+                    200,
+                    r#"{"deploymentGroupsInfo":[{"deploymentGroupName":"group-0"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, second_body),
-                json_response(200, r#"{"deploymentGroupsInfo":[{"deploymentGroupName":"group-100"}]}"#),
+                json_response(
+                    200,
+                    r#"{"deploymentGroupsInfo":[{"deploymentGroupName":"group-100"}]}"#,
+                ),
             ),
         ]);
         let client = CodeDeployClient::new(&sdk_config(http_client.clone()));
@@ -550,7 +575,10 @@ mod tests {
         )]);
         let client = CodeDeployClient::new(&sdk_config(http_client.clone()));
 
-        let (ids, token) = client.list_deployments(None, None, None, None).await.unwrap();
+        let (ids, token) = client
+            .list_deployments(None, None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(ids, vec!["d-1".to_string(), "d-2".to_string()]);
         assert_eq!(token, None);
@@ -586,7 +614,10 @@ mod tests {
         )]);
         let client = CodeDeployClient::new(&sdk_config(http_client.clone()));
 
-        let (ids, token) = client.list_deployments(None, None, Some(1), None).await.unwrap();
+        let (ids, token) = client
+            .list_deployments(None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(ids, vec!["d-1".to_string()]);
         assert_eq!(token, Some("page2".to_string()));
@@ -607,7 +638,10 @@ mod tests {
         ]);
         let client = CodeDeployClient::new(&sdk_config(http_client.clone()));
 
-        let (ids, token) = client.list_deployments(None, None, Some(10), None).await.unwrap();
+        let (ids, token) = client
+            .list_deployments(None, None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(ids.len(), 2);
         assert_eq!(token, None);
@@ -622,7 +656,10 @@ mod tests {
         )]);
         let client = CodeDeployClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_deployments(None, None, None, None).await.unwrap_err();
+        let err = client
+            .list_deployments(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -721,4 +758,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

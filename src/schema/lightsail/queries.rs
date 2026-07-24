@@ -71,7 +71,9 @@ impl LightsailQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::lightsail::LightsailClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::LightsailQuery;
@@ -173,15 +175,18 @@ mod tests {
         let data = res.data.into_json().unwrap();
         let item = &data["lightsailLoadBalancers"]["items"][0];
         assert_eq!(item["name"], "my-lb");
-        assert_eq!(
-            item["dnsName"],
-            "my-lb.abcdefg.us-east-1.elb.amazonaws.com"
-        );
+        assert_eq!(item["dnsName"], "my-lb.abcdefg.us-east-1.elb.amazonaws.com");
         assert_eq!(item["state"], "active_impaired");
         assert_eq!(item["protocol"], "HTTP_HTTPS");
         assert_eq!(item["instancePort"], 80);
-        assert_eq!(item["instanceHealthSummary"][0]["instanceName"], "my-instance");
-        assert_eq!(item["instanceHealthSummary"][0]["instanceHealth"], "healthy");
+        assert_eq!(
+            item["instanceHealthSummary"][0]["instanceName"],
+            "my-instance"
+        );
+        assert_eq!(
+            item["instanceHealthSummary"][0]["instanceHealth"],
+            "healthy"
+        );
         assert_eq!(item["createdAt"], "2023-11-14T22:13:20+00:00");
         http_client.relaxed_requests_match();
     }

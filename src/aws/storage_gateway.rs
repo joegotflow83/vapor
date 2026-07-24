@@ -76,7 +76,9 @@ impl StorageGatewayClient {
                     gateway_arn: gw.gateway_arn().map(|s| s.to_string()),
                     gateway_type: gw.gateway_type().map(|s| s.to_string()),
                     gateway_name: gw.gateway_name().map(|s| s.to_string()),
-                    gateway_operational_state: gw.gateway_operational_state().map(|s| s.to_string()),
+                    gateway_operational_state: gw
+                        .gateway_operational_state()
+                        .map(|s| s.to_string()),
                     gateway_region: gw.ec2_instance_region().map(|s| s.to_string()),
                     ec2_instance_id: gw.ec2_instance_id().map(|s| s.to_string()),
                 });
@@ -167,7 +169,10 @@ impl StorageGatewayClient {
     /// VTL gateways expose virtual tapes instead of iSCSI volumes.
     /// `ListTapes` has no gateway filter (it lists all tapes in the account's
     /// VTL/VTS), so results are filtered client-side by `gateway_arn`.
-    async fn list_tapes(&self, gateway_arn: &str) -> Result<Vec<StorageGatewayVolumeInfo>, VaporError> {
+    async fn list_tapes(
+        &self,
+        gateway_arn: &str,
+    ) -> Result<Vec<StorageGatewayVolumeInfo>, VaporError> {
         let mut items = Vec::new();
         let mut marker: Option<String> = None;
 
@@ -311,7 +316,8 @@ impl StorageGatewayClient {
 
         let mut items = Vec::new();
         for (arn, id, share_type, gw_arn, status) in summaries {
-            let (path, location_arn) = arn.as_deref()
+            let (path, location_arn) = arn
+                .as_deref()
                 .and_then(|a| nfs_details.get(a).or_else(|| smb_details.get(a)))
                 .cloned()
                 .unwrap_or((None, None));

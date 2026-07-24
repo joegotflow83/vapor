@@ -77,7 +77,9 @@ impl CodeArtifactQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::codeartifact::CodeArtifactClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::CodeArtifactQuery;

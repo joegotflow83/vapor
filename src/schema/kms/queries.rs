@@ -56,7 +56,9 @@ impl KmsQuery {
         next_token: Option<String>,
     ) -> Result<Page<KmsAlias>> {
         let kms = ctx.data::<KmsClient>()?;
-        let (results, next_token) = kms.list_aliases(key_id.as_deref(), limit, next_token).await?;
+        let (results, next_token) = kms
+            .list_aliases(key_id.as_deref(), limit, next_token)
+            .await?;
         let items = results.into_iter().map(KmsAlias::from).collect();
         Ok(Page { items, next_token })
     }
@@ -72,7 +74,9 @@ impl KmsQuery {
         next_token: Option<String>,
     ) -> Result<Page<String>> {
         let kms = ctx.data::<KmsClient>()?;
-        let (items, next_token) = kms.list_key_policy_names(&key_id, limit, next_token).await?;
+        let (items, next_token) = kms
+            .list_key_policy_names(&key_id, limit, next_token)
+            .await?;
         Ok(Page { items, next_token })
     }
 
@@ -303,7 +307,10 @@ mod tests {
         let json = res.data.into_json().unwrap();
         assert_eq!(json["kmsKeyPolicy"]["keyId"], "key-1");
         assert_eq!(json["kmsKeyPolicy"]["policyName"], "default");
-        assert_eq!(json["kmsKeyPolicy"]["policy"], r#"{"Version":"2012-10-17"}"#);
+        assert_eq!(
+            json["kmsKeyPolicy"]["policy"],
+            r#"{"Version":"2012-10-17"}"#
+        );
         http_client.relaxed_requests_match();
     }
 

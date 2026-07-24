@@ -73,7 +73,9 @@ impl DetectiveQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::detective::DetectiveClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::DetectiveQuery;
@@ -145,7 +147,10 @@ mod tests {
     #[tokio::test]
     async fn detective_datasource_packages_maps_items_and_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(LIST_DATASOURCE_PACKAGES, r#"{"GraphArn":"arn:graph:1","MaxResults":1}"#),
+            request(
+                LIST_DATASOURCE_PACKAGES,
+                r#"{"GraphArn":"arn:graph:1","MaxResults":1}"#,
+            ),
             json_response(
                 200,
                 r#"{"DatasourcePackages":{"DETECTIVE_CORE":{"DatasourcePackageIngestState":"STARTED"}},"NextToken":"cursor-c"}"#,

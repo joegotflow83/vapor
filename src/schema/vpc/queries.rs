@@ -2,7 +2,9 @@ use async_graphql::{Context, Object, Result};
 
 use crate::aws::ec2::Ec2Client;
 use crate::schema::pagination::Page;
-use crate::schema::vpc::types::{InternetGateway, NatGateway, NetworkAcl, RouteTable, TransitGateway, VpcEndpoint, VpcFlowLog};
+use crate::schema::vpc::types::{
+    InternetGateway, NatGateway, NetworkAcl, RouteTable, TransitGateway, VpcEndpoint, VpcFlowLog,
+};
 
 #[derive(Default)]
 pub struct VpcQuery;
@@ -11,65 +13,151 @@ pub struct VpcQuery;
 impl VpcQuery {
     /// Lists route tables. `limit` caps the total number of results (default
     /// unlimited); pass `nextToken` from a prior page to resume.
-    async fn route_tables(&self, ctx: &Context<'_>, vpc_id: Option<String>, ids: Option<Vec<String>>, limit: Option<i32>, next_token: Option<String>) -> Result<Page<RouteTable>> {
+    async fn route_tables(
+        &self,
+        ctx: &Context<'_>,
+        vpc_id: Option<String>,
+        ids: Option<Vec<String>>,
+        limit: Option<i32>,
+        next_token: Option<String>,
+    ) -> Result<Page<RouteTable>> {
         let ec2 = ctx.data::<Ec2Client>()?;
-        let (results, next_token) = ec2.describe_route_tables(ids, vpc_id, limit, next_token).await?;
-        Ok(Page { items: results.into_iter().map(RouteTable::from).collect(), next_token })
+        let (results, next_token) = ec2
+            .describe_route_tables(ids, vpc_id, limit, next_token)
+            .await?;
+        Ok(Page {
+            items: results.into_iter().map(RouteTable::from).collect(),
+            next_token,
+        })
     }
 
     /// Lists network ACLs. `limit` caps the total number of results (default
     /// unlimited); pass `nextToken` from a prior page to resume.
-    async fn network_acls(&self, ctx: &Context<'_>, vpc_id: Option<String>, ids: Option<Vec<String>>, limit: Option<i32>, next_token: Option<String>) -> Result<Page<NetworkAcl>> {
+    async fn network_acls(
+        &self,
+        ctx: &Context<'_>,
+        vpc_id: Option<String>,
+        ids: Option<Vec<String>>,
+        limit: Option<i32>,
+        next_token: Option<String>,
+    ) -> Result<Page<NetworkAcl>> {
         let ec2 = ctx.data::<Ec2Client>()?;
-        let (results, next_token) = ec2.describe_network_acls(ids, vpc_id, limit, next_token).await?;
-        Ok(Page { items: results.into_iter().map(NetworkAcl::from).collect(), next_token })
+        let (results, next_token) = ec2
+            .describe_network_acls(ids, vpc_id, limit, next_token)
+            .await?;
+        Ok(Page {
+            items: results.into_iter().map(NetworkAcl::from).collect(),
+            next_token,
+        })
     }
 
     /// Lists internet gateways. `limit` caps the total number of results
     /// (default unlimited); pass `nextToken` from a prior page to resume.
-    async fn internet_gateways(&self, ctx: &Context<'_>, vpc_id: Option<String>, ids: Option<Vec<String>>, limit: Option<i32>, next_token: Option<String>) -> Result<Page<InternetGateway>> {
+    async fn internet_gateways(
+        &self,
+        ctx: &Context<'_>,
+        vpc_id: Option<String>,
+        ids: Option<Vec<String>>,
+        limit: Option<i32>,
+        next_token: Option<String>,
+    ) -> Result<Page<InternetGateway>> {
         let ec2 = ctx.data::<Ec2Client>()?;
-        let (results, next_token) = ec2.describe_internet_gateways(ids, vpc_id, limit, next_token).await?;
-        Ok(Page { items: results.into_iter().map(InternetGateway::from).collect(), next_token })
+        let (results, next_token) = ec2
+            .describe_internet_gateways(ids, vpc_id, limit, next_token)
+            .await?;
+        Ok(Page {
+            items: results.into_iter().map(InternetGateway::from).collect(),
+            next_token,
+        })
     }
 
     /// Lists NAT gateways. `limit` caps the total number of results (default
     /// unlimited); pass `nextToken` from a prior page to resume.
-    async fn nat_gateways(&self, ctx: &Context<'_>, vpc_id: Option<String>, ids: Option<Vec<String>>, state: Option<String>, limit: Option<i32>, next_token: Option<String>) -> Result<Page<NatGateway>> {
+    async fn nat_gateways(
+        &self,
+        ctx: &Context<'_>,
+        vpc_id: Option<String>,
+        ids: Option<Vec<String>>,
+        state: Option<String>,
+        limit: Option<i32>,
+        next_token: Option<String>,
+    ) -> Result<Page<NatGateway>> {
         let ec2 = ctx.data::<Ec2Client>()?;
-        let (results, next_token) = ec2.describe_nat_gateways(ids, vpc_id, state, limit, next_token).await?;
-        Ok(Page { items: results.into_iter().map(NatGateway::from).collect(), next_token })
+        let (results, next_token) = ec2
+            .describe_nat_gateways(ids, vpc_id, state, limit, next_token)
+            .await?;
+        Ok(Page {
+            items: results.into_iter().map(NatGateway::from).collect(),
+            next_token,
+        })
     }
 
     /// Lists VPC endpoints. `limit` caps the total number of results (default
     /// unlimited); pass `nextToken` from a prior page to resume.
-    async fn vpc_endpoints(&self, ctx: &Context<'_>, vpc_id: Option<String>, ids: Option<Vec<String>>, service_name: Option<String>, limit: Option<i32>, next_token: Option<String>) -> Result<Page<VpcEndpoint>> {
+    async fn vpc_endpoints(
+        &self,
+        ctx: &Context<'_>,
+        vpc_id: Option<String>,
+        ids: Option<Vec<String>>,
+        service_name: Option<String>,
+        limit: Option<i32>,
+        next_token: Option<String>,
+    ) -> Result<Page<VpcEndpoint>> {
         let ec2 = ctx.data::<Ec2Client>()?;
-        let (results, next_token) = ec2.describe_vpc_endpoints(ids, vpc_id, service_name, limit, next_token).await?;
-        Ok(Page { items: results.into_iter().map(VpcEndpoint::from).collect(), next_token })
+        let (results, next_token) = ec2
+            .describe_vpc_endpoints(ids, vpc_id, service_name, limit, next_token)
+            .await?;
+        Ok(Page {
+            items: results.into_iter().map(VpcEndpoint::from).collect(),
+            next_token,
+        })
     }
 
     /// Lists transit gateways. `limit` caps the total number of results
     /// (default unlimited); pass `nextToken` from a prior page to resume.
-    async fn transit_gateways(&self, ctx: &Context<'_>, ids: Option<Vec<String>>, limit: Option<i32>, next_token: Option<String>) -> Result<Page<TransitGateway>> {
+    async fn transit_gateways(
+        &self,
+        ctx: &Context<'_>,
+        ids: Option<Vec<String>>,
+        limit: Option<i32>,
+        next_token: Option<String>,
+    ) -> Result<Page<TransitGateway>> {
         let ec2 = ctx.data::<Ec2Client>()?;
-        let (results, next_token) = ec2.describe_transit_gateways(ids, limit, next_token).await?;
-        Ok(Page { items: results.into_iter().map(TransitGateway::from).collect(), next_token })
+        let (results, next_token) = ec2
+            .describe_transit_gateways(ids, limit, next_token)
+            .await?;
+        Ok(Page {
+            items: results.into_iter().map(TransitGateway::from).collect(),
+            next_token,
+        })
     }
 
     /// Lists VPC flow logs. `limit` caps the total number of results (default
     /// unlimited); pass `nextToken` from a prior page to resume.
-    async fn vpc_flow_logs(&self, ctx: &Context<'_>, resource_id: Option<String>, limit: Option<i32>, next_token: Option<String>) -> Result<Page<VpcFlowLog>> {
+    async fn vpc_flow_logs(
+        &self,
+        ctx: &Context<'_>,
+        resource_id: Option<String>,
+        limit: Option<i32>,
+        next_token: Option<String>,
+    ) -> Result<Page<VpcFlowLog>> {
         let ec2 = ctx.data::<Ec2Client>()?;
-        let (results, next_token) = ec2.describe_flow_logs(resource_id, limit, next_token).await?;
-        Ok(Page { items: results.into_iter().map(VpcFlowLog::from).collect(), next_token })
+        let (results, next_token) = ec2
+            .describe_flow_logs(resource_id, limit, next_token)
+            .await?;
+        Ok(Page {
+            items: results.into_iter().map(VpcFlowLog::from).collect(),
+            next_token,
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::aws::ec2::Ec2Client;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::VpcQuery;
@@ -79,7 +167,10 @@ mod tests {
     #[tokio::test]
     async fn route_tables_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeRouteTables&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeRouteTables&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeRouteTablesResponse><routeTableSet>\
@@ -90,7 +181,9 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(VpcQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ routeTables(limit: 1) { items { id vpcId } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ routeTables(limit: 1) { items { id vpcId } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
@@ -103,7 +196,10 @@ mod tests {
     #[tokio::test]
     async fn network_acls_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeNetworkAcls&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeNetworkAcls&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeNetworkAclsResponse><networkAclSet>\
@@ -114,7 +210,9 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(VpcQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ networkAcls(limit: 1) { items { id vpcId } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ networkAcls(limit: 1) { items { id vpcId } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
@@ -127,7 +225,10 @@ mod tests {
     #[tokio::test]
     async fn internet_gateways_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeInternetGateways&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeInternetGateways&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeInternetGatewaysResponse><internetGatewaySet>\
@@ -138,7 +239,9 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(VpcQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ internetGateways(limit: 1) { items { id } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ internetGateways(limit: 1) { items { id } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
@@ -150,7 +253,10 @@ mod tests {
     #[tokio::test]
     async fn nat_gateways_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeNatGateways&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeNatGateways&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeNatGatewaysResponse><natGatewaySet>\
@@ -161,7 +267,9 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(VpcQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ natGateways(limit: 1) { items { id vpcId } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ natGateways(limit: 1) { items { id vpcId } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
@@ -174,7 +282,10 @@ mod tests {
     #[tokio::test]
     async fn vpc_endpoints_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeVpcEndpoints&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeVpcEndpoints&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeVpcEndpointsResponse><vpcEndpointSet>\
@@ -185,7 +296,9 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(VpcQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ vpcEndpoints(limit: 1) { items { id vpcId } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ vpcEndpoints(limit: 1) { items { id vpcId } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
@@ -198,7 +311,10 @@ mod tests {
     #[tokio::test]
     async fn transit_gateways_maps_items_and_forwards_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeTransitGateways&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeTransitGateways&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeTransitGatewaysResponse><transitGatewaySet>\
@@ -209,7 +325,9 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(VpcQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ transitGateways(limit: 1) { items { id } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ transitGateways(limit: 1) { items { id } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
@@ -236,7 +354,9 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
         let schema = build_query_schema(VpcQuery).data(client).finish();
 
-        let res = schema.execute(r#"{ vpcFlowLogs(limit: 1) { items { flowLogId } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ vpcFlowLogs(limit: 1) { items { flowLogId } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();

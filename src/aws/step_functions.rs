@@ -23,7 +23,13 @@ impl StepFunctionsClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_sfn::types::StateMachineListItem>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_sfn::types::StateMachineListItem>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -53,8 +59,10 @@ impl StepFunctionsClient {
     pub async fn describe_state_machine(
         &self,
         arn: &str,
-    ) -> Result<aws_sdk_sfn::operation::describe_state_machine::DescribeStateMachineOutput, VaporError>
-    {
+    ) -> Result<
+        aws_sdk_sfn::operation::describe_state_machine::DescribeStateMachineOutput,
+        VaporError,
+    > {
         self.inner
             .describe_state_machine()
             .state_machine_arn(arn)
@@ -80,7 +88,8 @@ impl StepFunctionsClient {
     pub async fn describe_execution(
         &self,
         execution_arn: &str,
-    ) -> Result<aws_sdk_sfn::operation::describe_execution::DescribeExecutionOutput, VaporError> {
+    ) -> Result<aws_sdk_sfn::operation::describe_execution::DescribeExecutionOutput, VaporError>
+    {
         self.inner
             .describe_execution()
             .execution_arn(execution_arn)
@@ -190,4 +199,3 @@ mod tests {
         assert!(matches!(err, VaporError::InvalidInput(_)));
     }
 }
-

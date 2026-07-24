@@ -3,7 +3,7 @@ use futures::future::join_all;
 
 use crate::aws::cloudfront::CloudFrontClient;
 use crate::schema::cloudfront::types::{
-    CfDistribution, distribution_from_get, distribution_from_summary, map_tags,
+    distribution_from_get, distribution_from_summary, map_tags, CfDistribution,
 };
 use crate::schema::pagination::Page;
 
@@ -27,10 +27,7 @@ impl CloudFrontQuery {
             .map(|d| {
                 let arn = d.arn().to_string();
                 async move {
-                    let tags = cf
-                        .list_tags_for_resource(&arn)
-                        .await
-                        .unwrap_or_default();
+                    let tags = cf.list_tags_for_resource(&arn).await.unwrap_or_default();
                     let tags = map_tags(tags);
                     distribution_from_summary(d, tags)
                 }
@@ -225,13 +222,18 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ cloudfrontDistribution(id: "E1ONE") { id domainName tags { key value } } }"#)
+            .execute(
+                r#"{ cloudfrontDistribution(id: "E1ONE") { id domainName tags { key value } } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
         assert_eq!(json["cloudfrontDistribution"]["id"], "E1ONE");
-        assert_eq!(json["cloudfrontDistribution"]["domainName"], "d1.cloudfront.net");
+        assert_eq!(
+            json["cloudfrontDistribution"]["domainName"],
+            "d1.cloudfront.net"
+        );
         assert_eq!(json["cloudfrontDistribution"]["tags"][0]["key"], "env");
         http_client.relaxed_requests_match();
     }
@@ -243,7 +245,10 @@ mod tests {
         // test with "no more test data available".
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{DISTRIBUTIONS}/missing"), ""),
-            xml_error_response("NoSuchDistribution", "The specified distribution does not exist."),
+            xml_error_response(
+                "NoSuchDistribution",
+                "The specified distribution does not exist.",
+            ),
         )]);
         let schema = build_query_schema(CloudFrontQuery)
             .data(CloudFrontClient::new(&sdk_config(http_client.clone())))

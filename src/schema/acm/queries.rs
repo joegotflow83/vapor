@@ -182,7 +182,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["acmCertificates"]["items"].as_array().unwrap().len(), 0);
+        assert_eq!(
+            json["acmCertificates"]["items"].as_array().unwrap().len(),
+            0
+        );
         http_client.relaxed_requests_match();
     }
 

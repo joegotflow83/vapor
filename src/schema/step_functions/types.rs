@@ -155,25 +155,26 @@ mod tests {
     fn test_state_machine_from_describe() {
         use aws_sdk_sfn::types::{StateMachineStatus, StateMachineType, Tag as SdkTag};
 
-        let output = aws_sdk_sfn::operation::describe_state_machine::DescribeStateMachineOutput::builder()
-            .state_machine_arn("arn:aws:states:us-east-1:123456789012:stateMachine:MyMachine")
-            .name("MyMachine")
-            .definition("{}")
-            .role_arn("arn:aws:iam::123456789012:role/MyRole")
-            .r#type(StateMachineType::Standard)
-            .creation_date(aws_sdk_sfn::primitives::DateTime::from_secs(1700000000))
-            .status(StateMachineStatus::Active)
-            .build()
-            .unwrap();
+        let output =
+            aws_sdk_sfn::operation::describe_state_machine::DescribeStateMachineOutput::builder()
+                .state_machine_arn("arn:aws:states:us-east-1:123456789012:stateMachine:MyMachine")
+                .name("MyMachine")
+                .definition("{}")
+                .role_arn("arn:aws:iam::123456789012:role/MyRole")
+                .r#type(StateMachineType::Standard)
+                .creation_date(aws_sdk_sfn::primitives::DateTime::from_secs(1700000000))
+                .status(StateMachineStatus::Active)
+                .build()
+                .unwrap();
 
-        let sdk_tag = SdkTag::builder()
-            .key("env")
-            .value("prod")
-            .build();
+        let sdk_tag = SdkTag::builder().key("env").value("prod").build();
 
         let result = StateMachine::from_describe(&output, &[sdk_tag]);
 
-        assert_eq!(result.arn, "arn:aws:states:us-east-1:123456789012:stateMachine:MyMachine");
+        assert_eq!(
+            result.arn,
+            "arn:aws:states:us-east-1:123456789012:stateMachine:MyMachine"
+        );
         assert_eq!(result.name, "MyMachine");
         assert_eq!(result.machine_type, Some("STANDARD".to_string()));
         assert_eq!(result.status, Some("ACTIVE".to_string()));
@@ -199,7 +200,10 @@ mod tests {
             .build()
             .unwrap();
         let detail = ExecutionDetail::from(output);
-        assert_eq!(detail.execution_arn, "arn:aws:states:us-east-1:123456789012:execution:MyMachine:exec1");
+        assert_eq!(
+            detail.execution_arn,
+            "arn:aws:states:us-east-1:123456789012:execution:MyMachine:exec1"
+        );
         assert_eq!(detail.status, "SUCCEEDED");
         assert_eq!(detail.name, Some("exec1".to_string()));
         assert_eq!(detail.input, Some(r#"{"key":"value"}"#.to_string()));

@@ -114,7 +114,9 @@ impl AcmPcaClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://acm-pca.us-east-1.amazonaws.com/";
 
@@ -138,7 +140,10 @@ mod tests {
         ]);
         let client = AcmPcaClient::new(&sdk_config(http_client.clone()));
 
-        let (cas, token) = client.list_certificate_authorities(None, None).await.unwrap();
+        let (cas, token) = client
+            .list_certificate_authorities(None, None)
+            .await
+            .unwrap();
 
         assert_eq!(cas.len(), 1);
         assert_eq!(
@@ -189,7 +194,10 @@ mod tests {
         ]);
         let client = AcmPcaClient::new(&sdk_config(http_client.clone()));
 
-        let (cas, token) = client.list_certificate_authorities(Some(2), None).await.unwrap();
+        let (cas, token) = client
+            .list_certificate_authorities(Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(cas.len(), 2);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -226,7 +234,10 @@ mod tests {
         ]);
         let client = AcmPcaClient::new(&sdk_config(http_client.clone()));
 
-        let (cas, token) = client.list_certificate_authorities(Some(10), None).await.unwrap();
+        let (cas, token) = client
+            .list_certificate_authorities(Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(cas.len(), 2);
         assert_eq!(token, None);
@@ -241,7 +252,10 @@ mod tests {
         )]);
         let client = AcmPcaClient::new(&sdk_config(http_client.clone()));
 
-        let (cas, token) = client.list_certificate_authorities(None, None).await.unwrap();
+        let (cas, token) = client
+            .list_certificate_authorities(None, None)
+            .await
+            .unwrap();
 
         assert_eq!(cas.len(), 1);
         assert_eq!(cas[0].inner.arn(), None);
@@ -270,7 +284,11 @@ mod tests {
         ]);
         let client = AcmPcaClient::new(&sdk_config(http_client.clone()));
 
-        let ca = client.describe_certificate_authority("arn-1").await.unwrap().unwrap();
+        let ca = client
+            .describe_certificate_authority("arn-1")
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(ca.inner.arn(), Some("arn-1"));
         assert_eq!(ca.tags, vec![("team".to_string(), "platform".to_string())]);
@@ -285,7 +303,10 @@ mod tests {
         )]);
         let client = AcmPcaClient::new(&sdk_config(http_client.clone()));
 
-        let ca = client.describe_certificate_authority("arn-missing").await.unwrap();
+        let ca = client
+            .describe_certificate_authority("arn-missing")
+            .await
+            .unwrap();
 
         assert!(ca.is_none());
         http_client.relaxed_requests_match();
@@ -315,4 +336,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

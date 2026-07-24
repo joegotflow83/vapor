@@ -6,7 +6,12 @@ use crate::schema::time::to_utc;
 
 fn tags_from_map(map: Option<&std::collections::HashMap<String, String>>) -> Vec<Tag> {
     map.into_iter()
-        .flat_map(|m| m.iter().map(|(k, v)| Tag { key: k.clone(), value: v.clone() }))
+        .flat_map(|m| {
+            m.iter().map(|(k, v)| Tag {
+                key: k.clone(),
+                value: v.clone(),
+            })
+        })
         .collect()
 }
 
@@ -23,9 +28,7 @@ pub struct EksKubernetesNetworkConfig {
     pub ip_family: Option<String>,
 }
 
-impl From<&aws_sdk_eks::types::KubernetesNetworkConfigResponse>
-    for EksKubernetesNetworkConfig
-{
+impl From<&aws_sdk_eks::types::KubernetesNetworkConfigResponse> for EksKubernetesNetworkConfig {
     fn from(knc: &aws_sdk_eks::types::KubernetesNetworkConfigResponse) -> Self {
         Self {
             service_ipv4_cidr: knc.service_ipv4_cidr().map(|s| s.to_string()),
@@ -51,12 +54,20 @@ impl From<&aws_sdk_eks::types::VpcConfigResponse> for EksVpcConfig {
     fn from(vpc: &aws_sdk_eks::types::VpcConfigResponse) -> Self {
         Self {
             subnet_ids: vpc.subnet_ids().iter().map(|s| s.to_string()).collect(),
-            security_group_ids: vpc.security_group_ids().iter().map(|s| s.to_string()).collect(),
+            security_group_ids: vpc
+                .security_group_ids()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             cluster_security_group_id: vpc.cluster_security_group_id().map(|s| s.to_string()),
             vpc_id: vpc.vpc_id().map(|s| s.to_string()),
             endpoint_public_access: Some(vpc.endpoint_public_access()),
             endpoint_private_access: Some(vpc.endpoint_private_access()),
-            public_access_cidrs: vpc.public_access_cidrs().iter().map(|s| s.to_string()).collect(),
+            public_access_cidrs: vpc
+                .public_access_cidrs()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
         }
     }
 }
@@ -87,7 +98,11 @@ pub struct EksLogging {
 impl From<&aws_sdk_eks::types::Logging> for EksLogging {
     fn from(logging: &aws_sdk_eks::types::Logging) -> Self {
         Self {
-            cluster_logging: logging.cluster_logging().iter().map(EksLogSetup::from).collect(),
+            cluster_logging: logging
+                .cluster_logging()
+                .iter()
+                .map(EksLogSetup::from)
+                .collect(),
         }
     }
 }
@@ -172,7 +187,10 @@ pub struct EksNodegroup {
 impl From<aws_sdk_eks::types::Nodegroup> for EksNodegroup {
     fn from(ng: aws_sdk_eks::types::Nodegroup) -> Self {
         Self {
-            name: ng.nodegroup_name().map(|s| s.to_string()).unwrap_or_default(),
+            name: ng
+                .nodegroup_name()
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
             arn: ng.nodegroup_arn().map(|s| s.to_string()),
             cluster_name: ng.cluster_name().map(|s| s.to_string()),
             status: ng.status().map(|s| s.as_str().to_string()),
@@ -226,13 +244,20 @@ pub struct EksFargateProfile {
 impl From<aws_sdk_eks::types::FargateProfile> for EksFargateProfile {
     fn from(fp: aws_sdk_eks::types::FargateProfile) -> Self {
         Self {
-            name: fp.fargate_profile_name().map(|s| s.to_string()).unwrap_or_default(),
+            name: fp
+                .fargate_profile_name()
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
             arn: fp.fargate_profile_arn().map(|s| s.to_string()),
             cluster_name: fp.cluster_name().map(|s| s.to_string()),
             status: fp.status().map(|s| s.as_str().to_string()),
             pod_execution_role_arn: fp.pod_execution_role_arn().map(|s| s.to_string()),
             subnet_ids: fp.subnets().iter().map(|s| s.to_string()).collect(),
-            selectors: fp.selectors().iter().map(EksFargateSelector::from).collect(),
+            selectors: fp
+                .selectors()
+                .iter()
+                .map(EksFargateSelector::from)
+                .collect(),
             created_at: to_utc(fp.created_at()),
             tags: tags_from_map(fp.tags()),
         }
@@ -258,7 +283,10 @@ pub struct EksAddon {
 impl From<aws_sdk_eks::types::Addon> for EksAddon {
     fn from(addon: aws_sdk_eks::types::Addon) -> Self {
         Self {
-            name: addon.addon_name().map(|s| s.to_string()).unwrap_or_default(),
+            name: addon
+                .addon_name()
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
             arn: addon.addon_arn().map(|s| s.to_string()),
             cluster_name: addon.cluster_name().map(|s| s.to_string()),
             status: addon.status().map(|s| s.as_str().to_string()),
@@ -315,7 +343,10 @@ mod tests {
         assert_eq!(result.subnet_ids.len(), 2);
         assert!(result.subnet_ids.contains(&"subnet-aaa".to_string()));
         assert_eq!(result.security_group_ids, vec!["sg-001".to_string()]);
-        assert_eq!(result.cluster_security_group_id, Some("sg-cluster".to_string()));
+        assert_eq!(
+            result.cluster_security_group_id,
+            Some("sg-cluster".to_string())
+        );
         assert_eq!(result.vpc_id, Some("vpc-12345".to_string()));
         assert_eq!(result.endpoint_public_access, Some(true));
         assert_eq!(result.endpoint_private_access, Some(false));

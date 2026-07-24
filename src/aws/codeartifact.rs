@@ -18,7 +18,13 @@ impl CodeArtifactClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_codeartifact::types::DomainSummary>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_codeartifact::types::DomainSummary>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -52,8 +58,13 @@ impl CodeArtifactClient {
         domain_owner: Option<String>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_codeartifact::types::RepositorySummary>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_codeartifact::types::RepositorySummary>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -92,8 +103,13 @@ impl CodeArtifactClient {
         namespace: Option<String>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_codeartifact::types::PackageSummary>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_codeartifact::types::PackageSummary>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -250,7 +266,10 @@ mod tests {
     #[tokio::test]
     async fn list_repositories_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{REPOS}?domain=my-domain&domain-owner=111122223333"), ""),
+            request(
+                &format!("{REPOS}?domain=my-domain&domain-owner=111122223333"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"repositories":[{"name":"repo1","domainName":"my-domain","domainOwner":"111122223333"},{"name":"repo2"}]}"#,
@@ -323,7 +342,9 @@ mod tests {
     async fn list_packages_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(
-                &format!("{PACKAGES}?domain=my-domain&repository=my-repo&format=npm&namespace=acme"),
+                &format!(
+                    "{PACKAGES}?domain=my-domain&repository=my-repo&format=npm&namespace=acme"
+                ),
                 "",
             ),
             json_response(

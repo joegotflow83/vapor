@@ -186,7 +186,8 @@ impl EcrClient {
                 if !counts_collected {
                     if let Some(counts) = findings_obj.finding_severity_counts {
                         for (severity, count) in counts {
-                            finding_severity_counts.push((severity.as_str().to_string(), count.into()));
+                            finding_severity_counts
+                                .push((severity.as_str().to_string(), count.into()));
                         }
                     }
                     counts_collected = true;
@@ -220,7 +221,9 @@ impl EcrClient {
 #[cfg(feature = "ecr")]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::error::VaporError;
 
     // ecr's endpoint is `api.ecr.<region>.amazonaws.com`, not `ecr.<region>...`
@@ -239,7 +242,10 @@ mod tests {
         )]);
         let client = EcrClient::new(&sdk_config(http_client.clone()));
 
-        let (repos, token) = client.describe_repositories(None, None, None).await.unwrap();
+        let (repos, token) = client
+            .describe_repositories(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(repos.len(), 2);
         assert_eq!(repos[0].repository_name.as_deref(), Some("foo"));
@@ -290,11 +296,17 @@ mod tests {
         ]);
         let client = EcrClient::new(&sdk_config(http_client.clone()));
 
-        let (repos, token) = client.describe_repositories(None, Some(3), None).await.unwrap();
+        let (repos, token) = client
+            .describe_repositories(None, Some(3), None)
+            .await
+            .unwrap();
 
         assert_eq!(repos.len(), 3);
         assert_eq!(
-            repos.iter().map(|r| r.repository_name.as_deref()).collect::<Vec<_>>(),
+            repos
+                .iter()
+                .map(|r| r.repository_name.as_deref())
+                .collect::<Vec<_>>(),
             vec![Some("a"), Some("b"), Some("c")]
         );
         assert_eq!(token, None);
@@ -309,7 +321,10 @@ mod tests {
         )]);
         let client = EcrClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_repositories(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_repositories(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -350,7 +365,10 @@ mod tests {
                 ENDPOINT,
                 r#"{"repositoryName":"foo","imageIds":[{"imageTag":"latest"},{"imageDigest":"sha256:abc"}]}"#,
             ),
-            json_response(200, r#"{"imageDetails":[{"repositoryName":"foo","imageDigest":"sha256:abc"}]}"#),
+            json_response(
+                200,
+                r#"{"imageDetails":[{"repositoryName":"foo","imageDigest":"sha256:abc"}]}"#,
+            ),
         )]);
         let client = EcrClient::new(&sdk_config(http_client.clone()));
 
@@ -381,7 +399,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"repositoryName":"foo","nextToken":"page-2","maxResults":1}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"repositoryName":"foo","nextToken":"page-2","maxResults":1}"#,
+                ),
                 json_response(200, r#"{"imageDetails":[{"imageDigest":"sha256:bbb"}]}"#),
             ),
         ]);
@@ -441,7 +462,10 @@ mod tests {
 
         assert_eq!(result.image_tags, vec!["latest".to_string()]);
         assert_eq!(result.scan_status, Some("COMPLETE".to_string()));
-        assert_eq!(result.finding_severity_counts, vec![("HIGH".to_string(), 2)]);
+        assert_eq!(
+            result.finding_severity_counts,
+            vec![("HIGH".to_string(), 2)]
+        );
         assert_eq!(result.findings.len(), 1);
         assert_eq!(result.findings[0].name.as_deref(), Some("CVE-1"));
         assert_eq!(token, None);
@@ -484,9 +508,16 @@ mod tests {
         // values for those fields.
         assert_eq!(result.image_tags, vec!["latest".to_string()]);
         assert_eq!(result.scan_status, Some("COMPLETE".to_string()));
-        assert_eq!(result.finding_severity_counts, vec![("HIGH".to_string(), 1)]);
         assert_eq!(
-            result.findings.iter().map(|f| f.name.as_deref()).collect::<Vec<_>>(),
+            result.finding_severity_counts,
+            vec![("HIGH".to_string(), 1)]
+        );
+        assert_eq!(
+            result
+                .findings
+                .iter()
+                .map(|f| f.name.as_deref())
+                .collect::<Vec<_>>(),
             vec![Some("CVE-1"), Some("CVE-2")]
         );
         assert_eq!(token, None);

@@ -93,10 +93,16 @@ impl DmsClient {
                     .filter_map(|sg| sg.vpc_security_group_id().map(|s| s.to_string()))
                     .collect();
                 items.push(DmsReplicationInstanceInfo {
-                    replication_instance_identifier: ri.replication_instance_identifier().map(|s| s.to_string()),
+                    replication_instance_identifier: ri
+                        .replication_instance_identifier()
+                        .map(|s| s.to_string()),
                     replication_instance_arn: ri.replication_instance_arn().map(|s| s.to_string()),
-                    replication_instance_class: ri.replication_instance_class().map(|s| s.to_string()),
-                    replication_instance_status: ri.replication_instance_status().map(|s| s.to_string()),
+                    replication_instance_class: ri
+                        .replication_instance_class()
+                        .map(|s| s.to_string()),
+                    replication_instance_status: ri
+                        .replication_instance_status()
+                        .map(|s| s.to_string()),
                     allocated_storage: Some(ri.allocated_storage()),
                     publicly_accessible: Some(ri.publicly_accessible()),
                     engine_version: ri.engine_version().map(|s| s.to_string()),
@@ -143,7 +149,10 @@ impl DmsClient {
                     .name("endpoint-type")
                     .values(et.to_lowercase())
                     .build()
-                    .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?,
+                    .map_err(|e| VaporError::AwsSdk {
+                        code: None,
+                        message: e.to_string(),
+                    })?,
             ),
             None => None,
         };
@@ -220,13 +229,17 @@ impl DmsClient {
 
             for task in output.replication_tasks() {
                 items.push(DmsReplicationTaskInfo {
-                    replication_task_identifier: task.replication_task_identifier().map(|s| s.to_string()),
+                    replication_task_identifier: task
+                        .replication_task_identifier()
+                        .map(|s| s.to_string()),
                     replication_task_arn: task.replication_task_arn().map(|s| s.to_string()),
                     status: task.status().map(|s| s.to_string()),
                     migration_type: task.migration_type().map(|t| t.as_str().to_string()),
                     source_endpoint_arn: task.source_endpoint_arn().map(|s| s.to_string()),
                     target_endpoint_arn: task.target_endpoint_arn().map(|s| s.to_string()),
-                    replication_instance_arn: task.replication_instance_arn().map(|s| s.to_string()),
+                    replication_instance_arn: task
+                        .replication_instance_arn()
+                        .map(|s| s.to_string()),
                     replication_task_creation_date: task.replication_task_creation_date().cloned(),
                     replication_task_start_date: task.replication_task_start_date().cloned(),
                 });
@@ -253,7 +266,9 @@ impl DmsClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://dms.us-east-1.amazonaws.com/";
 
@@ -268,14 +283,23 @@ mod tests {
         )]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, marker) = client.describe_replication_instances(None, None).await.unwrap();
+        let (items, marker) = client
+            .describe_replication_instances(None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0].replication_instance_identifier, Some("my-repl".to_string()));
+        assert_eq!(
+            items[0].replication_instance_identifier,
+            Some("my-repl".to_string())
+        );
         assert_eq!(items[0].allocated_storage, Some(50));
         assert_eq!(items[0].publicly_accessible, Some(true));
         assert_eq!(items[0].vpc_security_groups, vec!["sg-1".to_string()]);
-        assert_eq!(items[0].replication_subnet_group_id, Some("my-subnet-group".to_string()));
+        assert_eq!(
+            items[0].replication_subnet_group_id,
+            Some("my-subnet-group".to_string())
+        );
         assert_eq!(items[0].multi_az, Some(false));
         assert_eq!(marker, None);
         http_client.relaxed_requests_match();
@@ -317,7 +341,10 @@ mod tests {
         )]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, marker) = client.describe_replication_instances(Some(2), None).await.unwrap();
+        let (items, marker) = client
+            .describe_replication_instances(Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(marker, Some("page2".to_string()));
@@ -336,12 +363,18 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"MaxRecords":99,"Marker":"p2"}"#),
-                json_response(200, r#"{"ReplicationInstances":[{"ReplicationInstanceIdentifier":"b"}]}"#),
+                json_response(
+                    200,
+                    r#"{"ReplicationInstances":[{"ReplicationInstanceIdentifier":"b"}]}"#,
+                ),
             ),
         ]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, marker) = client.describe_replication_instances(Some(100), None).await.unwrap();
+        let (items, marker) = client
+            .describe_replication_instances(Some(100), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(marker, None);
@@ -356,7 +389,10 @@ mod tests {
         )]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_replication_instances(None, None).await.unwrap_err();
+        let err = client
+            .describe_replication_instances(None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -371,7 +407,10 @@ mod tests {
     #[tokio::test]
     async fn describe_endpoints_happy_path_with_type_filter_lowercased() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"Filters":[{"Name":"endpoint-type","Values":["source"]}]}"#),
+            request(
+                ENDPOINT,
+                r#"{"Filters":[{"Name":"endpoint-type","Values":["source"]}]}"#,
+            ),
             json_response(
                 200,
                 r#"{"Endpoints":[{"EndpointIdentifier":"my-src","EndpointArn":"arn:aws:dms:us-east-1:1:endpoint:abc","EndpointType":"source","EngineName":"postgres","Status":"active","DatabaseName":"mydb","ServerName":"db.example.com","Port":5432,"SslMode":"require"}]}"#,
@@ -424,7 +463,10 @@ mod tests {
         )]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, marker) = client.describe_endpoints(None, Some(2), None).await.unwrap();
+        let (items, marker) = client
+            .describe_endpoints(None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(marker, Some("page2".to_string()));
@@ -439,7 +481,10 @@ mod tests {
         )]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_endpoints(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_endpoints(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -465,9 +510,15 @@ mod tests {
         let (items, marker) = client.describe_replication_tasks(None, None).await.unwrap();
 
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0].replication_task_identifier, Some("my-task".to_string()));
+        assert_eq!(
+            items[0].replication_task_identifier,
+            Some("my-task".to_string())
+        );
         assert_eq!(items[0].status, Some("running".to_string()));
-        assert_eq!(items[0].migration_type, Some("full-load-and-cdc".to_string()));
+        assert_eq!(
+            items[0].migration_type,
+            Some("full-load-and-cdc".to_string())
+        );
         assert_eq!(items[0].source_endpoint_arn, Some("arn:src".to_string()));
         assert_eq!(items[0].target_endpoint_arn, Some("arn:tgt".to_string()));
         assert!(items[0].replication_task_creation_date.is_some());
@@ -491,7 +542,10 @@ mod tests {
         )]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, marker) = client.describe_replication_tasks(Some(2), None).await.unwrap();
+        let (items, marker) = client
+            .describe_replication_tasks(Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 2);
         assert_eq!(marker, Some("page2".to_string()));
@@ -524,7 +578,10 @@ mod tests {
         )]);
         let client = DmsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_replication_tasks(None, None).await.unwrap_err();
+        let err = client
+            .describe_replication_tasks(None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

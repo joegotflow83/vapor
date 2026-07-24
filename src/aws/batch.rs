@@ -133,10 +133,13 @@ impl BatchClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const JOB_QUEUES: &str = "https://batch.us-east-1.amazonaws.com/v1/describejobqueues";
-    const COMPUTE_ENVS: &str = "https://batch.us-east-1.amazonaws.com/v1/describecomputeenvironments";
+    const COMPUTE_ENVS: &str =
+        "https://batch.us-east-1.amazonaws.com/v1/describecomputeenvironments";
     const JOB_DEFS: &str = "https://batch.us-east-1.amazonaws.com/v1/describejobdefinitions";
 
     #[tokio::test]
@@ -210,7 +213,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(JOB_QUEUES, r#"{"maxResults":8,"nextToken":"p2"}"#),
-                json_response(200, r#"{"jobQueues":[{"jobQueueName":"q3","jobQueueArn":"arn:q3"}]}"#),
+                json_response(
+                    200,
+                    r#"{"jobQueues":[{"jobQueueName":"q3","jobQueueArn":"arn:q3"}]}"#,
+                ),
             ),
         ]);
         let client = BatchClient::new(&sdk_config(http_client.clone()));
@@ -256,7 +262,10 @@ mod tests {
         )]);
         let client = BatchClient::new(&sdk_config(http_client.clone()));
 
-        let (envs, token) = client.describe_compute_environments(None, None).await.unwrap();
+        let (envs, token) = client
+            .describe_compute_environments(None, None)
+            .await
+            .unwrap();
 
         assert_eq!(envs.len(), 1);
         assert_eq!(envs[0].compute_environment_name(), Some("ce1"));
@@ -276,7 +285,10 @@ mod tests {
         )]);
         let client = BatchClient::new(&sdk_config(http_client.clone()));
 
-        let (envs, token) = client.describe_compute_environments(Some(1), None).await.unwrap();
+        let (envs, token) = client
+            .describe_compute_environments(Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(envs.len(), 1);
         assert_eq!(token, Some("page2".to_string()));
@@ -294,7 +306,10 @@ mod tests {
         )]);
         let client = BatchClient::new(&sdk_config(http_client.clone()));
 
-        let (defs, token) = client.describe_job_definitions(None, None, None).await.unwrap();
+        let (defs, token) = client
+            .describe_job_definitions(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(defs.len(), 1);
         assert_eq!(defs[0].job_definition_name(), Some("jd1"));
@@ -342,11 +357,13 @@ mod tests {
         )]);
         let client = BatchClient::new(&sdk_config(http_client.clone()));
 
-        let (defs, token) = client.describe_job_definitions(None, Some(1), None).await.unwrap();
+        let (defs, token) = client
+            .describe_job_definitions(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(defs.len(), 1);
         assert_eq!(token, Some("page2".to_string()));
         http_client.relaxed_requests_match();
     }
 }
-

@@ -102,7 +102,9 @@ mod tests {
             .not_before(ts.clone())
             .not_after(ts.clone())
             .renewal_eligibility(aws_sdk_acm::types::RenewalEligibility::Eligible)
-            .in_use_by("arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/my-lb/abc")
+            .in_use_by(
+                "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/my-lb/abc",
+            )
             .build();
 
         let cert = AcmCertificate::from_detail_and_tags(detail, vec![]);
@@ -143,6 +145,9 @@ mod tests {
             .not_after(ts)
             .build();
         let cert = AcmCertificate::from_detail_and_tags(detail, vec![]);
-        assert!(cert.not_after.is_some(), "not_after must be exposed when present");
+        assert!(
+            cert.not_after.is_some(),
+            "not_after must be exposed when present"
+        );
     }
 }

@@ -1,8 +1,8 @@
 use async_graphql::{Context, Object, Result};
 
+use super::types::{EbEventBus, EbRule, EbTarget};
 use crate::aws::eventbridge::EventBridgeClient;
 use crate::schema::pagination::Page;
-use super::types::{EbEventBus, EbRule, EbTarget};
 
 #[derive(Default)]
 pub struct EventBridgeQuery;
@@ -69,7 +69,9 @@ impl EventBridgeQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::eventbridge::EventBridgeClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::EventBridgeQuery;
@@ -101,8 +103,14 @@ mod tests {
             data["eventBridgeBuses"]["items"][0]["arn"],
             "arn:aws:events:us-east-1:1:event-bus/default"
         );
-        assert_eq!(data["eventBridgeBuses"]["items"][0]["description"], "My event bus");
-        assert_eq!(data["eventBridgeBuses"]["items"][0]["policy"], "{\"Statement\":[]}");
+        assert_eq!(
+            data["eventBridgeBuses"]["items"][0]["description"],
+            "My event bus"
+        );
+        assert_eq!(
+            data["eventBridgeBuses"]["items"][0]["policy"],
+            "{\"Statement\":[]}"
+        );
         assert!(data["eventBridgeBuses"]["items"][0]["createdBy"].is_null());
         assert_eq!(data["eventBridgeBuses"]["nextToken"], "page2");
         http_client.relaxed_requests_match();
@@ -129,7 +137,10 @@ mod tests {
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
         assert_eq!(data["eventBridgeRules"]["items"][0]["name"], "my-rule");
-        assert_eq!(data["eventBridgeRules"]["items"][0]["eventBusName"], "custom-bus");
+        assert_eq!(
+            data["eventBridgeRules"]["items"][0]["eventBusName"],
+            "custom-bus"
+        );
         assert_eq!(data["eventBridgeRules"]["items"][0]["state"], "ENABLED");
         assert_eq!(
             data["eventBridgeRules"]["items"][0]["scheduleExpression"],
@@ -176,8 +187,14 @@ mod tests {
             data["eventBridgeTargets"]["items"][0]["roleArn"],
             "arn:aws:iam::1:role/MyRole"
         );
-        assert_eq!(data["eventBridgeTargets"]["items"][0]["input"], "{\"key\":\"value\"}");
-        assert_eq!(data["eventBridgeTargets"]["items"][0]["inputPath"], "$.body");
+        assert_eq!(
+            data["eventBridgeTargets"]["items"][0]["input"],
+            "{\"key\":\"value\"}"
+        );
+        assert_eq!(
+            data["eventBridgeTargets"]["items"][0]["inputPath"],
+            "$.body"
+        );
         assert_eq!(data["eventBridgeTargets"]["nextToken"], "page2");
         http_client.relaxed_requests_match();
     }

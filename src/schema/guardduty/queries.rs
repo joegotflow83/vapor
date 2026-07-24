@@ -41,7 +41,10 @@ impl GuardDutyQuery {
                 }
             }
         }
-        Ok(Page { items: detectors, next_token: token })
+        Ok(Page {
+            items: detectors,
+            next_token: token,
+        })
     }
 
     async fn guardduty_findings(
@@ -61,7 +64,9 @@ impl GuardDutyQuery {
         if let Some(sev) = min_severity {
             criterion.insert(
                 "severity".to_string(),
-                Condition::builder().greater_than_or_equal(sev as i64).build(),
+                Condition::builder()
+                    .greater_than_or_equal(sev as i64)
+                    .build(),
             );
         }
 
@@ -84,7 +89,11 @@ impl GuardDutyQuery {
         let criteria = if criterion.is_empty() {
             None
         } else {
-            Some(FindingCriteria::builder().set_criterion(Some(criterion)).build())
+            Some(
+                FindingCriteria::builder()
+                    .set_criterion(Some(criterion))
+                    .build(),
+            )
         };
 
         let (finding_ids, token) = client
@@ -92,19 +101,23 @@ impl GuardDutyQuery {
             .await?;
 
         if finding_ids.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token: token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token: token,
+            });
         }
 
         // Batch in chunks of 50
         let mut all_findings = Vec::new();
         for chunk in finding_ids.chunks(50) {
-            let findings = client
-                .get_findings(&detector_id, chunk.to_vec())
-                .await?;
+            let findings = client.get_findings(&detector_id, chunk.to_vec()).await?;
             all_findings.extend(findings.into_iter().map(Finding::from));
         }
 
-        Ok(Page { items: all_findings, next_token: token })
+        Ok(Page {
+            items: all_findings,
+            next_token: token,
+        })
     }
 }
 
@@ -121,7 +134,9 @@ impl GuardDutyQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::guardduty::GuardDutyClient;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::GuardDutyQuery;
@@ -197,7 +212,10 @@ mod tests {
     async fn guardduty_findings_lists_and_gets_forwards_next_token() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/detector/d1/findings"), r#"{"maxResults":1}"#),
+                request(
+                    &format!("{BASE}/detector/d1/findings"),
+                    r#"{"maxResults":1}"#,
+                ),
                 json_response(200, r#"{"findingIds":["f1"],"nextToken":"page2"}"#),
             ),
             ReplayEvent::new(
@@ -251,7 +269,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert!(json["guarddutyFindings"]["items"].as_array().unwrap().is_empty());
+        assert!(json["guarddutyFindings"]["items"]
+            .as_array()
+            .unwrap()
+            .is_empty());
         assert!(json["guarddutyFindings"]["nextToken"].is_null());
         http_client.relaxed_requests_match();
     }
@@ -279,9 +300,7 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(
-                r#"{ guarddutyFindings(detectorId: "d1", minSeverity: 8) { items { id } } }"#,
-            )
+            .execute(r#"{ guarddutyFindings(detectorId: "d1", minSeverity: 8) { items { id } } }"#)
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -343,9 +362,7 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(
-                r#"{ guarddutyFindings(detectorId: "d1", archived: true) { items { id } } }"#,
-            )
+            .execute(r#"{ guarddutyFindings(detectorId: "d1", archived: true) { items { id } } }"#)
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);

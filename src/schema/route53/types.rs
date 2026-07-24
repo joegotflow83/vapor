@@ -119,11 +119,7 @@ impl From<&aws_sdk_route53::types::HealthCheckConfig> for R53HealthCheckConfig {
             failure_threshold: c.failure_threshold(),
             inverted: c.inverted(),
             disabled: c.disabled(),
-            regions: c
-                .regions()
-                .iter()
-                .map(|r| r.as_str().to_string())
-                .collect(),
+            regions: c.regions().iter().map(|r| r.as_str().to_string()).collect(),
         }
     }
 }

@@ -25,7 +25,10 @@ impl CognitoClient {
         limit: Option<i32>,
         next_token: Option<String>,
     ) -> Result<
-        (Vec<aws_sdk_cognitoidentityprovider::types::UserPoolDescriptionType>, Option<String>),
+        (
+            Vec<aws_sdk_cognitoidentityprovider::types::UserPoolDescriptionType>,
+            Option<String>,
+        ),
         VaporError,
     > {
         let mut pools = Vec::new();
@@ -65,9 +68,10 @@ impl CognitoClient {
             .send()
             .await
             .map_err(crate::error::sdk_err)?;
-        output
-            .user_pool
-            .ok_or_else(|| VaporError::AwsSdk { code: None, message: "No user pool returned".to_string() })
+        output.user_pool.ok_or_else(|| VaporError::AwsSdk {
+            code: None,
+            message: "No user pool returned".to_string(),
+        })
     }
 
     /// Lists app clients for a user pool, optionally capped at `limit` results
@@ -82,14 +86,20 @@ impl CognitoClient {
         limit: Option<i32>,
         next_token: Option<String>,
     ) -> Result<
-        (Vec<aws_sdk_cognitoidentityprovider::types::UserPoolClientDescription>, Option<String>),
+        (
+            Vec<aws_sdk_cognitoidentityprovider::types::UserPoolClientDescription>,
+            Option<String>,
+        ),
         VaporError,
     > {
         let mut clients = Vec::new();
         let mut token = next_token;
 
         loop {
-            let mut req = self.inner.list_user_pool_clients().user_pool_id(user_pool_id);
+            let mut req = self
+                .inner
+                .list_user_pool_clients()
+                .user_pool_id(user_pool_id);
             if let Some(ref t) = token {
                 req = req.next_token(t);
             }
@@ -124,9 +134,10 @@ impl CognitoClient {
             .send()
             .await
             .map_err(crate::error::sdk_err)?;
-        output
-            .user_pool_client
-            .ok_or_else(|| VaporError::AwsSdk { code: None, message: "No user pool client returned".to_string() })
+        output.user_pool_client.ok_or_else(|| VaporError::AwsSdk {
+            code: None,
+            message: "No user pool client returned".to_string(),
+        })
     }
 }
 
@@ -162,7 +173,10 @@ mod tests {
     async fn list_user_pools_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"NextToken":"cursor-a"}"#),
-            json_response(200, r#"{"UserPools":[{"Id":"pool-3","Name":"Pool Three"}]}"#),
+            json_response(
+                200,
+                r#"{"UserPools":[{"Id":"pool-3","Name":"Pool Three"}]}"#,
+            ),
         )]);
         let client = CognitoClient::new(&sdk_config(http_client.clone()));
 
@@ -323,11 +337,11 @@ mod tests {
     #[tokio::test]
     async fn list_user_pool_clients_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"UserPoolId":"pool-1","NextToken":"cursor-a"}"#),
-            json_response(
-                200,
-                r#"{"UserPoolClients":[{"ClientId":"client-2"}]}"#,
+            request(
+                ENDPOINT,
+                r#"{"UserPoolId":"pool-1","NextToken":"cursor-a"}"#,
             ),
+            json_response(200, r#"{"UserPoolClients":[{"ClientId":"client-2"}]}"#),
         )]);
         let client = CognitoClient::new(&sdk_config(http_client.clone()));
 
@@ -483,4 +497,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

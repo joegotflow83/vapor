@@ -38,7 +38,10 @@ impl RedshiftClient {
 
             let output = req.send().await.map_err(crate::error::sdk_err)?;
             items.extend(output.clusters().to_vec());
-            marker = output.marker().filter(|m| !m.is_empty()).map(|m| m.to_string());
+            marker = output
+                .marker()
+                .filter(|m| !m.is_empty())
+                .map(|m| m.to_string());
 
             match (&marker, limit) {
                 (None, _) => break,
@@ -81,7 +84,10 @@ impl RedshiftClient {
 
             let output = req.send().await.map_err(crate::error::sdk_err)?;
             items.extend(output.snapshots().to_vec());
-            marker = output.marker().filter(|m| !m.is_empty()).map(|m| m.to_string());
+            marker = output
+                .marker()
+                .filter(|m| !m.is_empty())
+                .map(|m| m.to_string());
 
             match (&marker, limit) {
                 (None, _) => break,
@@ -97,7 +103,9 @@ impl RedshiftClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://redshift.us-east-1.amazonaws.com/";
 
@@ -128,7 +136,10 @@ mod tests {
     #[tokio::test]
     async fn describe_clusters_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeClusters&Version=2012-12-01&Marker=cursor-a"),
+            request(
+                ENDPOINT,
+                "Action=DescribeClusters&Version=2012-12-01&Marker=cursor-a",
+            ),
             xml_response(
                 200,
                 "<DescribeClustersResponse><DescribeClustersResult><Clusters>\
@@ -241,7 +252,12 @@ mod tests {
         let client = RedshiftClient::new(&sdk_config(http_client.clone()));
 
         let (snapshots, marker) = client
-            .describe_cluster_snapshots(Some("my-cluster".to_string()), Some("manual".to_string()), None, None)
+            .describe_cluster_snapshots(
+                Some("my-cluster".to_string()),
+                Some("manual".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -258,7 +274,10 @@ mod tests {
     #[tokio::test]
     async fn describe_cluster_snapshots_resumes_from_provided_marker() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeClusterSnapshots&Version=2012-12-01&Marker=cursor-b"),
+            request(
+                ENDPOINT,
+                "Action=DescribeClusterSnapshots&Version=2012-12-01&Marker=cursor-b",
+            ),
             xml_response(
                 200,
                 "<DescribeClusterSnapshotsResponse><DescribeClusterSnapshotsResult><Snapshots>\
@@ -290,7 +309,10 @@ mod tests {
         )]);
         let client = RedshiftClient::new(&sdk_config(http_client.clone()));
 
-        let (snapshots, marker) = client.describe_cluster_snapshots(None, None, Some(1), None).await.unwrap();
+        let (snapshots, marker) = client
+            .describe_cluster_snapshots(None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(snapshots.len(), 1);
         assert_eq!(marker, Some("next".to_string()));
@@ -324,7 +346,10 @@ mod tests {
         ]);
         let client = RedshiftClient::new(&sdk_config(http_client.clone()));
 
-        let (snapshots, marker) = client.describe_cluster_snapshots(None, None, Some(50), None).await.unwrap();
+        let (snapshots, marker) = client
+            .describe_cluster_snapshots(None, None, Some(50), None)
+            .await
+            .unwrap();
 
         assert_eq!(snapshots.len(), 2);
         assert_eq!(marker, None);
@@ -334,12 +359,18 @@ mod tests {
     #[tokio::test]
     async fn describe_cluster_snapshots_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeClusterSnapshots&Version=2012-12-01"),
+            request(
+                ENDPOINT,
+                "Action=DescribeClusterSnapshots&Version=2012-12-01",
+            ),
             xml_error_response("ClusterSnapshotNotFound", "snapshot not found"),
         )]);
         let client = RedshiftClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_cluster_snapshots(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_cluster_snapshots(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

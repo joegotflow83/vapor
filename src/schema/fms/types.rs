@@ -104,10 +104,7 @@ mod tests {
         assert_eq!(result.policy_name, Some("MyPolicy".to_string()));
         assert_eq!(result.security_service_type, Some("WAFV2".to_string()));
         assert_eq!(result.remediation_enabled, Some(true));
-        assert_eq!(
-            result.resource_type,
-            Some("AWS::EC2::Instance".to_string())
-        );
+        assert_eq!(result.resource_type, Some("AWS::EC2::Instance".to_string()));
         assert_eq!(result.delete_unused_fm_managed_resources, Some(true));
     }
 

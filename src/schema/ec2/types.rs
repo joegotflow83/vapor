@@ -520,7 +520,12 @@ impl From<aws_sdk_ec2::types::LaunchTemplateVersion> for LaunchTemplateVersion {
             key_name: data.and_then(|d| d.key_name()).map(|s| s.to_string()),
             user_data: data.and_then(|d| d.user_data()).map(|s| s.to_string()),
             security_group_ids: data
-                .map(|d| d.security_group_ids().iter().map(|s| s.to_string()).collect())
+                .map(|d| {
+                    d.security_group_ids()
+                        .iter()
+                        .map(|s| s.to_string())
+                        .collect()
+                })
                 .unwrap_or_default(),
             iam_instance_profile_arn: data
                 .and_then(|d| d.iam_instance_profile())
@@ -798,7 +803,9 @@ mod tests {
         // Simulates AWS adding a new InstanceStateName value this client
         // doesn't know about yet. Must map to Unknown, never Running.
         let sdk_state = aws_sdk_ec2::types::InstanceState::builder()
-            .name(aws_sdk_ec2::types::InstanceStateName::from("some-future-state"))
+            .name(aws_sdk_ec2::types::InstanceStateName::from(
+                "some-future-state",
+            ))
             .build();
         let sdk_instance = aws_sdk_ec2::types::Instance::builder()
             .instance_id("i-abc123")
@@ -847,10 +854,7 @@ mod tests {
         assert_eq!(iface.subnet_id, Some("subnet-abc".to_string()));
         assert_eq!(iface.vpc_id, Some("vpc-abc".to_string()));
         assert_eq!(iface.private_ip, Some("10.0.0.5".to_string()));
-        assert_eq!(
-            iface.mac_address,
-            Some("0a:1b:2c:3d:4e:5f".to_string())
-        );
+        assert_eq!(iface.mac_address, Some("0a:1b:2c:3d:4e:5f".to_string()));
     }
 
     // --- Image ---
@@ -1102,7 +1106,10 @@ mod tests {
         assert_eq!(v.version_number, Some(2));
         assert_eq!(v.version_description, Some("v2 release".to_string()));
         assert_eq!(v.default_version, Some(false));
-        assert_eq!(v.created_by, Some("arn:aws:iam::123:user/admin".to_string()));
+        assert_eq!(
+            v.created_by,
+            Some("arn:aws:iam::123:user/admin".to_string())
+        );
         assert!(v.create_time.is_some());
         assert_eq!(v.image_id, Some("ami-abc123".to_string()));
         assert_eq!(v.instance_type, Some("t3.medium".to_string()));
@@ -1113,10 +1120,7 @@ mod tests {
             v.iam_instance_profile_arn,
             Some("arn:aws:iam::123:instance-profile/my-profile".to_string())
         );
-        assert_eq!(
-            v.iam_instance_profile_name,
-            Some("my-profile".to_string())
-        );
+        assert_eq!(v.iam_instance_profile_name, Some("my-profile".to_string()));
     }
 
     #[test]
@@ -1157,7 +1161,9 @@ mod tests {
             .build();
 
         let instance: Instance = sdk_instance.into();
-        let meta = instance.metadata_options.expect("metadata_options should be Some");
+        let meta = instance
+            .metadata_options
+            .expect("metadata_options should be Some");
         assert_eq!(meta.http_tokens, Some("required".to_string()));
         assert_eq!(meta.http_endpoint, Some("enabled".to_string()));
         assert_eq!(meta.http_put_response_hop_limit, Some(1));

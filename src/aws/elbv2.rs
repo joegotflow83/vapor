@@ -25,8 +25,13 @@ impl Elbv2Client {
         names: Option<Vec<String>>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_elasticloadbalancingv2::types::LoadBalancer>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_elasticloadbalancingv2::types::LoadBalancer>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut marker = next_token;
 
@@ -73,8 +78,13 @@ impl Elbv2Client {
         load_balancer_arn: Option<String>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_elasticloadbalancingv2::types::TargetGroup>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_elasticloadbalancingv2::types::TargetGroup>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut marker = next_token;
 
@@ -138,8 +148,13 @@ impl Elbv2Client {
         load_balancer_arn: String,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_elasticloadbalancingv2::types::Listener>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_elasticloadbalancingv2::types::Listener>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut marker = next_token;
 
@@ -184,8 +199,13 @@ impl Elbv2Client {
         listener_arn: String,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_elasticloadbalancingv2::types::Rule>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_elasticloadbalancingv2::types::Rule>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut marker = next_token;
 
@@ -223,7 +243,9 @@ impl Elbv2Client {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://elasticloadbalancing.us-east-1.amazonaws.com/";
 
@@ -304,7 +326,10 @@ mod tests {
         )]);
         let client = Elbv2Client::new(&sdk_config(http_client.clone()));
 
-        let (lbs, marker) = client.describe_load_balancers(None, None, Some(2), None).await.unwrap();
+        let (lbs, marker) = client
+            .describe_load_balancers(None, None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(lbs.len(), 2);
         assert_eq!(lbs[0].load_balancer_arn(), Some("a"));
@@ -340,7 +365,10 @@ mod tests {
         ]);
         let client = Elbv2Client::new(&sdk_config(http_client.clone()));
 
-        let (lbs, marker) = client.describe_load_balancers(None, None, None, None).await.unwrap();
+        let (lbs, marker) = client
+            .describe_load_balancers(None, None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(lbs.len(), 2);
         assert_eq!(lbs[0].load_balancer_arn(), Some("a"));
@@ -357,7 +385,10 @@ mod tests {
         )]);
         let client = Elbv2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_load_balancers(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_load_balancers(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -430,7 +461,10 @@ mod tests {
         )]);
         let client = Elbv2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_target_groups(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_target_groups(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -465,9 +499,15 @@ mod tests {
             .unwrap();
 
         assert_eq!(descriptions.len(), 1);
-        assert_eq!(descriptions[0].target().and_then(|t| t.id()), Some("i-1234"));
         assert_eq!(
-            descriptions[0].target_health().and_then(|h| h.state()).map(|s| s.as_str()),
+            descriptions[0].target().and_then(|t| t.id()),
+            Some("i-1234")
+        );
+        assert_eq!(
+            descriptions[0]
+                .target_health()
+                .and_then(|h| h.state())
+                .map(|s| s.as_str()),
             Some("healthy")
         );
         http_client.relaxed_requests_match();

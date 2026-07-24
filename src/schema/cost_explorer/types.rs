@@ -1,7 +1,5 @@
 use async_graphql::SimpleObject;
-use aws_sdk_costexplorer::types::{
-    ForecastResult as SdkForecast, ResultByTime as SdkResultByTime,
-};
+use aws_sdk_costexplorer::types::{ForecastResult as SdkForecast, ResultByTime as SdkResultByTime};
 
 #[derive(SimpleObject, Clone)]
 pub struct CostAndUsageResult {
@@ -65,12 +63,7 @@ impl From<SdkResultByTime> for CostAndUsageResult {
 
         let (start, end) = r
             .time_period()
-            .map(|tp| {
-                (
-                    tp.start().to_string(),
-                    tp.end().to_string(),
-                )
-            })
+            .map(|tp| (tp.start().to_string(), tp.end().to_string()))
             .unwrap_or_default();
 
         Self {
@@ -115,10 +108,7 @@ mod tests {
         let mut total_map = HashMap::new();
         total_map.insert(
             "UnblendedCost".to_string(),
-            MetricValue::builder()
-                .amount("123.45")
-                .unit("USD")
-                .build(),
+            MetricValue::builder().amount("123.45").unit("USD").build(),
         );
 
         let result = SdkResultByTime::builder()
@@ -145,10 +135,7 @@ mod tests {
         let mut metrics = HashMap::new();
         metrics.insert(
             "UnblendedCost".to_string(),
-            MetricValue::builder()
-                .amount("50.00")
-                .unit("USD")
-                .build(),
+            MetricValue::builder().amount("50.00").unit("USD").build(),
         );
 
         let group = Group::builder()

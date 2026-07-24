@@ -181,7 +181,9 @@ impl ElastiCacheClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://elasticache.us-east-1.amazonaws.com/";
 
@@ -217,7 +219,10 @@ mod tests {
         ]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (clusters, marker) = client.describe_cache_clusters(None, None, None).await.unwrap();
+        let (clusters, marker) = client
+            .describe_cache_clusters(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(clusters.len(), 1);
         let (cluster, tags) = &clusters[0];
@@ -246,7 +251,10 @@ mod tests {
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (clusters, marker) = client.describe_cache_clusters(None, None, None).await.unwrap();
+        let (clusters, marker) = client
+            .describe_cache_clusters(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(clusters.len(), 1);
         assert_eq!(clusters[0].0.cache_cluster_id(), Some("no-arn-cluster"));
@@ -281,7 +289,10 @@ mod tests {
         ]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (clusters, marker) = client.describe_cache_clusters(None, None, None).await.unwrap();
+        let (clusters, marker) = client
+            .describe_cache_clusters(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(clusters.len(), 1);
         assert!(clusters[0].1.is_empty());
@@ -363,7 +374,10 @@ mod tests {
         ]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (clusters, marker) = client.describe_cache_clusters(None, Some(2), None).await.unwrap();
+        let (clusters, marker) = client
+            .describe_cache_clusters(None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(clusters.len(), 2);
         assert_eq!(clusters[0].0.cache_cluster_id(), Some("a"));
@@ -402,7 +416,10 @@ mod tests {
         ]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (clusters, marker) = client.describe_cache_clusters(None, Some(100), None).await.unwrap();
+        let (clusters, marker) = client
+            .describe_cache_clusters(None, Some(100), None)
+            .await
+            .unwrap();
 
         assert_eq!(clusters.len(), 2);
         assert_eq!(clusters[0].0.cache_cluster_id(), Some("a"));
@@ -422,7 +439,10 @@ mod tests {
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_cache_clusters(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_cache_clusters(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -448,7 +468,10 @@ mod tests {
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (groups, marker) = client.describe_replication_groups(None, None, None).await.unwrap();
+        let (groups, marker) = client
+            .describe_replication_groups(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(groups.len(), 1);
         assert_eq!(groups[0].replication_group_id(), Some("my-rg"));
@@ -526,7 +549,10 @@ mod tests {
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (groups, marker) = client.describe_replication_groups(None, Some(2), None).await.unwrap();
+        let (groups, marker) = client
+            .describe_replication_groups(None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(groups.len(), 2);
         assert_eq!(marker, Some("page2".to_string()));
@@ -563,7 +589,10 @@ mod tests {
         ]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (groups, marker) = client.describe_replication_groups(None, Some(100), None).await.unwrap();
+        let (groups, marker) = client
+            .describe_replication_groups(None, Some(100), None)
+            .await
+            .unwrap();
 
         assert_eq!(groups.len(), 2);
         assert_eq!(marker, None);
@@ -573,7 +602,10 @@ mod tests {
     #[tokio::test]
     async fn describe_replication_groups_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeReplicationGroups&Version=2015-02-02"),
+            request(
+                ENDPOINT,
+                "Action=DescribeReplicationGroups&Version=2015-02-02",
+            ),
             xml_error_response("ReplicationGroupNotFoundFault", "no such rg"),
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
@@ -608,11 +640,17 @@ mod tests {
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (subnet_groups, marker) = client.describe_cache_subnet_groups(None, None).await.unwrap();
+        let (subnet_groups, marker) = client
+            .describe_cache_subnet_groups(None, None)
+            .await
+            .unwrap();
 
         assert_eq!(subnet_groups.len(), 1);
         assert_eq!(subnet_groups[0].cache_subnet_group_name(), Some("my-sg"));
-        assert_eq!(subnet_groups[0].cache_subnet_group_description(), Some("test sg"));
+        assert_eq!(
+            subnet_groups[0].cache_subnet_group_description(),
+            Some("test sg")
+        );
         assert_eq!(subnet_groups[0].vpc_id(), Some("vpc-123"));
         assert_eq!(marker, None);
         http_client.relaxed_requests_match();
@@ -661,7 +699,10 @@ mod tests {
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (subnet_groups, marker) = client.describe_cache_subnet_groups(Some(2), None).await.unwrap();
+        let (subnet_groups, marker) = client
+            .describe_cache_subnet_groups(Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(subnet_groups.len(), 2);
         assert_eq!(marker, Some("page2".to_string()));
@@ -698,7 +739,10 @@ mod tests {
         ]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let (subnet_groups, marker) = client.describe_cache_subnet_groups(Some(100), None).await.unwrap();
+        let (subnet_groups, marker) = client
+            .describe_cache_subnet_groups(Some(100), None)
+            .await
+            .unwrap();
 
         assert_eq!(subnet_groups.len(), 2);
         assert_eq!(marker, None);
@@ -708,12 +752,18 @@ mod tests {
     #[tokio::test]
     async fn describe_cache_subnet_groups_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeCacheSubnetGroups&Version=2015-02-02"),
+            request(
+                ENDPOINT,
+                "Action=DescribeCacheSubnetGroups&Version=2015-02-02",
+            ),
             xml_error_response("CacheSubnetGroupNotFoundFault", "no such subnet group"),
         )]);
         let client = ElastiCacheClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_cache_subnet_groups(None, None).await.unwrap_err();
+        let err = client
+            .describe_cache_subnet_groups(None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

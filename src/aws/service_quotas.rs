@@ -25,7 +25,13 @@ impl ServiceQuotasClient {
         service_code: &str,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_servicequotas::types::ServiceQuota>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_servicequotas::types::ServiceQuota>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -61,7 +67,13 @@ impl ServiceQuotasClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_servicequotas::types::ServiceInfo>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_servicequotas::types::ServiceInfo>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -125,10 +137,7 @@ mod tests {
         )]);
         let client = ServiceQuotasClient::new(&sdk_config(http_client.clone()));
 
-        let (quotas, token) = client
-            .list_service_quotas("ec2", None, None)
-            .await
-            .unwrap();
+        let (quotas, token) = client.list_service_quotas("ec2", None, None).await.unwrap();
 
         assert_eq!(quotas.len(), 1);
         assert_eq!(quotas[0].quota_code(), Some("L-1234"));

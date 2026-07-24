@@ -186,12 +186,18 @@ mod tests {
     #[test]
     fn test_custom_model_from_full() {
         let info = BedrockCustomModelInfo {
-            model_arn: Some("arn:aws:bedrock:us-east-1:123456789012:custom-model/my-model".to_string()),
+            model_arn: Some(
+                "arn:aws:bedrock:us-east-1:123456789012:custom-model/my-model".to_string(),
+            ),
             model_name: Some("my-fine-tuned-model".to_string()),
             creation_time: Some("2024-01-15T10:30:00Z".parse().unwrap()),
-            base_model_arn: Some("arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-text-lite-v1".to_string()),
+            base_model_arn: Some(
+                "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-text-lite-v1".to_string(),
+            ),
             customization_type: Some("FINE_TUNING".to_string()),
-            job_arn: Some("arn:aws:bedrock:us-east-1:123456789012:model-customization-job/abc123".to_string()),
+            job_arn: Some(
+                "arn:aws:bedrock:us-east-1:123456789012:model-customization-job/abc123".to_string(),
+            ),
         };
         let result = BedrockCustomModel::from(info);
         assert!(result.model_arn.is_some());
@@ -221,7 +227,9 @@ mod tests {
     fn test_guardrail_from_full() {
         let info = BedrockGuardrailInfo {
             guardrail_id: Some("abc123def456".to_string()),
-            guardrail_arn: Some("arn:aws:bedrock:us-east-1:123456789012:guardrail/abc123def456".to_string()),
+            guardrail_arn: Some(
+                "arn:aws:bedrock:us-east-1:123456789012:guardrail/abc123def456".to_string(),
+            ),
             name: Some("my-guardrail".to_string()),
             status: Some("READY".to_string()),
             version: Some("DRAFT".to_string()),
@@ -233,14 +241,19 @@ mod tests {
         assert_eq!(result.guardrail_id, Some("abc123def456".to_string()));
         assert_eq!(result.name, Some("my-guardrail".to_string()));
         assert_eq!(result.status, Some("READY".to_string()));
-        assert_eq!(result.description, Some("Content filtering guardrail".to_string()));
+        assert_eq!(
+            result.description,
+            Some("Content filtering guardrail".to_string())
+        );
     }
 
     #[test]
     fn test_guardrail_from_no_description() {
         let info = BedrockGuardrailInfo {
             guardrail_id: Some("xyz789".to_string()),
-            guardrail_arn: Some("arn:aws:bedrock:us-east-1:123456789012:guardrail/xyz789".to_string()),
+            guardrail_arn: Some(
+                "arn:aws:bedrock:us-east-1:123456789012:guardrail/xyz789".to_string(),
+            ),
             name: Some("basic-guardrail".to_string()),
             status: Some("CREATING".to_string()),
             version: Some("DRAFT".to_string()),
@@ -286,7 +299,10 @@ mod tests {
             }),
         };
         let result = BedrockCloudWatchConfig::from(info);
-        assert_eq!(result.log_group_name, Some("/aws/bedrock/invocations".to_string()));
+        assert_eq!(
+            result.log_group_name,
+            Some("/aws/bedrock/invocations".to_string())
+        );
         assert!(result.role_arn.is_some());
         assert!(result.large_data_delivery_s3_config.is_some());
     }

@@ -305,7 +305,9 @@ impl DataSyncClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://datasync.us-east-1.amazonaws.com/";
 
@@ -379,7 +381,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"AgentArn":"arn:agent-1"}"#),
-                json_response(200, r#"{"AgentArn":"arn:agent-1","CreationTime":1700000000}"#),
+                json_response(
+                    200,
+                    r#"{"AgentArn":"arn:agent-1","CreationTime":1700000000}"#,
+                ),
             ),
         ]);
         let client = DataSyncClient::new(&sdk_config(http_client.clone()));
@@ -410,11 +415,17 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"AgentArn":"arn:agent-1"}"#),
-                json_response(200, r#"{"AgentArn":"arn:agent-1","CreationTime":1700000000}"#),
+                json_response(
+                    200,
+                    r#"{"AgentArn":"arn:agent-1","CreationTime":1700000000}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"AgentArn":"arn:agent-2"}"#),
-                json_response(200, r#"{"AgentArn":"arn:agent-2","CreationTime":1700003600}"#),
+                json_response(
+                    200,
+                    r#"{"AgentArn":"arn:agent-2","CreationTime":1700003600}"#,
+                ),
             ),
         ]);
         let client = DataSyncClient::new(&sdk_config(http_client.clone()));
@@ -491,7 +502,10 @@ mod tests {
 
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].location_arn, "arn:loc-1");
-        assert_eq!(items[0].location_uri, Some("s3://bucket/prefix".to_string()));
+        assert_eq!(
+            items[0].location_uri,
+            Some("s3://bucket/prefix".to_string())
+        );
         // `creation_time` is hard-coded `None` — DataSync's `ListLocations`
         // has no such field per `specs/datasync.md`'s "Known limitation".
         assert_eq!(items[0].creation_time, None);
@@ -563,7 +577,10 @@ mod tests {
         assert_eq!(items[0].task_arn, "arn:task-1");
         assert_eq!(items[0].name, Some("task-one".to_string()));
         assert_eq!(items[0].status, Some("AVAILABLE".to_string()));
-        assert_eq!(items[0].source_location_arn, Some("arn:loc-src".to_string()));
+        assert_eq!(
+            items[0].source_location_arn,
+            Some("arn:loc-src".to_string())
+        );
         assert_eq!(
             items[0].destination_location_arn,
             Some("arn:loc-dst".to_string())
@@ -581,7 +598,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"Tasks":[{"TaskArn":"arn:task-1","Status":"AVAILABLE"}]}"#),
+                json_response(
+                    200,
+                    r#"{"Tasks":[{"TaskArn":"arn:task-1","Status":"AVAILABLE"}]}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"TaskArn":"arn:task-1"}"#),
@@ -636,7 +656,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"TaskExecutionArn":"arn:task-1/execution/exec-1"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"TaskExecutionArn":"arn:task-1/execution/exec-1"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"TaskExecutionArn":"arn:task-1/execution/exec-1","Status":"SUCCESS","StartTime":1700000000,"EstimatedFilesToTransfer":100,"FilesTransferred":100,"BytesTransferred":204800}"#,
@@ -724,4 +747,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

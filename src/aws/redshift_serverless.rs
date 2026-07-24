@@ -314,4 +314,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

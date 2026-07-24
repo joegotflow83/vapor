@@ -26,7 +26,13 @@ impl SsoAdminClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_ssoadmin::types::InstanceMetadata>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_ssoadmin::types::InstanceMetadata>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -152,7 +158,13 @@ impl SsoAdminClient {
         permission_set_arn: &str,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_ssoadmin::types::AccountAssignment>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_ssoadmin::types::AccountAssignment>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -191,7 +203,9 @@ impl SsoAdminClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://sso.us-east-1.amazonaws.com";
 
@@ -310,10 +324,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"InstanceArn":"arn:instance"}"#),
-                json_response(
-                    200,
-                    r#"{"PermissionSets":["ps-1","ps-2"]}"#,
-                ),
+                json_response(200, r#"{"PermissionSets":["ps-1","ps-2"]}"#),
             ),
             ReplayEvent::new(
                 request(
@@ -416,7 +427,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"InstanceArn":"arn:instance","MaxResults":10}"#),
-                json_response(200, r#"{"PermissionSets":["ps-1","ps-2"],"NextToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"PermissionSets":["ps-1","ps-2"],"NextToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(
@@ -515,7 +529,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn list_permission_sets_skips_permission_set_when_describe_permission_set_reports_not_found() {
+    async fn list_permission_sets_skips_permission_set_when_describe_permission_set_reports_not_found(
+    ) {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"InstanceArn":"arn:instance"}"#),
@@ -660,7 +675,10 @@ mod tests {
                     BASE,
                     r#"{"InstanceArn":"arn:instance","AccountId":"111111111111","PermissionSetArn":"ps-1","NextToken":"p2","MaxResults":8}"#,
                 ),
-                json_response(200, r#"{"AccountAssignments":[{"AccountId":"111111111111"}]}"#),
+                json_response(
+                    200,
+                    r#"{"AccountAssignments":[{"AccountId":"111111111111"}]}"#,
+                ),
             ),
         ]);
         let client = SsoAdminClient::new(&sdk_config(http_client.clone()));

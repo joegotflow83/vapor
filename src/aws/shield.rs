@@ -22,9 +22,7 @@ impl ShieldClient {
     ) -> Result<Option<aws_sdk_shield::types::Subscription>, VaporError> {
         match self.inner.describe_subscription().send().await {
             Ok(output) => Ok(output.subscription().cloned()),
-            Err(SdkError::ServiceError(e)) if e.err().is_resource_not_found_exception() => {
-                Ok(None)
-            }
+            Err(SdkError::ServiceError(e)) if e.err().is_resource_not_found_exception() => Ok(None),
             Err(e) => Err(crate::error::sdk_err(e)),
         }
     }
@@ -289,10 +287,7 @@ mod tests {
         )]);
         let client = ShieldClient::new(&sdk_config(http_client.clone()));
 
-        let (protections, token) = client
-            .list_protections(None, Some(1), None)
-            .await
-            .unwrap();
+        let (protections, token) = client.list_protections(None, Some(1), None).await.unwrap();
 
         assert_eq!(protections.len(), 1);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -316,10 +311,7 @@ mod tests {
         ]);
         let client = ShieldClient::new(&sdk_config(http_client.clone()));
 
-        let (protections, token) = client
-            .list_protections(None, Some(10), None)
-            .await
-            .unwrap();
+        let (protections, token) = client.list_protections(None, Some(10), None).await.unwrap();
 
         assert_eq!(protections.len(), 3);
         assert_eq!(token, None);
@@ -376,10 +368,7 @@ mod tests {
         )]);
         let client = ShieldClient::new(&sdk_config(http_client.clone()));
 
-        let (groups, token) = client
-            .list_protection_groups(Some(1), None)
-            .await
-            .unwrap();
+        let (groups, token) = client.list_protection_groups(Some(1), None).await.unwrap();
 
         assert_eq!(groups.len(), 1);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -394,10 +383,7 @@ mod tests {
         )]);
         let client = ShieldClient::new(&sdk_config(http_client.clone()));
 
-        let err = client
-            .list_protection_groups(None, None)
-            .await
-            .unwrap_err();
+        let err = client.list_protection_groups(None, None).await.unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -445,7 +431,7 @@ mod tests {
         let (attacks, token) = client
             .list_attacks(
                 Some(vec![
-                    "arn:aws:cloudfront::111111111111:distribution/E1".to_string(),
+                    "arn:aws:cloudfront::111111111111:distribution/E1".to_string()
                 ]),
                 Some("2023-11-14T22:13:20Z".to_string()),
                 Some("2023-11-14T23:13:20Z".to_string()),
@@ -504,4 +490,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

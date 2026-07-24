@@ -321,9 +321,7 @@ impl From<aws_sdk_ecs::types::Cluster> for Cluster {
             running_tasks_count: Some(c.running_tasks_count()),
             pending_tasks_count: Some(c.pending_tasks_count()),
             active_services_count: Some(c.active_services_count()),
-            registered_container_instances_count: Some(
-                c.registered_container_instances_count(),
-            ),
+            registered_container_instances_count: Some(c.registered_container_instances_count()),
             tags: c
                 .tags()
                 .iter()
@@ -551,9 +549,7 @@ mod tests {
         let result = ServiceLoadBalancer::from(lb);
         assert_eq!(
             result.target_group_arn,
-            Some(
-                "arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/my-tg/abc".to_string()
-            )
+            Some("arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/my-tg/abc".to_string())
         );
         assert_eq!(result.container_name, Some("web".to_string()));
         assert_eq!(result.container_port, Some(80));

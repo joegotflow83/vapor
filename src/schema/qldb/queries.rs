@@ -39,7 +39,9 @@ impl QldbQuery {
         next_token: Option<String>,
     ) -> Result<Page<QldbJournalExport>> {
         let client = ctx.data::<QldbClient>()?;
-        let (exports, next_token) = client.list_journal_s3_exports(&ledger_name, limit, next_token).await?;
+        let (exports, next_token) = client
+            .list_journal_s3_exports(&ledger_name, limit, next_token)
+            .await?;
         Ok(Page {
             items: exports.into_iter().map(QldbJournalExport::from).collect(),
             next_token,
@@ -55,7 +57,9 @@ impl QldbQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::qldb::QldbClient;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::QldbQuery;

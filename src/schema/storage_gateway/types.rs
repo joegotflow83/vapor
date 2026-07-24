@@ -88,7 +88,9 @@ mod tests {
     fn test_gateway_from() {
         let info = StorageGatewayInfo {
             gateway_id: Some("sgw-12345678".to_string()),
-            gateway_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-12345678".to_string()),
+            gateway_arn: Some(
+                "arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-12345678".to_string(),
+            ),
             gateway_type: Some("FILE_S3".to_string()),
             gateway_name: Some("my-gateway".to_string()),
             gateway_operational_state: Some("RUNNING".to_string()),
@@ -99,7 +101,10 @@ mod tests {
         assert_eq!(result.gateway_id, Some("sgw-12345678".to_string()));
         assert_eq!(result.gateway_type, Some("FILE_S3".to_string()));
         assert_eq!(result.gateway_name, Some("my-gateway".to_string()));
-        assert_eq!(result.gateway_operational_state, Some("RUNNING".to_string()));
+        assert_eq!(
+            result.gateway_operational_state,
+            Some("RUNNING".to_string())
+        );
         assert_eq!(result.gateway_region, Some("us-east-1".to_string()));
     }
 
@@ -140,9 +145,13 @@ mod tests {
     #[test]
     fn test_volume_from_vtl_tape() {
         let info = StorageGatewayVolumeInfo {
-            volume_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:tape/TAPE12345".to_string()),
+            volume_arn: Some(
+                "arn:aws:storagegateway:us-east-1:123456789012:tape/TAPE12345".to_string(),
+            ),
             volume_id: Some("TAPE12345".to_string()),
-            gateway_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-87654321".to_string()),
+            gateway_arn: Some(
+                "arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-87654321".to_string(),
+            ),
             volume_type: Some("VTL_TAPE".to_string()),
             volume_size_in_bytes: Some(2199023255552),
             volume_status: Some("AVAILABLE".to_string()),
@@ -172,10 +181,14 @@ mod tests {
     #[test]
     fn test_file_share_nfs_from() {
         let info = StorageGatewayFileShareInfo {
-            file_share_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:share/share-12345678".to_string()),
+            file_share_arn: Some(
+                "arn:aws:storagegateway:us-east-1:123456789012:share/share-12345678".to_string(),
+            ),
             file_share_id: Some("share-12345678".to_string()),
             file_share_type: Some("NFS".to_string()),
-            gateway_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-12345678".to_string()),
+            gateway_arn: Some(
+                "arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-12345678".to_string(),
+            ),
             path: Some("/export".to_string()),
             file_share_status: Some("AVAILABLE".to_string()),
             location_arn: Some("arn:aws:s3:::my-bucket".to_string()),
@@ -185,16 +198,23 @@ mod tests {
         assert_eq!(result.file_share_type, Some("NFS".to_string()));
         assert_eq!(result.path, Some("/export".to_string()));
         assert_eq!(result.file_share_status, Some("AVAILABLE".to_string()));
-        assert_eq!(result.location_arn, Some("arn:aws:s3:::my-bucket".to_string()));
+        assert_eq!(
+            result.location_arn,
+            Some("arn:aws:s3:::my-bucket".to_string())
+        );
     }
 
     #[test]
     fn test_file_share_smb_from() {
         let info = StorageGatewayFileShareInfo {
-            file_share_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:share/share-87654321".to_string()),
+            file_share_arn: Some(
+                "arn:aws:storagegateway:us-east-1:123456789012:share/share-87654321".to_string(),
+            ),
             file_share_id: Some("share-87654321".to_string()),
             file_share_type: Some("SMB".to_string()),
-            gateway_arn: Some("arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-12345678".to_string()),
+            gateway_arn: Some(
+                "arn:aws:storagegateway:us-east-1:123456789012:gateway/sgw-12345678".to_string(),
+            ),
             path: Some("/smb-export".to_string()),
             file_share_status: Some("AVAILABLE".to_string()),
             location_arn: Some("arn:aws:s3:::my-smb-bucket".to_string()),

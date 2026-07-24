@@ -275,14 +275,18 @@ impl EksClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const CLUSTERS: &str = "https://eks.us-east-1.amazonaws.com/clusters";
     const CLUSTER: &str = "https://eks.us-east-1.amazonaws.com/clusters/demo";
     const NODEGROUPS: &str = "https://eks.us-east-1.amazonaws.com/clusters/demo/node-groups";
     const NODEGROUP: &str = "https://eks.us-east-1.amazonaws.com/clusters/demo/node-groups/ng-1";
-    const FARGATE_PROFILES: &str = "https://eks.us-east-1.amazonaws.com/clusters/demo/fargate-profiles";
-    const FARGATE_PROFILE: &str = "https://eks.us-east-1.amazonaws.com/clusters/demo/fargate-profiles/fp-1";
+    const FARGATE_PROFILES: &str =
+        "https://eks.us-east-1.amazonaws.com/clusters/demo/fargate-profiles";
+    const FARGATE_PROFILE: &str =
+        "https://eks.us-east-1.amazonaws.com/clusters/demo/fargate-profiles/fp-1";
     const ADDONS: &str = "https://eks.us-east-1.amazonaws.com/clusters/demo/addons";
     const ADDON: &str = "https://eks.us-east-1.amazonaws.com/clusters/demo/addons/vpc-cni";
 
@@ -352,7 +356,10 @@ mod tests {
 
         let (names, token) = client.list_clusters(Some(10), None).await.unwrap();
 
-        assert_eq!(names, vec!["c1".to_string(), "c2".to_string(), "c3".to_string()]);
+        assert_eq!(
+            names,
+            vec!["c1".to_string(), "c2".to_string(), "c3".to_string()]
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -387,7 +394,10 @@ mod tests {
     async fn describe_cluster_returns_detail_when_found() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(CLUSTER, ""),
-            json_response(200, r#"{"cluster":{"name":"demo","status":"ACTIVE","version":"1.29"}}"#),
+            json_response(
+                200,
+                r#"{"cluster":{"name":"demo","status":"ACTIVE","version":"1.29"}}"#,
+            ),
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
@@ -496,9 +506,15 @@ mod tests {
         ]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let (names, token) = client.list_nodegroups("demo", Some(10), None).await.unwrap();
+        let (names, token) = client
+            .list_nodegroups("demo", Some(10), None)
+            .await
+            .unwrap();
 
-        assert_eq!(names, vec!["ng-1".to_string(), "ng-2".to_string(), "ng-3".to_string()]);
+        assert_eq!(
+            names,
+            vec!["ng-1".to_string(), "ng-2".to_string(), "ng-3".to_string()]
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -511,7 +527,10 @@ mod tests {
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_nodegroups("demo", None, None).await.unwrap_err();
+        let err = client
+            .list_nodegroups("demo", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -529,11 +548,18 @@ mod tests {
     async fn describe_nodegroup_returns_detail_when_found() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(NODEGROUP, ""),
-            json_response(200, r#"{"nodegroup":{"nodegroupName":"ng-1","clusterName":"demo","status":"ACTIVE"}}"#),
+            json_response(
+                200,
+                r#"{"nodegroup":{"nodegroupName":"ng-1","clusterName":"demo","status":"ACTIVE"}}"#,
+            ),
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let nodegroup = client.describe_nodegroup("demo", "ng-1").await.unwrap().unwrap();
+        let nodegroup = client
+            .describe_nodegroup("demo", "ng-1")
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(nodegroup.nodegroup_name(), Some("ng-1"));
         assert_eq!(nodegroup.cluster_name(), Some("demo"));
@@ -584,7 +610,10 @@ mod tests {
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let (names, token) = client.list_fargate_profiles("demo", None, None).await.unwrap();
+        let (names, token) = client
+            .list_fargate_profiles("demo", None, None)
+            .await
+            .unwrap();
 
         assert_eq!(names, vec!["fp-1".to_string(), "fp-2".to_string()]);
         assert_eq!(token, None);
@@ -613,11 +642,17 @@ mod tests {
     async fn list_fargate_profiles_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{FARGATE_PROFILES}?maxResults=1"), ""),
-            json_response(200, r#"{"fargateProfileNames":["fp-1"],"nextToken":"page2"}"#),
+            json_response(
+                200,
+                r#"{"fargateProfileNames":["fp-1"],"nextToken":"page2"}"#,
+            ),
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let (names, token) = client.list_fargate_profiles("demo", Some(1), None).await.unwrap();
+        let (names, token) = client
+            .list_fargate_profiles("demo", Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(names, vec!["fp-1".to_string()]);
         assert_eq!(token, Some("page2".to_string()));
@@ -629,18 +664,30 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{FARGATE_PROFILES}?maxResults=10"), ""),
-                json_response(200, r#"{"fargateProfileNames":["fp-1","fp-2"],"nextToken":"page2"}"#),
+                json_response(
+                    200,
+                    r#"{"fargateProfileNames":["fp-1","fp-2"],"nextToken":"page2"}"#,
+                ),
             ),
             ReplayEvent::new(
-                request(&format!("{FARGATE_PROFILES}?maxResults=8&nextToken=page2"), ""),
+                request(
+                    &format!("{FARGATE_PROFILES}?maxResults=8&nextToken=page2"),
+                    "",
+                ),
                 json_response(200, r#"{"fargateProfileNames":["fp-3"]}"#),
             ),
         ]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let (names, token) = client.list_fargate_profiles("demo", Some(10), None).await.unwrap();
+        let (names, token) = client
+            .list_fargate_profiles("demo", Some(10), None)
+            .await
+            .unwrap();
 
-        assert_eq!(names, vec!["fp-1".to_string(), "fp-2".to_string(), "fp-3".to_string()]);
+        assert_eq!(
+            names,
+            vec!["fp-1".to_string(), "fp-2".to_string(), "fp-3".to_string()]
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -653,7 +700,10 @@ mod tests {
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_fargate_profiles("demo", None, None).await.unwrap_err();
+        let err = client
+            .list_fargate_profiles("demo", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -697,7 +747,10 @@ mod tests {
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let profile = client.describe_fargate_profile("demo", "fp-1").await.unwrap();
+        let profile = client
+            .describe_fargate_profile("demo", "fp-1")
+            .await
+            .unwrap();
 
         assert_eq!(profile, None);
         http_client.relaxed_requests_match();
@@ -711,7 +764,10 @@ mod tests {
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_fargate_profile("demo", "fp-1").await.unwrap_err();
+        let err = client
+            .describe_fargate_profile("demo", "fp-1")
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -778,7 +834,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{ADDONS}?maxResults=10"), ""),
-                json_response(200, r#"{"addons":["vpc-cni","coredns"],"nextToken":"page2"}"#),
+                json_response(
+                    200,
+                    r#"{"addons":["vpc-cni","coredns"],"nextToken":"page2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(&format!("{ADDONS}?maxResults=8&nextToken=page2"), ""),
@@ -789,7 +848,14 @@ mod tests {
 
         let (names, token) = client.list_addons("demo", Some(10), None).await.unwrap();
 
-        assert_eq!(names, vec!["vpc-cni".to_string(), "coredns".to_string(), "kube-proxy".to_string()]);
+        assert_eq!(
+            names,
+            vec![
+                "vpc-cni".to_string(),
+                "coredns".to_string(),
+                "kube-proxy".to_string()
+            ]
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -827,7 +893,11 @@ mod tests {
         )]);
         let client = EksClient::new(&sdk_config(http_client.clone()));
 
-        let addon = client.describe_addon("demo", "vpc-cni").await.unwrap().unwrap();
+        let addon = client
+            .describe_addon("demo", "vpc-cni")
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(addon.addon_name(), Some("vpc-cni"));
         assert_eq!(addon.addon_version(), Some("v1.18.0"));

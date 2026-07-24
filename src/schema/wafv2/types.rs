@@ -36,10 +36,7 @@ pub struct WebAcl {
 }
 
 impl WebAcl {
-    pub fn from_sdk(
-        acl: &aws_sdk_wafv2::types::WebAcl,
-        scope: &WafScope,
-    ) -> Self {
+    pub fn from_sdk(acl: &aws_sdk_wafv2::types::WebAcl, scope: &WafScope) -> Self {
         let default_action = acl.default_action().map(|a| {
             if a.allow().is_some() {
                 "ALLOW".to_string()
@@ -74,10 +71,7 @@ pub struct WafIpSet {
 }
 
 impl WafIpSet {
-    pub fn from_sdk(
-        ip_set: &aws_sdk_wafv2::types::IpSet,
-        scope: &WafScope,
-    ) -> Self {
+    pub fn from_sdk(ip_set: &aws_sdk_wafv2::types::IpSet, scope: &WafScope) -> Self {
         Self {
             name: ip_set.name().to_string(),
             id: ip_set.id().to_string(),
@@ -122,8 +116,14 @@ mod tests {
 
     #[test]
     fn test_waf_scope_to_sdk() {
-        assert_eq!(WafScope::Regional.to_sdk(), aws_sdk_wafv2::types::Scope::Regional);
-        assert_eq!(WafScope::Cloudfront.to_sdk(), aws_sdk_wafv2::types::Scope::Cloudfront);
+        assert_eq!(
+            WafScope::Regional.to_sdk(),
+            aws_sdk_wafv2::types::Scope::Regional
+        );
+        assert_eq!(
+            WafScope::Cloudfront.to_sdk(),
+            aws_sdk_wafv2::types::Scope::Cloudfront
+        );
     }
 
     #[test]
@@ -140,10 +140,7 @@ mod tests {
         let rule = aws_sdk_wafv2::types::Rule::builder()
             .name("rule1")
             .priority(1)
-            .statement(
-                aws_sdk_wafv2::types::Statement::builder()
-                    .build(),
-            )
+            .statement(aws_sdk_wafv2::types::Statement::builder().build())
             .visibility_config(
                 aws_sdk_wafv2::types::VisibilityConfig::builder()
                     .sampled_requests_enabled(true)

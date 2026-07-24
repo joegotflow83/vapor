@@ -118,7 +118,9 @@ impl EcsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::ecs::EcsClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::EcsQuery;
@@ -219,10 +221,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"cluster":"my-cluster","maxResults":1}"#),
-                json_response(
-                    200,
-                    r#"{"taskArns":["arn:task-a"],"nextToken":"cursor-c"}"#,
-                ),
+                json_response(200, r#"{"taskArns":["arn:task-a"],"nextToken":"cursor-c"}"#),
             ),
             ReplayEvent::new(
                 request(
@@ -308,7 +307,10 @@ mod tests {
         let items = &json["ecsTaskDefinitions"]["items"];
         assert_eq!(items[0], "arn:td-1");
         assert_eq!(items[1], "arn:td-2");
-        assert_eq!(json["ecsTaskDefinitions"]["nextToken"], serde_json::Value::Null);
+        assert_eq!(
+            json["ecsTaskDefinitions"]["nextToken"],
+            serde_json::Value::Null
+        );
         http_client.relaxed_requests_match();
     }
 }

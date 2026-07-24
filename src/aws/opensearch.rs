@@ -67,7 +67,9 @@ impl OpenSearchClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://es.us-east-1.amazonaws.com";
     const ARN: &str = "arn:aws:es:us-east-1:123456789012:domain/domain-1";
@@ -171,14 +173,20 @@ mod tests {
 
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/2021-01-01/opensearch/domain-info"), first_body),
+                request(
+                    &format!("{BASE}/2021-01-01/opensearch/domain-info"),
+                    first_body,
+                ),
                 json_response(
                     200,
                     r#"{"DomainStatusList":[{"DomainId":"1/domain-0","DomainName":"domain-0","ARN":"arn:d0"}]}"#,
                 ),
             ),
             ReplayEvent::new(
-                request(&format!("{BASE}/2021-01-01/opensearch/domain-info"), second_body),
+                request(
+                    &format!("{BASE}/2021-01-01/opensearch/domain-info"),
+                    second_body,
+                ),
                 json_response(
                     200,
                     r#"{"DomainStatusList":[{"DomainId":"1/domain-5","DomainName":"domain-5","ARN":"arn:d5"}]}"#,

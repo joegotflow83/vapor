@@ -31,9 +31,7 @@ pub struct BudgetNotificationInfo {
     pub notification_state: Option<String>,
 }
 
-fn spend_to_info(
-    spend: &aws_sdk_budgets::types::Spend,
-) -> BudgetAmountInfo {
+fn spend_to_info(spend: &aws_sdk_budgets::types::Spend) -> BudgetAmountInfo {
     BudgetAmountInfo {
         amount: spend.amount().to_string(),
         unit: spend.unit().to_string(),
@@ -78,10 +76,13 @@ impl BudgetsClient {
                 let budget_limit = budget.budget_limit.as_ref().map(spend_to_info);
 
                 let calculated_spend =
-                    budget.calculated_spend.as_ref().map(|cs| BudgetCalculatedSpendInfo {
-                        actual_spend: cs.actual_spend.as_ref().map(spend_to_info),
-                        forecasted_spend: cs.forecasted_spend.as_ref().map(spend_to_info),
-                    });
+                    budget
+                        .calculated_spend
+                        .as_ref()
+                        .map(|cs| BudgetCalculatedSpendInfo {
+                            actual_spend: cs.actual_spend.as_ref().map(spend_to_info),
+                            forecasted_spend: cs.forecasted_spend.as_ref().map(spend_to_info),
+                        });
 
                 let budget_exceeded = {
                     let limit_val = budget
@@ -156,9 +157,7 @@ impl BudgetsClient {
                     notification_type: notification.notification_type.as_str().to_string(),
                     comparison_operator: notification.comparison_operator.as_str().to_string(),
                     threshold: notification.threshold,
-                    threshold_type: notification
-                        .threshold_type
-                        .map(|t| t.as_str().to_string()),
+                    threshold_type: notification.threshold_type.map(|t| t.as_str().to_string()),
                     notification_state: notification
                         .notification_state
                         .map(|s| s.as_str().to_string()),
@@ -181,7 +180,9 @@ impl BudgetsClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     // Global endpoint (no region segment) — verified against pinned
     // `aws-sdk-budgets` 1.112.0's `config/endpoint.rs` us-east-1/no-FIPS/
@@ -244,7 +245,10 @@ mod tests {
     #[tokio::test]
     async fn describe_budgets_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"AccountId":"111111111111","NextToken":"cursor-a"}"#),
+            request(
+                ENDPOINT,
+                r#"{"AccountId":"111111111111","NextToken":"cursor-a"}"#,
+            ),
             json_response(200, r#"{"Budgets":[]}"#),
         )]);
         let client = BudgetsClient::new(&sdk_config(http_client.clone()));
@@ -291,7 +295,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"AccountId":"111111111111","NextToken":"p2","MaxResults":9}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"AccountId":"111111111111","NextToken":"p2","MaxResults":9}"#,
+                ),
                 json_response(
                     200,
                     r#"{"Budgets":[{"BudgetName":"b2","BudgetType":"COST","TimeUnit":"MONTHLY"}]}"#,
@@ -418,4 +425,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

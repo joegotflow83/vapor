@@ -40,7 +40,13 @@ impl EcrQuery {
     ) -> Result<Page<EcrImage>> {
         let ecr = ctx.data::<EcrClient>()?;
         let (images, token) = ecr
-            .describe_images(&repository_name, image_tags, image_digests, limit, next_token)
+            .describe_images(
+                &repository_name,
+                image_tags,
+                image_digests,
+                limit,
+                next_token,
+            )
             .await?;
         Ok(Page {
             items: images.into_iter().map(EcrImage::from).collect(),
@@ -76,7 +82,9 @@ impl EcrQuery {
 mod tests {
     use super::*;
     use crate::aws::ecr::EcrClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     // Matches `src/aws/ecr.rs`'s own test module: ecr's endpoint is
@@ -171,7 +179,10 @@ mod tests {
             data["ecrImageScanFindings"]["findings"][0]["severity"],
             "HIGH"
         );
-        assert_eq!(data["ecrImageScanFindings"]["nextToken"], serde_json::Value::Null);
+        assert_eq!(
+            data["ecrImageScanFindings"]["nextToken"],
+            serde_json::Value::Null
+        );
         http_client.relaxed_requests_match();
     }
 }

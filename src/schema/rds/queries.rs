@@ -1,8 +1,10 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::rds::RdsClient;
-use crate::schema::rds::types::{DbCluster, DbInstance, DbParameterGroup, DbSnapshot, DbSubnetGroup};
 use crate::schema::pagination::Page;
+use crate::schema::rds::types::{
+    DbCluster, DbInstance, DbParameterGroup, DbSnapshot, DbSubnetGroup,
+};
 
 #[derive(Default)]
 pub struct RdsQuery;
@@ -113,7 +115,9 @@ impl RdsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::rds::RdsClient;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::RdsQuery;
@@ -125,7 +129,10 @@ mod tests {
         // limit=1 clamps MaxRecords to 20 (rds.rs's [20,100] clamp), but the
         // loop still stops after 1 item since 1 >= limit.
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeDBInstances&Version=2014-10-31&MaxRecords=20"),
+            request(
+                ENDPOINT,
+                "Action=DescribeDBInstances&Version=2014-10-31&MaxRecords=20",
+            ),
             xml_response(
                 200,
                 "<DescribeDBInstancesResponse><DescribeDBInstancesResult><DBInstances>\

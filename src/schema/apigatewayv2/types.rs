@@ -1,11 +1,7 @@
 use async_graphql::SimpleObject;
 use aws_sdk_apigatewayv2::types::{
-    DomainName as SdkDomainName,
-    DomainNameConfiguration as SdkDomainNameConfig,
-    Route as SdkRoute,
-    RouteSettings as SdkRouteSettings,
-    Stage as SdkStage,
-    VpcLink as SdkVpcLink,
+    DomainName as SdkDomainName, DomainNameConfiguration as SdkDomainNameConfig, Route as SdkRoute,
+    RouteSettings as SdkRouteSettings, Stage as SdkStage, VpcLink as SdkVpcLink,
 };
 use chrono::{DateTime, Utc};
 
@@ -14,7 +10,10 @@ use crate::schema::time::to_utc;
 fn tags_from_map(map: Option<&std::collections::HashMap<String, String>>) -> Vec<ApiV2Tag> {
     map.map(|m| {
         m.iter()
-            .map(|(k, v)| ApiV2Tag { key: k.clone(), value: v.clone() })
+            .map(|(k, v)| ApiV2Tag {
+                key: k.clone(),
+                value: v.clone(),
+            })
             .collect()
     })
     .unwrap_or_default()
@@ -268,7 +267,10 @@ mod tests {
             .build();
         let result = ApiV2::from(api);
         assert_eq!(result.api_id, Some("api-123".to_string()));
-        assert_eq!(result.api_endpoint, Some("https://abc.execute-api.us-east-1.amazonaws.com".to_string()));
+        assert_eq!(
+            result.api_endpoint,
+            Some("https://abc.execute-api.us-east-1.amazonaws.com".to_string())
+        );
         assert_eq!(result.cors_allow_origins, vec!["https://example.com"]);
         assert_eq!(result.cors_allow_methods, vec!["GET", "POST"]);
         assert_eq!(result.disable_execute_api_endpoint, Some(false));

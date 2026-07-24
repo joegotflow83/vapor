@@ -118,11 +118,13 @@ impl DetectiveClient {
 
             let output = req.send().await.map_err(crate::error::sdk_err)?;
             if let Some(map) = output.datasource_packages() {
-                items.extend(map.iter().map(|(pkg, details)| DatasourcePackageInfo {
-                    datasource_package: Some(pkg.as_str().to_string()),
-                    ingest_state: details
-                        .datasource_package_ingest_state()
-                        .map(|s| s.as_str().to_string()),
+                items.extend(map.iter().map(|(pkg, details)| {
+                    DatasourcePackageInfo {
+                        datasource_package: Some(pkg.as_str().to_string()),
+                        ingest_state: details
+                            .datasource_package_ingest_state()
+                            .map(|s| s.as_str().to_string()),
+                    }
                 }));
             }
             token = output.next_token;
@@ -141,24 +143,33 @@ impl DetectiveClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const LIST_GRAPHS: &str = "https://api.detective.us-east-1.amazonaws.com/graphs/list";
     const LIST_MEMBERS: &str = "https://api.detective.us-east-1.amazonaws.com/graph/members/list";
-    const LIST_DATASOURCE_PACKAGES: &str = "https://api.detective.us-east-1.amazonaws.com/graph/datasources/list";
+    const LIST_DATASOURCE_PACKAGES: &str =
+        "https://api.detective.us-east-1.amazonaws.com/graph/datasources/list";
 
     #[tokio::test]
     async fn list_graphs_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(LIST_GRAPHS, "{}"),
-            json_response(200, r#"{"GraphList":[{"Arn":"arn:aws:detective:us-east-1:1:graph:abc"}]}"#),
+            json_response(
+                200,
+                r#"{"GraphList":[{"Arn":"arn:aws:detective:us-east-1:1:graph:abc"}]}"#,
+            ),
         )]);
         let client = DetectiveClient::new(&sdk_config(http_client.clone()));
 
         let (graphs, token) = client.list_graphs(None, None).await.unwrap();
 
         assert_eq!(graphs.len(), 1);
-        assert_eq!(graphs[0].arn(), Some("arn:aws:detective:us-east-1:1:graph:abc"));
+        assert_eq!(
+            graphs[0].arn(),
+            Some("arn:aws:detective:us-east-1:1:graph:abc")
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -171,7 +182,10 @@ mod tests {
         )]);
         let client = DetectiveClient::new(&sdk_config(http_client.clone()));
 
-        let (graphs, token) = client.list_graphs(None, Some("cursor-a".to_string())).await.unwrap();
+        let (graphs, token) = client
+            .list_graphs(None, Some("cursor-a".to_string()))
+            .await
+            .unwrap();
 
         assert_eq!(graphs.len(), 1);
         assert_eq!(graphs[0].arn(), Some("arn3"));
@@ -249,7 +263,10 @@ mod tests {
         )]);
         let client = DetectiveClient::new(&sdk_config(http_client.clone()));
 
-        let (members, token) = client.list_members("arn:graph:1".to_string(), None, None).await.unwrap();
+        let (members, token) = client
+            .list_members("arn:graph:1".to_string(), None, None)
+            .await
+            .unwrap();
 
         assert_eq!(members.len(), 1);
         assert_eq!(members[0].account_id(), Some("111111111111"));
@@ -312,7 +329,10 @@ mod tests {
     #[tokio::test]
     async fn list_datasource_packages_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(LIST_DATASOURCE_PACKAGES, r#"{"GraphArn":"arn:graph:1","MaxResults":1}"#),
+            request(
+                LIST_DATASOURCE_PACKAGES,
+                r#"{"GraphArn":"arn:graph:1","MaxResults":1}"#,
+            ),
             json_response(
                 200,
                 r#"{"DatasourcePackages":{"DETECTIVE_CORE":{"DatasourcePackageIngestState":"STARTED"}},"NextToken":"page2-token"}"#,

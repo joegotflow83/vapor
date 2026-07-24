@@ -83,7 +83,10 @@ mod tests {
         );
         assert_eq!(finding.severity, Some("CRITICAL".to_string()));
         assert_eq!(finding.status, Some("ACTIVE".to_string()));
-        assert_eq!(finding.finding_type, Some("PACKAGE_VULNERABILITY".to_string()));
+        assert_eq!(
+            finding.finding_type,
+            Some("PACKAGE_VULNERABILITY".to_string())
+        );
         assert_eq!(finding.resource_type, Some("AWS_EC2_INSTANCE".to_string()));
         assert_eq!(finding.fix_available, Some("YES".to_string()));
     }

@@ -31,11 +31,7 @@ impl SnsQuery {
     }
 
     /// Fetch a single SNS topic by ARN.
-    async fn sns_topic(
-        &self,
-        ctx: &Context<'_>,
-        topic_arn: String,
-    ) -> Result<Option<SnsTopic>> {
+    async fn sns_topic(&self, ctx: &Context<'_>, topic_arn: String) -> Result<Option<SnsTopic>> {
         let client = ctx.data::<SnsClient>()?;
         let attrs = client.get_topic_attributes(&topic_arn).await?;
         Ok(Some(SnsTopic::from_attrs(topic_arn, attrs)))
@@ -64,7 +60,9 @@ impl SnsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::sns::SnsClient;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::SnsQuery;
@@ -92,7 +90,9 @@ mod tests {
             ReplayEvent::new(
                 request(
                     ENDPOINT,
-                    format!("Action=GetTopicAttributes&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"),
+                    format!(
+                        "Action=GetTopicAttributes&Version=2010-03-31&TopicArn={TOPIC_ARN_ENC}"
+                    ),
                 ),
                 xml_response(
                     200,
@@ -228,7 +228,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["snsSubscriptions"]["items"][0]["subscriptionArn"], "sub-2");
+        assert_eq!(
+            json["snsSubscriptions"]["items"][0]["subscriptionArn"],
+            "sub-2"
+        );
         assert!(json["snsSubscriptions"]["nextToken"].is_null());
         http_client.relaxed_requests_match();
     }

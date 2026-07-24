@@ -19,7 +19,10 @@ impl ControlTowerQuery {
         let client = ctx.data::<ControlTowerClient>()?;
         let (zones, next_token) = client.list_landing_zones(limit, next_token).await?;
         Ok(Page {
-            items: zones.into_iter().map(ControlTowerLandingZone::from).collect(),
+            items: zones
+                .into_iter()
+                .map(ControlTowerLandingZone::from)
+                .collect(),
             next_token,
         })
     }
@@ -46,7 +49,9 @@ impl ControlTowerQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     const BASE: &str = "https://controltower.us-east-1.amazonaws.com";
@@ -90,10 +95,7 @@ mod tests {
         assert_eq!(items[0]["latestAvailableVersion"], "3.3");
         assert_eq!(items[0]["status"], "ACTIVE");
         assert!(items[0]["driftStatus"].is_null());
-        assert_eq!(
-            json["controlTowerLandingZones"]["nextToken"],
-            "page2-token"
-        );
+        assert_eq!(json["controlTowerLandingZones"]["nextToken"], "page2-token");
         http_client.relaxed_requests_match();
     }
 

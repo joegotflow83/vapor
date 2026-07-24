@@ -15,8 +15,8 @@ use std::time::Duration;
 use subtle::ConstantTimeEq;
 use tower_http::timeout::TimeoutLayer;
 
+use crate::schema::aws::registry::{MutationRoot, QueryRoot};
 use async_graphql::Schema;
-use crate::schema::aws::registry::{QueryRoot, MutationRoot};
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_BODY_BYTES: usize = 1024 * 1024;
@@ -34,7 +34,10 @@ fn inet_aton_first_octet(bind: &str) -> Option<u8> {
     if parts.is_empty() || parts.len() > 4 || parts.iter().any(|p| p.is_empty()) {
         return None;
     }
-    let nums: Vec<u32> = parts.iter().map(|p| p.parse::<u32>().ok()).collect::<Option<_>>()?;
+    let nums: Vec<u32> = parts
+        .iter()
+        .map(|p| p.parse::<u32>().ok())
+        .collect::<Option<_>>()?;
     // `(1u64 << bits) as u32` would overflow-wrap to 0 for `bits == 32`
     // (the single-decimal `[a]` arm below), making that arm's guard always
     // false — compare in `u64` instead so the `bits == 32` case (every
@@ -86,14 +89,18 @@ struct AuthState {
 fn unauthorized() -> Response {
     let body = Json(serde_json::json!({"errors": [{"message": "unauthorized"}]}));
     let mut response = (StatusCode::UNAUTHORIZED, body).into_response();
-    response
-        .headers_mut()
-        .insert(axum::http::header::WWW_AUTHENTICATE, HeaderValue::from_static("Bearer"));
+    response.headers_mut().insert(
+        axum::http::header::WWW_AUTHENTICATE,
+        HeaderValue::from_static("Bearer"),
+    );
     response
 }
 
 fn bearer_token(headers: &HeaderMap) -> Option<&str> {
-    let value = headers.get(axum::http::header::AUTHORIZATION)?.to_str().ok()?;
+    let value = headers
+        .get(axum::http::header::AUTHORIZATION)?
+        .to_str()
+        .ok()?;
     let (scheme, token) = value.split_once(' ')?;
     scheme.eq_ignore_ascii_case("bearer").then_some(token)
 }
@@ -123,7 +130,9 @@ async fn auth(
 fn with_auth(app: Router, auth_token: Option<String>) -> Router {
     match auth_token {
         Some(token) => app.layer(middleware::from_fn_with_state(
-            AuthState { token: Arc::from(token.as_str()) },
+            AuthState {
+                token: Arc::from(token.as_str()),
+            },
             auth,
         )),
         None => app,
@@ -246,10 +255,15 @@ mod tests {
 
     #[tokio::test]
     async fn token_configured_missing_header_rejected() {
-        let res = test_router(Some("secret")).oneshot(request(None)).await.unwrap();
+        let res = test_router(Some("secret"))
+            .oneshot(request(None))
+            .await
+            .unwrap();
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
         assert_eq!(
-            res.headers().get(axum::http::header::WWW_AUTHENTICATE).unwrap(),
+            res.headers()
+                .get(axum::http::header::WWW_AUTHENTICATE)
+                .unwrap(),
             "Bearer"
         );
     }
@@ -287,7 +301,9 @@ mod tests {
 
         let res = graphiql().await.into_response();
         assert_eq!(res.status(), StatusCode::OK);
-        let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let html = String::from_utf8(body.to_vec()).unwrap();
         assert!(html.contains("/graphql"));
     }
@@ -315,7 +331,14 @@ mod tests {
 
     #[test]
     fn is_loopback_table() {
-        for bind in ["127.0.0.1", "127.0.0.2", "127.1", "::1", "localhost", "LOCALHOST"] {
+        for bind in [
+            "127.0.0.1",
+            "127.0.0.2",
+            "127.1",
+            "::1",
+            "localhost",
+            "LOCALHOST",
+        ] {
             assert!(is_loopback(bind), "{bind} should be loopback");
         }
         for bind in ["0.0.0.0", "192.168.1.10", "::"] {

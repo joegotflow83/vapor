@@ -1,8 +1,8 @@
 use aws_config::SdkConfig;
 use aws_sdk_codebuild::types::{Build, Project};
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 pub struct CodeBuildClient {
     inner: aws_sdk_codebuild::Client,
@@ -83,7 +83,10 @@ impl CodeBuildClient {
         let mut token = next_token;
 
         loop {
-            let mut req = self.inner.list_builds_for_project().project_name(project_name);
+            let mut req = self
+                .inner
+                .list_builds_for_project()
+                .project_name(project_name);
             if let Some(ref t) = token {
                 req = req.next_token(t);
             }
@@ -317,7 +320,10 @@ mod tests {
     async fn list_builds_for_project_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"projectName":"my-project"}"#),
-            json_response(200, r#"{"ids":["my-project:build-1","my-project:build-2"]}"#),
+            json_response(
+                200,
+                r#"{"ids":["my-project:build-1","my-project:build-2"]}"#,
+            ),
         )]);
         let client = CodeBuildClient::new(&sdk_config(http_client.clone()));
 
@@ -328,7 +334,10 @@ mod tests {
 
         assert_eq!(
             ids,
-            vec!["my-project:build-1".to_string(), "my-project:build-2".to_string()]
+            vec![
+                "my-project:build-1".to_string(),
+                "my-project:build-2".to_string()
+            ]
         );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
@@ -358,7 +367,10 @@ mod tests {
     #[tokio::test]
     async fn list_builds_for_project_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"projectName":"my-project","nextToken":"cursor-a"}"#),
+            request(
+                ENDPOINT,
+                r#"{"projectName":"my-project","nextToken":"cursor-a"}"#,
+            ),
             json_response(200, r#"{"ids":["my-project:build-3"]}"#),
         )]);
         let client = CodeBuildClient::new(&sdk_config(http_client.clone()));
@@ -483,4 +495,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

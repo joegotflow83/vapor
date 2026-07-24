@@ -75,7 +75,10 @@ impl CloudFrontClient {
             .send()
             .await
             .map_err(crate::error::sdk_err)?;
-        Ok(output.tags().map(|t| t.items().to_vec()).unwrap_or_default())
+        Ok(output
+            .tags()
+            .map(|t| t.items().to_vec())
+            .unwrap_or_default())
     }
 
     /// Fetch a single distribution by ID. Returns None if not found.
@@ -106,7 +109,9 @@ impl CloudFrontClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const DISTRIBUTIONS: &str = "https://cloudfront.amazonaws.com/2020-05-31/distribution";
 
@@ -124,7 +129,11 @@ mod tests {
         )
     }
 
-    fn distribution_list_xml(items: &[String], is_truncated: bool, next_marker: Option<&str>) -> String {
+    fn distribution_list_xml(
+        items: &[String],
+        is_truncated: bool,
+        next_marker: Option<&str>,
+    ) -> String {
         let next_marker_el = next_marker
             .map(|m| format!("<NextMarker>{m}</NextMarker>"))
             .unwrap_or_default();
@@ -175,7 +184,11 @@ mod tests {
             request(&format!("{DISTRIBUTIONS}?Marker=cursor-a"), ""),
             xml_response(
                 200,
-                distribution_list_xml(&[distribution_summary_xml("E3THREE", "d3.cloudfront.net")], false, None),
+                distribution_list_xml(
+                    &[distribution_summary_xml("E3THREE", "d3.cloudfront.net")],
+                    false,
+                    None,
+                ),
             ),
         )]);
         let client = CloudFrontClient::new(&sdk_config(http_client.clone()));
@@ -236,7 +249,11 @@ mod tests {
                 request(&format!("{DISTRIBUTIONS}?Marker=p2&MaxItems=8"), ""),
                 xml_response(
                     200,
-                    distribution_list_xml(&[distribution_summary_xml("E3THREE", "d3.cloudfront.net")], false, None),
+                    distribution_list_xml(
+                        &[distribution_summary_xml("E3THREE", "d3.cloudfront.net")],
+                        false,
+                        None,
+                    ),
                 ),
             ),
         ]);
@@ -310,7 +327,10 @@ mod tests {
 
         let distribution = client.get_distribution("E1ONE").await.unwrap();
 
-        assert_eq!(distribution.map(|d| d.id().to_string()), Some("E1ONE".to_string()));
+        assert_eq!(
+            distribution.map(|d| d.id().to_string()),
+            Some("E1ONE".to_string())
+        );
         http_client.relaxed_requests_match();
     }
 
@@ -318,7 +338,10 @@ mod tests {
     async fn get_distribution_returns_none_when_not_found() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(&format!("{DISTRIBUTIONS}/missing"), ""),
-            xml_error_response("NoSuchDistribution", "The specified distribution does not exist."),
+            xml_error_response(
+                "NoSuchDistribution",
+                "The specified distribution does not exist.",
+            ),
         )]);
         let client = CloudFrontClient::new(&sdk_config(http_client.clone()));
 

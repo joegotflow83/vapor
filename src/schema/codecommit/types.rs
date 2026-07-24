@@ -119,8 +119,12 @@ mod tests {
             default_branch: Some("main".to_string()),
             last_modified_date: Some(SmithyDateTime::from_secs(1_705_312_800)),
             creation_date: Some(SmithyDateTime::from_secs(1_704_067_200)),
-            clone_url_http: Some("https://git-codecommit.us-east-1.amazonaws.com/v1/repos/my-repo".to_string()),
-            clone_url_ssh: Some("ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/my-repo".to_string()),
+            clone_url_http: Some(
+                "https://git-codecommit.us-east-1.amazonaws.com/v1/repos/my-repo".to_string(),
+            ),
+            clone_url_ssh: Some(
+                "ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/my-repo".to_string(),
+            ),
             arn: Some("arn:aws:codecommit:us-east-1:123456789012:my-repo".to_string()),
         };
         let result = CodeCommitRepository::from(info);
@@ -184,8 +188,14 @@ mod tests {
         };
         let result = CodeCommitPullRequestTarget::from(info);
         assert_eq!(result.repository_name, Some("my-repo".to_string()));
-        assert_eq!(result.source_reference, Some("refs/heads/feature/xyz".to_string()));
-        assert_eq!(result.destination_reference, Some("refs/heads/main".to_string()));
+        assert_eq!(
+            result.source_reference,
+            Some("refs/heads/feature/xyz".to_string())
+        );
+        assert_eq!(
+            result.destination_reference,
+            Some("refs/heads/main".to_string())
+        );
         assert_eq!(result.merge_base, Some("abc123".to_string()));
     }
 
@@ -210,7 +220,10 @@ mod tests {
         assert_eq!(result.pull_request_id, Some("1".to_string()));
         assert_eq!(result.pull_request_status, Some("OPEN".to_string()));
         assert_eq!(result.targets.len(), 1);
-        assert_eq!(result.targets[0].repository_name, Some("my-repo".to_string()));
+        assert_eq!(
+            result.targets[0].repository_name,
+            Some("my-repo".to_string())
+        );
         assert!(result.creation_date.is_some());
         assert!(result.last_activity_date.is_some());
     }

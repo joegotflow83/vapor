@@ -64,8 +64,13 @@ impl OrganizationsClient {
         parent_id: &str,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_organizations::types::OrganizationalUnit>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_organizations::types::OrganizationalUnit>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut ous = Vec::new();
         let mut token = next_token;
 
@@ -105,8 +110,13 @@ impl OrganizationsClient {
         policy_type: PolicyType,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_organizations::types::PolicySummary>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_organizations::types::PolicySummary>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut policies = Vec::new();
         let mut token = next_token;
 
@@ -285,11 +295,7 @@ mod tests {
         let client = OrganizationsClient::new(&sdk_config(http_client.clone()));
 
         let (ous, token) = client
-            .list_organizational_units_for_parent(
-                "r-root1",
-                None,
-                Some("cursor-a".to_string()),
-            )
+            .list_organizational_units_for_parent("r-root1", None, Some("cursor-a".to_string()))
             .await
             .unwrap();
 
@@ -444,4 +450,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

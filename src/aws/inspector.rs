@@ -37,7 +37,10 @@ impl InspectorClient {
                     .value(sev)
                     .comparison(StringComparison::Equals)
                     .build()
-                    .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?;
+                    .map_err(|e| VaporError::AwsSdk {
+                        code: None,
+                        message: e.to_string(),
+                    })?;
                 fb = fb.severity(f);
             }
             if let Some(rt) = resource_type {
@@ -45,7 +48,10 @@ impl InspectorClient {
                     .value(rt)
                     .comparison(StringComparison::Equals)
                     .build()
-                    .map_err(|e| VaporError::AwsSdk { code: None, message: e.to_string() })?;
+                    .map_err(|e| VaporError::AwsSdk {
+                        code: None,
+                        message: e.to_string(),
+                    })?;
                 fb = fb.resource_type(f);
             }
             Some(fb.build())
@@ -121,7 +127,9 @@ impl InspectorClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use aws_sdk_inspector2::types::Severity;
 
     const FINDINGS_URL: &str = "https://inspector2.us-east-1.amazonaws.com/findings/list";
@@ -161,7 +169,12 @@ mod tests {
         let client = InspectorClient::new(&sdk_config(http_client.clone()));
 
         let (findings, _token) = client
-            .list_findings(Some("HIGH".to_string()), Some("AWS_EC2_INSTANCE".to_string()), None, None)
+            .list_findings(
+                Some("HIGH".to_string()),
+                Some("AWS_EC2_INSTANCE".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -198,7 +211,10 @@ mod tests {
         )]);
         let client = InspectorClient::new(&sdk_config(http_client.clone()));
 
-        let (findings, token) = client.list_findings(None, None, Some(2), None).await.unwrap();
+        let (findings, token) = client
+            .list_findings(None, None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(findings.len(), 2);
         assert_eq!(token, Some("page2".to_string()));
@@ -222,7 +238,10 @@ mod tests {
         ]);
         let client = InspectorClient::new(&sdk_config(http_client.clone()));
 
-        let (findings, token) = client.list_findings(None, None, Some(10), None).await.unwrap();
+        let (findings, token) = client
+            .list_findings(None, None, Some(10), None)
+            .await
+            .unwrap();
 
         assert_eq!(findings.len(), 3);
         assert_eq!(token, None);
@@ -237,7 +256,10 @@ mod tests {
         )]);
         let client = InspectorClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_findings(None, None, None, None).await.unwrap_err();
+        let err = client
+            .list_findings(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -325,4 +347,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

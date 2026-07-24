@@ -56,7 +56,10 @@ impl From<DbInstance> for NeptuneInstance {
             status: i.db_instance_status().map(|s| s.to_string()),
             cluster_identifier: i.db_cluster_identifier().map(|s| s.to_string()),
             availability_zone: i.availability_zone().map(|s| s.to_string()),
-            endpoint: i.endpoint().and_then(|e| e.address()).map(|s| s.to_string()),
+            endpoint: i
+                .endpoint()
+                .and_then(|e| e.address())
+                .map(|s| s.to_string()),
         }
     }
 }
@@ -73,8 +76,12 @@ mod tests {
             status: Some("available".to_string()),
             engine: Some("neptune".to_string()),
             engine_version: Some("1.2.1.0".to_string()),
-            endpoint: Some("my-neptune-cluster.cluster-abc123.us-east-1.neptune.amazonaws.com".to_string()),
-            reader_endpoint: Some("my-neptune-cluster.cluster-ro-abc123.us-east-1.neptune.amazonaws.com".to_string()),
+            endpoint: Some(
+                "my-neptune-cluster.cluster-abc123.us-east-1.neptune.amazonaws.com".to_string(),
+            ),
+            reader_endpoint: Some(
+                "my-neptune-cluster.cluster-ro-abc123.us-east-1.neptune.amazonaws.com".to_string(),
+            ),
             port: Some(8182),
             multi_az: true,
             storage_encrypted: true,
@@ -123,13 +130,18 @@ mod tests {
             status: Some("available".to_string()),
             cluster_identifier: Some("my-neptune-cluster".to_string()),
             availability_zone: Some("us-east-1a".to_string()),
-            endpoint: Some("my-neptune-instance.abc123.us-east-1.neptune.amazonaws.com".to_string()),
+            endpoint: Some(
+                "my-neptune-instance.abc123.us-east-1.neptune.amazonaws.com".to_string(),
+            ),
         };
 
         assert_eq!(instance.instance_identifier, "my-neptune-instance");
         assert_eq!(instance.instance_class, Some("db.r5.large".to_string()));
         assert_eq!(instance.status, Some("available".to_string()));
-        assert_eq!(instance.cluster_identifier, Some("my-neptune-cluster".to_string()));
+        assert_eq!(
+            instance.cluster_identifier,
+            Some("my-neptune-cluster".to_string())
+        );
         assert_eq!(instance.availability_zone, Some("us-east-1a".to_string()));
     }
 

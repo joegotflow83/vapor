@@ -61,7 +61,13 @@ impl FmsClient {
         policy_id: &str,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_fms::types::PolicyComplianceStatus>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_fms::types::PolicyComplianceStatus>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -363,10 +369,7 @@ mod tests {
     async fn list_member_accounts_lists_all_when_no_limit() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, "{}"),
-            json_response(
-                200,
-                r#"{"MemberAccounts":["111111111111","222222222222"]}"#,
-            ),
+            json_response(200, r#"{"MemberAccounts":["111111111111","222222222222"]}"#),
         )]);
         let client = FmsClient::new(&sdk_config(http_client.clone()));
 
@@ -460,4 +463,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

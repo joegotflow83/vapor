@@ -1,5 +1,7 @@
 use async_graphql::SimpleObject;
-use aws_sdk_memorydb::types::{Cluster as SdkCluster, SubnetGroup as SdkSubnetGroup, Tag as SdkTag};
+use aws_sdk_memorydb::types::{
+    Cluster as SdkCluster, SubnetGroup as SdkSubnetGroup, Tag as SdkTag,
+};
 
 #[derive(SimpleObject, Clone)]
 #[graphql(name = "MemoryDbTag")]
@@ -28,9 +30,10 @@ pub struct MemoryDbCluster {
 impl MemoryDbCluster {
     pub fn from_sdk(c: SdkCluster, sdk_tags: &[SdkTag]) -> Self {
         let num_shards = c.number_of_shards();
-        let num_replicas_per_shard = c.shards().first().and_then(|s| {
-            s.number_of_nodes().map(|n| n - 1)
-        });
+        let num_replicas_per_shard = c
+            .shards()
+            .first()
+            .and_then(|s| s.number_of_nodes().map(|n| n - 1));
         let tags = sdk_tags
             .iter()
             .filter_map(|t| {
@@ -71,7 +74,8 @@ pub struct MemoryDbSubnetGroup {
 
 impl MemoryDbSubnetGroup {
     pub fn from_sdk(sg: SdkSubnetGroup, sdk_tags: &[SdkTag]) -> Self {
-        let subnet_ids = sg.subnets()
+        let subnet_ids = sg
+            .subnets()
             .iter()
             .filter_map(|s| s.identifier().map(|v| v.to_string()))
             .collect();
@@ -119,7 +123,10 @@ mod tests {
             .build();
         let mdb = MemoryDbCluster::from_sdk(cluster, &[]);
         assert_eq!(mdb.name, "my-cluster");
-        assert_eq!(mdb.arn, Some("arn:aws:memorydb:us-east-1:123456789012:cluster/my-cluster".to_string()));
+        assert_eq!(
+            mdb.arn,
+            Some("arn:aws:memorydb:us-east-1:123456789012:cluster/my-cluster".to_string())
+        );
         assert_eq!(mdb.status, Some("available".to_string()));
         assert_eq!(mdb.node_type, Some("db.r6g.large".to_string()));
         assert!(mdb.tls_enabled);

@@ -13,8 +13,11 @@ use crate::schema::aws::registry::{MutationRoot, QueryRoot};
 /// service so resolvers can pull them from the request context.
 pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, EmptySubscription> {
     #[allow(unused_mut)]
-    let mut builder =
-        Schema::build(QueryRoot::default(), MutationRoot::default(), EmptySubscription);
+    let mut builder = Schema::build(
+        QueryRoot::default(),
+        MutationRoot::default(),
+        EmptySubscription,
+    );
 
     #[cfg(feature = "ec2")]
     {
@@ -164,7 +167,8 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "globalaccelerator")]
     {
-        builder = builder.data(crate::aws::global_accelerator::GlobalAcceleratorClient::new(config));
+        builder =
+            builder.data(crate::aws::global_accelerator::GlobalAcceleratorClient::new(config));
     }
 
     #[cfg(feature = "directconnect")]
@@ -174,7 +178,9 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "networkfirewall")]
     {
-        builder = builder.data(crate::aws::network_firewall::NetworkFirewallClient::new(config));
+        builder = builder.data(crate::aws::network_firewall::NetworkFirewallClient::new(
+            config,
+        ));
     }
 
     #[cfg(feature = "iam")]
@@ -189,7 +195,9 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "secretsmanager")]
     {
-        builder = builder.data(crate::aws::secrets_manager::SecretsManagerClient::new(config));
+        builder = builder.data(crate::aws::secrets_manager::SecretsManagerClient::new(
+            config,
+        ));
     }
 
     #[cfg(feature = "acm")]
@@ -244,7 +252,9 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "cloudwatchlogs")]
     {
-        builder = builder.data(crate::aws::cloudwatch_logs::CloudWatchLogsClient::new(config));
+        builder = builder.data(crate::aws::cloudwatch_logs::CloudWatchLogsClient::new(
+            config,
+        ));
     }
 
     #[cfg(feature = "cloudtrail")]
@@ -259,7 +269,9 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "cloudformation")]
     {
-        builder = builder.data(crate::aws::cloudformation::CloudFormationClient::new(config));
+        builder = builder.data(crate::aws::cloudformation::CloudFormationClient::new(
+            config,
+        ));
     }
 
     #[cfg(feature = "codepipeline")]
@@ -389,7 +401,9 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "elasticbeanstalk")]
     {
-        builder = builder.data(crate::aws::elastic_beanstalk::ElasticBeanstalkClient::new(config));
+        builder = builder.data(crate::aws::elastic_beanstalk::ElasticBeanstalkClient::new(
+            config,
+        ));
     }
 
     #[cfg(feature = "apprunner")]
@@ -419,7 +433,9 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "storagegateway")]
     {
-        builder = builder.data(crate::aws::storage_gateway::StorageGatewayClient::new(config));
+        builder = builder.data(crate::aws::storage_gateway::StorageGatewayClient::new(
+            config,
+        ));
     }
 
     #[cfg(feature = "datasync")]
@@ -508,7 +524,9 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
 
     #[cfg(feature = "licensemanager")]
     {
-        builder = builder.data(crate::aws::license_manager::LicenseManagerClient::new(config));
+        builder = builder.data(crate::aws::license_manager::LicenseManagerClient::new(
+            config,
+        ));
     }
 
     #[cfg(feature = "budgets")]

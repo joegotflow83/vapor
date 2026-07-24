@@ -33,7 +33,10 @@ impl FirehoseQuery {
         for r in results {
             streams.push(r?);
         }
-        Ok(Page { items: streams, next_token })
+        Ok(Page {
+            items: streams,
+            next_token,
+        })
     }
 
     async fn firehose_delivery_stream(
@@ -45,8 +48,7 @@ impl FirehoseQuery {
         match client.describe_delivery_stream(&name).await {
             Ok(desc) => {
                 let sdk_tags = client.list_tags_for_delivery_stream(&name).await?;
-                let tags: Vec<FirehoseTag> =
-                    sdk_tags.into_iter().map(FirehoseTag::from).collect();
+                let tags: Vec<FirehoseTag> = sdk_tags.into_iter().map(FirehoseTag::from).collect();
                 Ok(Some(FirehoseDeliveryStream::from_description(desc, tags)))
             }
             Err(_) => Ok(None),
@@ -85,7 +87,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"DeliveryStreamName":"my-stream"}"#),
-                json_response(200, r#"{"Tags":[{"Key":"Env","Value":"prod"}],"HasMoreTags":false}"#),
+                json_response(
+                    200,
+                    r#"{"Tags":[{"Key":"Env","Value":"prod"}],"HasMoreTags":false}"#,
+                ),
             ),
         ]);
         let schema = build_query_schema(FirehoseQuery)

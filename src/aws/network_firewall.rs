@@ -24,8 +24,13 @@ impl NetworkFirewallClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_networkfirewall::types::FirewallMetadata>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_networkfirewall::types::FirewallMetadata>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -55,8 +60,10 @@ impl NetworkFirewallClient {
     pub async fn describe_firewall(
         &self,
         arn: &str,
-    ) -> Result<aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput, VaporError>
-    {
+    ) -> Result<
+        aws_sdk_networkfirewall::operation::describe_firewall::DescribeFirewallOutput,
+        VaporError,
+    > {
         self.inner
             .describe_firewall()
             .firewall_arn(arn)
@@ -75,7 +82,10 @@ impl NetworkFirewallClient {
         limit: Option<i32>,
         next_token: Option<String>,
     ) -> Result<
-        (Vec<aws_sdk_networkfirewall::types::FirewallPolicyMetadata>, Option<String>),
+        (
+            Vec<aws_sdk_networkfirewall::types::FirewallPolicyMetadata>,
+            Option<String>,
+        ),
         VaporError,
     > {
         let mut items = Vec::new();
@@ -131,8 +141,13 @@ impl NetworkFirewallClient {
         rule_group_type: Option<&str>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_networkfirewall::types::RuleGroupMetadata>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_networkfirewall::types::RuleGroupMetadata>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -181,7 +196,9 @@ impl NetworkFirewallClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://network-firewall.us-east-1.amazonaws.com/";
 
@@ -315,7 +332,10 @@ mod tests {
         assert_eq!(output.update_token(), Some("token1"));
         let firewall = output.firewall().unwrap();
         assert_eq!(firewall.firewall_name(), Some("fw1"));
-        assert_eq!(firewall.firewall_policy_arn(), "arn:aws:network-firewall:us-east-1:111111111111:firewall-policy/pol1");
+        assert_eq!(
+            firewall.firewall_policy_arn(),
+            "arn:aws:network-firewall:us-east-1:111111111111:firewall-policy/pol1"
+        );
         assert_eq!(firewall.vpc_id(), "vpc-1");
         assert_eq!(
             output.firewall_status().unwrap().status(),
@@ -416,7 +436,9 @@ mod tests {
         let client = NetworkFirewallClient::new(&sdk_config(http_client.clone()));
 
         let output = client
-            .describe_firewall_policy("arn:aws:network-firewall:us-east-1:111111111111:firewall-policy/pol1")
+            .describe_firewall_policy(
+                "arn:aws:network-firewall:us-east-1:111111111111:firewall-policy/pol1",
+            )
             .await
             .unwrap();
 
@@ -521,10 +543,7 @@ mod tests {
         )]);
         let client = NetworkFirewallClient::new(&sdk_config(http_client.clone()));
 
-        let err = client
-            .list_rule_groups(None, None, None)
-            .await
-            .unwrap_err();
+        let err = client.list_rule_groups(None, None, None).await.unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -551,7 +570,9 @@ mod tests {
         let client = NetworkFirewallClient::new(&sdk_config(http_client.clone()));
 
         let output = client
-            .describe_rule_group("arn:aws:network-firewall:us-east-1:111111111111:stateful-rulegroup/rg1")
+            .describe_rule_group(
+                "arn:aws:network-firewall:us-east-1:111111111111:stateful-rulegroup/rg1",
+            )
             .await
             .unwrap();
 
@@ -570,10 +591,7 @@ mod tests {
         )]);
         let client = NetworkFirewallClient::new(&sdk_config(http_client.clone()));
 
-        let err = client
-            .describe_rule_group("arn:missing")
-            .await
-            .unwrap_err();
+        let err = client.describe_rule_group("arn:missing").await.unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -585,4 +603,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

@@ -224,7 +224,10 @@ mod tests {
                 "https://appsync.us-east-1.amazonaws.com/v1/apis/api1/datasources?maxResults=1",
                 "",
             ),
-            json_response(200, r#"{"dataSources":[{"name":"ds1"}],"nextToken":"page2"}"#),
+            json_response(
+                200,
+                r#"{"dataSources":[{"name":"ds1"}],"nextToken":"page2"}"#,
+            ),
         )]);
         let client = AppSyncClient::new(&sdk_config(http_client.clone()));
 
@@ -238,4 +241,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

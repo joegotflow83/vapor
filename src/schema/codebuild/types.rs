@@ -56,10 +56,14 @@ impl From<SdkProject> for BuildProject {
             service_role: p.service_role().map(|v| v.to_string()),
             created: to_utc(p.created()),
             last_modified: to_utc(p.last_modified()),
-            tags: p.tags().iter().map(|t| Tag {
-                key: t.key().unwrap_or_default().to_string(),
-                value: t.value().unwrap_or_default().to_string(),
-            }).collect(),
+            tags: p
+                .tags()
+                .iter()
+                .map(|t| Tag {
+                    key: t.key().unwrap_or_default().to_string(),
+                    value: t.value().unwrap_or_default().to_string(),
+                })
+                .collect(),
         }
     }
 }
@@ -191,7 +195,10 @@ mod tests {
 
     #[test]
     fn test_tag() {
-        let tag = Tag { key: "env".to_string(), value: "prod".to_string() };
+        let tag = Tag {
+            key: "env".to_string(),
+            value: "prod".to_string(),
+        };
         assert_eq!(tag.key, "env");
         assert_eq!(tag.value, "prod");
     }

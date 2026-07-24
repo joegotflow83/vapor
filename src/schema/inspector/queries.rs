@@ -49,7 +49,9 @@ impl InspectorQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::inspector::InspectorClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::InspectorQuery;
@@ -87,7 +89,10 @@ mod tests {
             "arn:aws:inspector2:us-east-1:111122223333:finding/abc123"
         );
         assert_eq!(items[0]["title"], "Critical vulnerability");
-        assert_eq!(items[0]["description"], "A critical vulnerability was found.");
+        assert_eq!(
+            items[0]["description"],
+            "A critical vulnerability was found."
+        );
         assert_eq!(items[0]["severity"], "CRITICAL");
         assert_eq!(items[0]["status"], "ACTIVE");
         assert_eq!(items[0]["findingType"], "PACKAGE_VULNERABILITY");

@@ -88,7 +88,10 @@ mod tests {
         assert_eq!(items[0]["arn"], "arn-1");
         assert_eq!(items[0]["status"], "ACTIVE");
         assert_eq!(items[0]["tags"][0]["key"], "env");
-        assert_eq!(json["privateCertificateAuthorities"]["nextToken"], "cursor-b");
+        assert_eq!(
+            json["privateCertificateAuthorities"]["nextToken"],
+            "cursor-b"
+        );
         http_client.relaxed_requests_match();
     }
 
@@ -153,7 +156,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ privateCertificateAuthority(certificateAuthorityArn: "arn-denied") { arn } }"#)
+            .execute(
+                r#"{ privateCertificateAuthority(certificateAuthorityArn: "arn-denied") { arn } }"#,
+            )
             .await;
 
         assert_eq!(res.errors.len(), 1);

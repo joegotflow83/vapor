@@ -67,7 +67,9 @@ impl EfsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::efs::EfsClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::EfsQuery;
@@ -95,8 +97,14 @@ mod tests {
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
         assert_eq!(data["efsFileSystems"]["items"][0]["fileSystemId"], "fs-1");
-        assert_eq!(data["efsFileSystems"]["items"][0]["lifeCycleState"], "available");
-        assert_eq!(data["efsFileSystems"]["items"][0]["performanceMode"], "generalPurpose");
+        assert_eq!(
+            data["efsFileSystems"]["items"][0]["lifeCycleState"],
+            "available"
+        );
+        assert_eq!(
+            data["efsFileSystems"]["items"][0]["performanceMode"],
+            "generalPurpose"
+        );
         assert_eq!(data["efsFileSystems"]["items"][0]["encrypted"], true);
         assert_eq!(data["efsFileSystems"]["nextToken"], "page2");
         http_client.relaxed_requests_match();
@@ -126,8 +134,14 @@ mod tests {
         assert_eq!(data["efsMountTargets"]["items"][0]["fileSystemId"], "fs-1");
         assert_eq!(data["efsMountTargets"]["items"][0]["subnetId"], "subnet-1");
         assert_eq!(data["efsMountTargets"]["items"][0]["ipAddress"], "10.0.0.1");
-        assert_eq!(data["efsMountTargets"]["items"][0]["availabilityZone"], "us-east-1a");
-        assert_eq!(data["efsMountTargets"]["nextToken"], serde_json::Value::Null);
+        assert_eq!(
+            data["efsMountTargets"]["items"][0]["availabilityZone"],
+            "us-east-1a"
+        );
+        assert_eq!(
+            data["efsMountTargets"]["nextToken"],
+            serde_json::Value::Null
+        );
         http_client.relaxed_requests_match();
     }
 
@@ -151,14 +165,20 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["efsAccessPoints"]["items"][0]["accessPointId"], "fsap-1");
+        assert_eq!(
+            data["efsAccessPoints"]["items"][0]["accessPointId"],
+            "fsap-1"
+        );
         assert_eq!(
             data["efsAccessPoints"]["items"][0]["arn"],
             "arn:aws:elasticfilesystem:us-east-1:1:access-point/fsap-1"
         );
         assert_eq!(data["efsAccessPoints"]["items"][0]["fileSystemId"], "fs-1");
         assert_eq!(data["efsAccessPoints"]["items"][0]["name"], "my-ap");
-        assert_eq!(data["efsAccessPoints"]["items"][0]["lifeCycleState"], "available");
+        assert_eq!(
+            data["efsAccessPoints"]["items"][0]["lifeCycleState"],
+            "available"
+        );
         http_client.relaxed_requests_match();
     }
 }

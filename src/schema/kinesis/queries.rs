@@ -31,7 +31,10 @@ impl KinesisQuery {
         for r in results {
             streams.push(r?);
         }
-        Ok(Page { items: streams, next_token: token })
+        Ok(Page {
+            items: streams,
+            next_token: token,
+        })
     }
 
     /// Lists shards for a stream, optionally capped at `limit` results (default
@@ -90,7 +93,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"StreamName":"my-stream"}"#),
-                json_response(200, r#"{"Tags":[{"Key":"env","Value":"prod"}],"HasMoreTags":false}"#),
+                json_response(
+                    200,
+                    r#"{"Tags":[{"Key":"env","Value":"prod"}],"HasMoreTags":false}"#,
+                ),
             ),
         ]);
         let schema = build_query_schema(KinesisQuery)
@@ -133,7 +139,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"StreamNames":["bad-stream"],"HasMoreStreams":false}"#),
+                json_response(
+                    200,
+                    r#"{"StreamNames":["bad-stream"],"HasMoreStreams":false}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"StreamName":"bad-stream"}"#),

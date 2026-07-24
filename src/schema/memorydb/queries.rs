@@ -80,7 +80,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute("{ memorydbClusters { items { name status arn tags { key value } } nextToken } }")
+            .execute(
+                "{ memorydbClusters { items { name status arn tags { key value } } nextToken } }",
+            )
             .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);

@@ -49,8 +49,10 @@ impl TimestreamQuery {
 mod tests {
     use aws_config::SdkConfig;
 
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::aws::timestream::TimestreamClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
     use crate::schema::test_util::build_query_schema;
 
     use super::TimestreamQuery;
@@ -109,7 +111,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["timestreamDatabases"]["items"][0]["databaseName"], "db1");
+        assert_eq!(
+            json["timestreamDatabases"]["items"][0]["databaseName"],
+            "db1"
+        );
         assert_eq!(
             json["timestreamDatabases"]["items"][0]["arn"],
             "arn:aws:timestream:us-east-1:111111111111:database/db1"
@@ -151,9 +156,13 @@ mod tests {
         let json = res.data.into_json().unwrap();
         assert_eq!(json["timestreamTables"]["items"][0]["tableName"], "t1");
         assert_eq!(json["timestreamTables"]["items"][0]["databaseName"], "db1");
-        assert_eq!(json["timestreamTables"]["items"][0]["tableStatus"], "ACTIVE");
         assert_eq!(
-            json["timestreamTables"]["items"][0]["retentionProperties"]["memoryStoreRetentionPeriodInHours"],
+            json["timestreamTables"]["items"][0]["tableStatus"],
+            "ACTIVE"
+        );
+        assert_eq!(
+            json["timestreamTables"]["items"][0]["retentionProperties"]
+                ["memoryStoreRetentionPeriodInHours"],
             24
         );
         assert!(json["timestreamTables"]["nextToken"].is_null());

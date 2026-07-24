@@ -5,8 +5,15 @@ use crate::schema::common::types::Tag;
 use crate::schema::time::to_utc;
 
 fn tags_from_map(map: Option<&std::collections::HashMap<String, String>>) -> Vec<Tag> {
-    map.map(|m| m.iter().map(|(k, v)| Tag { key: k.clone(), value: v.clone() }).collect())
-        .unwrap_or_default()
+    map.map(|m| {
+        m.iter()
+            .map(|(k, v)| Tag {
+                key: k.clone(),
+                value: v.clone(),
+            })
+            .collect()
+    })
+    .unwrap_or_default()
 }
 
 // ── REST API (v1) types ───────────────────────────────────────────────────────
@@ -22,7 +29,11 @@ impl From<&aws_sdk_apigateway::types::EndpointConfiguration> for ApigwEndpointCo
     fn from(ec: &aws_sdk_apigateway::types::EndpointConfiguration) -> Self {
         Self {
             types: ec.types().iter().map(|t| t.as_str().to_string()).collect(),
-            vpc_endpoint_ids: ec.vpc_endpoint_ids().iter().map(|s| s.to_string()).collect(),
+            vpc_endpoint_ids: ec
+                .vpc_endpoint_ids()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
         }
     }
 }
@@ -53,7 +64,11 @@ impl From<aws_sdk_apigateway::types::RestApi> for ApigwRestApi {
             description: api.description().map(|s| s.to_string()),
             created_date: to_utc(api.created_date()),
             version: api.version().map(|s| s.to_string()),
-            binary_media_types: api.binary_media_types().iter().map(|s| s.to_string()).collect(),
+            binary_media_types: api
+                .binary_media_types()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             minimum_compression_size: api.minimum_compression_size(),
             api_key_source: api.api_key_source().map(|s| s.as_str().to_string()),
             endpoint_configuration: api

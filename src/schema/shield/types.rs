@@ -111,9 +111,7 @@ mod tests {
     fn test_shield_subscription_from_full() {
         let sub = aws_sdk_shield::types::Subscription::builder()
             .auto_renew(aws_sdk_shield::types::AutoRenew::Enabled)
-            .proactive_engagement_status(
-                aws_sdk_shield::types::ProactiveEngagementStatus::Enabled,
-            )
+            .proactive_engagement_status(aws_sdk_shield::types::ProactiveEngagementStatus::Enabled)
             .build();
         let result = ShieldSubscription::from(sub);
         assert_eq!(result.auto_renew, Some("ENABLED".to_string()));
@@ -204,8 +202,7 @@ mod tests {
 
     #[test]
     fn test_attack_summary_from_minimal() {
-        let a = aws_sdk_shield::types::AttackSummary::builder()
-            .build();
+        let a = aws_sdk_shield::types::AttackSummary::builder().build();
         let result = AttackSummary::from(a);
         assert!(result.attack_id.is_none());
         assert!(result.resource_arn.is_none());

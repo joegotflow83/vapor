@@ -71,14 +71,12 @@ pub struct QueryRoot(
     #[cfg(feature = "apigatewayv2")] crate::schema::apigatewayv2::queries::ApiGatewayV2Query,
     #[cfg(feature = "globalaccelerator")]
     crate::schema::global_accelerator::queries::GlobalAcceleratorQuery,
-    #[cfg(feature = "directconnect")]
-    crate::schema::direct_connect::queries::DirectConnectQuery,
+    #[cfg(feature = "directconnect")] crate::schema::direct_connect::queries::DirectConnectQuery,
     #[cfg(feature = "networkfirewall")]
     crate::schema::network_firewall::queries::NetworkFirewallQuery,
     #[cfg(feature = "iam")] crate::schema::iam::queries::IamQuery,
     #[cfg(feature = "kms")] crate::schema::kms::queries::KmsQuery,
-    #[cfg(feature = "secretsmanager")]
-    crate::schema::secrets_manager::queries::SecretsManagerQuery,
+    #[cfg(feature = "secretsmanager")] crate::schema::secrets_manager::queries::SecretsManagerQuery,
     #[cfg(feature = "acm")] crate::schema::acm::queries::AcmQuery,
     #[cfg(feature = "cognitoidentityprovider")] crate::schema::cognito::queries::CognitoQuery,
     #[cfg(feature = "guardduty")] crate::schema::guardduty::queries::GuardDutyQuery,
@@ -91,8 +89,7 @@ pub struct QueryRoot(
     #[cfg(feature = "cloudwatch")] crate::schema::cloudwatch::queries::CloudWatchQuery,
     #[cfg(feature = "cloudtrail")] crate::schema::cloudtrail::queries::CloudTrailQuery,
     #[cfg(feature = "config")] crate::schema::config_svc::queries::AwsConfigQuery,
-    #[cfg(feature = "cloudformation")]
-    crate::schema::cloudformation::queries::CloudFormationQuery,
+    #[cfg(feature = "cloudformation")] crate::schema::cloudformation::queries::CloudFormationQuery,
     #[cfg(feature = "codepipeline")] crate::schema::codepipeline::queries::CodePipelineQuery,
     #[cfg(feature = "codebuild")] crate::schema::codebuild::queries::CodeBuildQuery,
     #[cfg(feature = "codedeploy")] crate::schema::codedeploy::queries::CodeDeployQuery,
@@ -133,8 +130,7 @@ pub struct QueryRoot(
     #[cfg(feature = "bedrock")] crate::schema::bedrock::queries::BedrockQuery,
     #[cfg(feature = "xray")] crate::schema::xray::queries::XRayQuery,
     #[cfg(feature = "timestream")] crate::schema::timestream::queries::TimestreamQuery,
-    #[cfg(feature = "lakeformation")]
-    crate::schema::lake_formation::queries::LakeFormationQuery,
+    #[cfg(feature = "lakeformation")] crate::schema::lake_formation::queries::LakeFormationQuery,
     #[cfg(feature = "quicksight")] crate::schema::quicksight::queries::QuickSightQuery,
     #[cfg(feature = "comprehend")] crate::schema::comprehend::queries::ComprehendQuery,
     #[cfg(feature = "rekognition")] crate::schema::rekognition::queries::RekognitionQuery,

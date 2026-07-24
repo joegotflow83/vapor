@@ -64,7 +64,10 @@ impl AthenaClient {
         output
             .work_group()
             .cloned()
-            .ok_or_else(|| VaporError::AwsSdk { code: None, message: "WorkGroup not found".to_string() })
+            .ok_or_else(|| VaporError::AwsSdk {
+                code: None,
+                message: "WorkGroup not found".to_string(),
+            })
     }
 
     /// Lists Athena named query IDs, optionally filtered by workgroup and
@@ -376,7 +379,10 @@ mod tests {
         )]);
         let client = AthenaClient::new(&sdk_config(http_client.clone()));
 
-        let (ids, token) = client.list_named_queries(None, Some(1), None).await.unwrap();
+        let (ids, token) = client
+            .list_named_queries(None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(ids, vec!["q1".to_string()]);
         assert_eq!(token, Some("p2".to_string()));
@@ -424,7 +430,10 @@ mod tests {
         )]);
         let client = AthenaClient::new(&sdk_config(http_client.clone()));
 
-        let (ids, token) = client.list_query_executions(None, None, None).await.unwrap();
+        let (ids, token) = client
+            .list_query_executions(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(ids, vec!["e1".to_string(), "e2".to_string()]);
         assert_eq!(token, None);
@@ -481,4 +490,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

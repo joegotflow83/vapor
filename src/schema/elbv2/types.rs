@@ -12,9 +12,7 @@ pub enum LoadBalancerScheme {
 }
 
 impl LoadBalancerScheme {
-    pub fn from_sdk(
-        s: &aws_sdk_elasticloadbalancingv2::types::LoadBalancerSchemeEnum,
-    ) -> Self {
+    pub fn from_sdk(s: &aws_sdk_elasticloadbalancingv2::types::LoadBalancerSchemeEnum) -> Self {
         match s {
             aws_sdk_elasticloadbalancingv2::types::LoadBalancerSchemeEnum::InternetFacing => {
                 Self::InternetFacing
@@ -35,9 +33,7 @@ pub enum LoadBalancerType {
 }
 
 impl LoadBalancerType {
-    pub fn from_sdk(
-        s: &aws_sdk_elasticloadbalancingv2::types::LoadBalancerTypeEnum,
-    ) -> Self {
+    pub fn from_sdk(s: &aws_sdk_elasticloadbalancingv2::types::LoadBalancerTypeEnum) -> Self {
         match s {
             aws_sdk_elasticloadbalancingv2::types::LoadBalancerTypeEnum::Application => {
                 Self::Application
@@ -118,11 +114,7 @@ impl From<aws_sdk_elasticloadbalancingv2::types::LoadBalancer> for LoadBalancer 
                 .iter()
                 .map(AvailabilityZone::from)
                 .collect(),
-            security_groups: lb
-                .security_groups()
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            security_groups: lb.security_groups().iter().map(|s| s.to_string()).collect(),
             created_time: to_utc(lb.created_time()),
         }
     }
@@ -276,7 +268,10 @@ pub struct RuleAction {
 impl From<&aws_sdk_elasticloadbalancingv2::types::Action> for RuleAction {
     fn from(a: &aws_sdk_elasticloadbalancingv2::types::Action) -> Self {
         Self {
-            action_type: a.r#type().map(|t| t.as_str().to_string()).unwrap_or_default(),
+            action_type: a
+                .r#type()
+                .map(|t| t.as_str().to_string())
+                .unwrap_or_default(),
             target_group_arn: a.target_group_arn().map(|s| s.to_string()),
             redirect_protocol: a
                 .redirect_config()
@@ -416,10 +411,7 @@ mod tests {
 
     #[test]
     fn test_target_type_ip() {
-        assert_eq!(
-            TargetType::from_sdk(&TargetTypeEnum::Ip),
-            TargetType::Ip
-        );
+        assert_eq!(TargetType::from_sdk(&TargetTypeEnum::Ip), TargetType::Ip);
     }
 
     #[test]
@@ -432,10 +424,7 @@ mod tests {
 
     #[test]
     fn test_target_type_alb() {
-        assert_eq!(
-            TargetType::from_sdk(&TargetTypeEnum::Alb),
-            TargetType::Alb
-        );
+        assert_eq!(TargetType::from_sdk(&TargetTypeEnum::Alb), TargetType::Alb);
     }
 
     #[test]
@@ -479,7 +468,9 @@ mod tests {
             .subnet_id("subnet-abc")
             .build();
         let lb = aws_sdk_elasticloadbalancingv2::types::LoadBalancer::builder()
-            .load_balancer_arn("arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc")
+            .load_balancer_arn(
+                "arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc",
+            )
             .load_balancer_name("my-lb")
             .dns_name("my-lb.us-east-1.elb.amazonaws.com")
             .scheme(LoadBalancerSchemeEnum::InternetFacing)
@@ -488,12 +479,20 @@ mod tests {
             .vpc_id("vpc-12345")
             .availability_zones(az)
             .security_groups("sg-12345")
-            .created_time(aws_sdk_elasticloadbalancingv2::primitives::DateTime::from_secs(1_700_000_000))
+            .created_time(
+                aws_sdk_elasticloadbalancingv2::primitives::DateTime::from_secs(1_700_000_000),
+            )
             .build();
         let result = LoadBalancer::from(lb);
-        assert_eq!(result.arn, "arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc");
+        assert_eq!(
+            result.arn,
+            "arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc"
+        );
         assert_eq!(result.name, "my-lb");
-        assert_eq!(result.dns_name, Some("my-lb.us-east-1.elb.amazonaws.com".to_string()));
+        assert_eq!(
+            result.dns_name,
+            Some("my-lb.us-east-1.elb.amazonaws.com".to_string())
+        );
         assert_eq!(result.scheme, Some(LoadBalancerScheme::InternetFacing));
         assert_eq!(result.lb_type, Some(LoadBalancerType::Application));
         assert_eq!(result.state, Some("active".to_string()));
@@ -535,10 +534,15 @@ mod tests {
             .health_check_port("traffic-port")
             .healthy_threshold_count(3)
             .unhealthy_threshold_count(2)
-            .load_balancer_arns("arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc")
+            .load_balancer_arns(
+                "arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc",
+            )
             .build();
         let result = TargetGroup::from(tg);
-        assert_eq!(result.arn, "arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/my-tg/abc");
+        assert_eq!(
+            result.arn,
+            "arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/my-tg/abc"
+        );
         assert_eq!(result.name, "my-tg");
         assert_eq!(result.protocol, Some("HTTPS".to_string()));
         assert_eq!(result.port, Some(443));
@@ -586,7 +590,10 @@ mod tests {
         assert_eq!(result.target_id, "i-12345");
         assert_eq!(result.port, Some(80));
         assert_eq!(result.health_state, "healthy");
-        assert_eq!(result.health_description, Some("Target is healthy".to_string()));
+        assert_eq!(
+            result.health_description,
+            Some("Target is healthy".to_string())
+        );
     }
 
     #[test]
@@ -610,14 +617,24 @@ mod tests {
             .build();
         let listener = aws_sdk_elasticloadbalancingv2::types::Listener::builder()
             .listener_arn("arn:aws:elasticloadbalancing:us-east-1:123:listener/app/my-lb/abc/def")
-            .load_balancer_arn("arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc")
+            .load_balancer_arn(
+                "arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc",
+            )
             .protocol(aws_sdk_elasticloadbalancingv2::types::ProtocolEnum::Https)
             .port(443)
             .default_actions(action)
             .build();
         let result = Listener::from(listener);
-        assert_eq!(result.arn, "arn:aws:elasticloadbalancing:us-east-1:123:listener/app/my-lb/abc/def");
-        assert_eq!(result.load_balancer_arn, Some("arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc".to_string()));
+        assert_eq!(
+            result.arn,
+            "arn:aws:elasticloadbalancing:us-east-1:123:listener/app/my-lb/abc/def"
+        );
+        assert_eq!(
+            result.load_balancer_arn,
+            Some(
+                "arn:aws:elasticloadbalancing:us-east-1:123:loadbalancer/app/my-lb/abc".to_string()
+            )
+        );
         assert_eq!(result.protocol, Some("HTTPS".to_string()));
         assert_eq!(result.port, Some(443));
         assert_eq!(result.default_actions, vec!["forward".to_string()]);
@@ -649,10 +666,9 @@ mod tests {
 
     #[test]
     fn test_rule_condition_falls_back_to_path_pattern_config() {
-        let config =
-            aws_sdk_elasticloadbalancingv2::types::PathPatternConditionConfig::builder()
-                .values("/api/*")
-                .build();
+        let config = aws_sdk_elasticloadbalancingv2::types::PathPatternConditionConfig::builder()
+            .values("/api/*")
+            .build();
         let cond = aws_sdk_elasticloadbalancingv2::types::RuleCondition::builder()
             .field("path-pattern")
             .path_pattern_config(config)
@@ -714,7 +730,9 @@ mod tests {
             .target_group_arn("arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/my-tg/abc")
             .build();
         let rule = aws_sdk_elasticloadbalancingv2::types::Rule::builder()
-            .rule_arn("arn:aws:elasticloadbalancing:us-east-1:123:listener-rule/app/my-lb/abc/def/rule1")
+            .rule_arn(
+                "arn:aws:elasticloadbalancing:us-east-1:123:listener-rule/app/my-lb/abc/def/rule1",
+            )
             .priority("10")
             .is_default(false)
             .conditions(cond)

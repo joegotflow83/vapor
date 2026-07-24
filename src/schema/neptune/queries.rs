@@ -44,7 +44,9 @@ impl NeptuneQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::neptune::NeptuneClient;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::NeptuneQuery;
@@ -86,7 +88,10 @@ mod tests {
         let json = res.data.into_json().unwrap();
         let items = &json["neptuneClusters"]["items"];
         assert_eq!(items[0]["clusterIdentifier"], "my-cluster");
-        assert_eq!(items[0]["arn"], "arn:aws:rds:us-east-1:123456789012:cluster:my-cluster");
+        assert_eq!(
+            items[0]["arn"],
+            "arn:aws:rds:us-east-1:123456789012:cluster:my-cluster"
+        );
         assert_eq!(items[0]["status"], "available");
         assert_eq!(items[0]["engine"], "neptune");
         assert_eq!(items[0]["port"], 8182);
@@ -135,7 +140,10 @@ mod tests {
         let json = res.data.into_json().unwrap();
         let items = &json["neptuneInstances"]["items"];
         assert_eq!(items[0]["instanceIdentifier"], "my-instance");
-        assert_eq!(items[0]["arn"], "arn:aws:rds:us-east-1:123456789012:db:my-instance");
+        assert_eq!(
+            items[0]["arn"],
+            "arn:aws:rds:us-east-1:123456789012:db:my-instance"
+        );
         assert_eq!(items[0]["instanceClass"], "db.r5.large");
         assert_eq!(items[0]["status"], "available");
         assert_eq!(items[0]["clusterIdentifier"], "my-cluster");

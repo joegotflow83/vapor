@@ -94,7 +94,9 @@ impl CloudTrailClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use aws_sdk_cloudtrail::types::LookupAttributeKey;
 
     const ENDPOINT: &str = "https://cloudtrail.us-east-1.amazonaws.com/";
@@ -252,7 +254,10 @@ mod tests {
     #[tokio::test]
     async fn lookup_events_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"StartTime":1700000000,"EndTime":1700003600,"MaxResults":2}"#),
+            request(
+                ENDPOINT,
+                r#"{"StartTime":1700000000,"EndTime":1700003600,"MaxResults":2}"#,
+            ),
             json_response(
                 200,
                 r#"{"Events":[{"EventId":"e1"},{"EventId":"e2"}],"NextToken":"page2"}"#,
@@ -280,7 +285,10 @@ mod tests {
     async fn lookup_events_pages_through_until_exhausted_when_limit_not_reached() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"StartTime":1700000000,"EndTime":1700003600,"MaxResults":10}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"StartTime":1700000000,"EndTime":1700003600,"MaxResults":10}"#,
+                ),
                 json_response(
                     200,
                     r#"{"Events":[{"EventId":"e1"},{"EventId":"e2"}],"NextToken":"p2"}"#,
@@ -341,4 +349,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

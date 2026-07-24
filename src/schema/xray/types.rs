@@ -1,6 +1,8 @@
 use async_graphql::SimpleObject;
 
-use crate::aws::xray::{XRayEncryptionConfigInfo, XRayGroupInfo, XRayGroupInsightsConfig, XRaySamplingRuleInfo};
+use crate::aws::xray::{
+    XRayEncryptionConfigInfo, XRayGroupInfo, XRayGroupInsightsConfig, XRaySamplingRuleInfo,
+};
 
 #[derive(SimpleObject, Clone)]
 pub struct XRayInsightsConfig {
@@ -91,7 +93,9 @@ impl From<XRayEncryptionConfigInfo> for XRayEncryptionConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::xray::{XRayEncryptionConfigInfo, XRayGroupInfo, XRayGroupInsightsConfig, XRaySamplingRuleInfo};
+    use crate::aws::xray::{
+        XRayEncryptionConfigInfo, XRayGroupInfo, XRayGroupInsightsConfig, XRaySamplingRuleInfo,
+    };
 
     #[test]
     fn test_insights_config_from() {
@@ -108,7 +112,9 @@ mod tests {
     fn test_group_from_full() {
         let info = XRayGroupInfo {
             group_name: Some("my-group".to_string()),
-            group_arn: Some("arn:aws:xray:us-east-1:123456789012:group/my-group/abc123".to_string()),
+            group_arn: Some(
+                "arn:aws:xray:us-east-1:123456789012:group/my-group/abc123".to_string(),
+            ),
             filter_expression: Some("service(\"my-service\")".to_string()),
             insights_configuration: Some(XRayGroupInsightsConfig {
                 insights_enabled: Some(true),
@@ -117,7 +123,10 @@ mod tests {
         };
         let result = XRayGroup::from(info);
         assert_eq!(result.group_name, Some("my-group".to_string()));
-        assert_eq!(result.filter_expression, Some("service(\"my-service\")".to_string()));
+        assert_eq!(
+            result.filter_expression,
+            Some("service(\"my-service\")".to_string())
+        );
         assert!(result.insights_configuration.is_some());
         let ic = result.insights_configuration.unwrap();
         assert_eq!(ic.insights_enabled, Some(true));

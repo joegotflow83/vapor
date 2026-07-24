@@ -101,11 +101,23 @@ impl MqClient {
         Ok((brokers, token))
     }
 
-    pub async fn describe_broker(&self, broker_id: &str) -> Result<Option<MqBrokerInfo>, VaporError> {
-        let output = match self.inner.describe_broker().broker_id(broker_id).send().await {
+    pub async fn describe_broker(
+        &self,
+        broker_id: &str,
+    ) -> Result<Option<MqBrokerInfo>, VaporError> {
+        let output = match self
+            .inner
+            .describe_broker()
+            .broker_id(broker_id)
+            .send()
+            .await
+        {
             Ok(o) => o,
             Err(e) => {
-                if matches!(e.code(), Some("NotFoundException") | Some("ResourceNotFoundException")) {
+                if matches!(
+                    e.code(),
+                    Some("NotFoundException") | Some("ResourceNotFoundException")
+                ) {
                     return Ok(None);
                 }
                 return Err(crate::error::sdk_err(e));
@@ -203,7 +215,9 @@ impl MqClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://mq.us-east-1.amazonaws.com";
 
@@ -249,8 +263,14 @@ mod tests {
             b1.broker_instances[0].console_url,
             Some("https://console/b1".to_string())
         );
-        assert_eq!(b1.broker_instances[0].endpoints, vec!["ssl://ep1:61617".to_string()]);
-        assert_eq!(b1.broker_instances[0].ip_address, Some("10.0.0.1".to_string()));
+        assert_eq!(
+            b1.broker_instances[0].endpoints,
+            vec!["ssl://ep1:61617".to_string()]
+        );
+        assert_eq!(
+            b1.broker_instances[0].ip_address,
+            Some("10.0.0.1".to_string())
+        );
         assert_eq!(b1.subnet_ids, vec!["subnet-1".to_string()]);
         assert_eq!(b1.security_groups, vec!["sg-1".to_string()]);
         assert_eq!(b1.tags, vec![("env".to_string(), "prod".to_string())]);
@@ -543,7 +563,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(&format!("{BASE}/v1/configurations?maxResults=8&nextToken=p2"), ""),
+                request(
+                    &format!("{BASE}/v1/configurations?maxResults=8&nextToken=p2"),
+                    "",
+                ),
                 json_response(200, r#"{"configurations":[{"id":"c3"}]}"#),
             ),
         ]);
@@ -576,4 +599,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

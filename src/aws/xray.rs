@@ -1,7 +1,7 @@
 use aws_config::SdkConfig;
 
-use crate::error::VaporError;
 use crate::aws::pagination::apply_limit;
+use crate::error::VaporError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct XRayGroupInsightsConfig {
@@ -163,18 +163,22 @@ impl XRayClient {
             .await
             .map_err(crate::error::sdk_err)?;
 
-        Ok(output.encryption_config().map(|ec| XRayEncryptionConfigInfo {
-            key_id: ec.key_id().map(|s| s.to_string()),
-            status: ec.status().map(|s| s.as_str().to_string()),
-            type_: ec.r#type().map(|t| t.as_str().to_string()),
-        }))
+        Ok(output
+            .encryption_config()
+            .map(|ec| XRayEncryptionConfigInfo {
+                key_id: ec.key_id().map(|s| s.to_string()),
+                status: ec.status().map(|s| s.as_str().to_string()),
+                type_: ec.r#type().map(|t| t.as_str().to_string()),
+            }))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://xray.us-east-1.amazonaws.com";
 
@@ -381,7 +385,10 @@ mod tests {
     #[tokio::test]
     async fn list_sampling_rules_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/GetSamplingRules"), r#"{"NextToken":"cursor-a"}"#),
+            request(
+                &format!("{BASE}/GetSamplingRules"),
+                r#"{"NextToken":"cursor-a"}"#,
+            ),
             json_response(
                 200,
                 r#"{"SamplingRuleRecords":[{"SamplingRule":{"ResourceARN":"*","Priority":3,"FixedRate":0.2,"ReservoirSize":3,"ServiceName":"svc3","ServiceType":"type3","Host":"h3","HTTPMethod":"PUT","URLPath":"/q","Version":3}}]}"#,

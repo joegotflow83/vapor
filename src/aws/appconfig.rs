@@ -67,7 +67,10 @@ impl AppConfigClient {
         let mut token = next_token;
 
         loop {
-            let mut req = self.inner.list_environments().application_id(application_id);
+            let mut req = self
+                .inner
+                .list_environments()
+                .application_id(application_id);
             if let Some(ref t) = token {
                 req = req.next_token(t);
             }
@@ -259,10 +262,7 @@ mod tests {
         )]);
         let client = AppConfigClient::new(&sdk_config(http_client.clone()));
 
-        let (envs, token) = client
-            .list_environments("app1", None, None)
-            .await
-            .unwrap();
+        let (envs, token) = client.list_environments("app1", None, None).await.unwrap();
 
         assert_eq!(envs.len(), 2);
         assert_eq!(envs[0].id(), Some("env1"));
@@ -345,4 +345,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

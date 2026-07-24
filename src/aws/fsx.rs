@@ -88,8 +88,14 @@ impl FsxClient {
                     .collect();
                 items.push(FsxFileSystemInfo {
                     file_system_id: fs.file_system_id.unwrap_or_default(),
-                    file_system_type: fs.file_system_type.map(|t| t.as_str().to_string()).unwrap_or_default(),
-                    lifecycle: fs.lifecycle.map(|l| l.as_str().to_string()).unwrap_or_default(),
+                    file_system_type: fs
+                        .file_system_type
+                        .map(|t| t.as_str().to_string())
+                        .unwrap_or_default(),
+                    lifecycle: fs
+                        .lifecycle
+                        .map(|l| l.as_str().to_string())
+                        .unwrap_or_default(),
                     storage_capacity_gi_b: fs.storage_capacity,
                     storage_type: fs.storage_type.map(|s| s.as_str().to_string()),
                     vpc_id: fs.vpc_id,
@@ -134,12 +140,10 @@ impl FsxClient {
                 req = req.set_backup_ids(Some(ids.clone()));
             }
             if let Some(ref fs_id) = file_system_id {
-                req = req.set_filters(Some(vec![
-                    aws_sdk_fsx::types::Filter::builder()
-                        .name(aws_sdk_fsx::types::FilterName::FileSystemId)
-                        .set_values(Some(vec![fs_id.clone()]))
-                        .build(),
-                ]));
+                req = req.set_filters(Some(vec![aws_sdk_fsx::types::Filter::builder()
+                    .name(aws_sdk_fsx::types::FilterName::FileSystemId)
+                    .set_values(Some(vec![fs_id.clone()]))
+                    .build()]));
             }
             if let Some(ref t) = token {
                 req = req.next_token(t);
@@ -158,8 +162,14 @@ impl FsxClient {
                     .collect();
                 items.push(FsxBackupInfo {
                     backup_id: backup.backup_id.unwrap_or_default(),
-                    lifecycle: backup.lifecycle.map(|l| l.as_str().to_string()).unwrap_or_default(),
-                    backup_type: backup.r#type.map(|t| t.as_str().to_string()).unwrap_or_default(),
+                    lifecycle: backup
+                        .lifecycle
+                        .map(|l| l.as_str().to_string())
+                        .unwrap_or_default(),
+                    backup_type: backup
+                        .r#type
+                        .map(|t| t.as_str().to_string())
+                        .unwrap_or_default(),
                     creation_time: backup.creation_time,
                     file_system_id: backup.file_system.and_then(|fs| fs.file_system_id),
                     resource_arn: backup.resource_arn,
@@ -224,7 +234,10 @@ impl FsxClient {
                     storage_virtual_machine_id: svm.storage_virtual_machine_id.unwrap_or_default(),
                     name: svm.name,
                     file_system_id: svm.file_system_id.unwrap_or_default(),
-                    lifecycle: svm.lifecycle.map(|l| l.as_str().to_string()).unwrap_or_default(),
+                    lifecycle: svm
+                        .lifecycle
+                        .map(|l| l.as_str().to_string())
+                        .unwrap_or_default(),
                     subtype: svm.subtype.map(|s| s.as_str().to_string()),
                     creation_time: svm.creation_time,
                     tags,
@@ -505,7 +518,10 @@ mod tests {
         )]);
         let client = FsxClient::new(&sdk_config(http_client.clone()));
 
-        let (backups, token) = client.describe_backups(None, None, Some(2), None).await.unwrap();
+        let (backups, token) = client
+            .describe_backups(None, None, Some(2), None)
+            .await
+            .unwrap();
 
         assert_eq!(backups.len(), 2);
         assert_eq!(token, Some("page2".to_string()));
@@ -558,10 +574,7 @@ mod tests {
         assert_eq!(svms[0].lifecycle, "CREATED");
         assert_eq!(svms[0].subtype, Some("DEFAULT".to_string()));
         assert!(svms[0].creation_time.is_some());
-        assert_eq!(
-            svms[0].tags,
-            vec![("env".to_string(), "prod".to_string())]
-        );
+        assert_eq!(svms[0].tags, vec![("env".to_string(), "prod".to_string())]);
         assert_eq!(svms[1].storage_virtual_machine_id, "svm-2");
         assert_eq!(token, None);
         http_client.relaxed_requests_match();

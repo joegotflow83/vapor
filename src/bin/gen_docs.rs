@@ -33,7 +33,11 @@ fn sdl_for<Q>() -> (String, String)
 where
     Q: ObjectType + Default + Send + Sync + 'static,
 {
-    let sdl = clean_sdl(&Schema::build(Q::default(), EmptyMutation, EmptySubscription).finish().sdl());
+    let sdl = clean_sdl(
+        &Schema::build(Q::default(), EmptyMutation, EmptySubscription)
+            .finish()
+            .sdl(),
+    );
     (Q::type_name().into_owned(), sdl)
 }
 
@@ -42,7 +46,11 @@ where
     Q: ObjectType + Default + Send + Sync + 'static,
     M: ObjectType + Default + Send + Sync + 'static,
 {
-    let sdl = clean_sdl(&Schema::build(Q::default(), M::default(), EmptySubscription).finish().sdl());
+    let sdl = clean_sdl(
+        &Schema::build(Q::default(), M::default(), EmptySubscription)
+            .finish()
+            .sdl(),
+    );
     (Q::type_name().into_owned(), sdl)
 }
 
@@ -86,7 +94,11 @@ fn strip_block(text: &str, start_marker: &str) -> String {
     };
 
     // Also eat one trailing newline so we don't leave a blank line behind.
-    let after = if text[block_end..].starts_with('\n') { block_end + 1 } else { block_end };
+    let after = if text[block_end..].starts_with('\n') {
+        block_end + 1
+    } else {
+        block_end
+    };
     format!("{}{}", &text[..marker_pos], &text[after..])
 }
 
@@ -138,7 +150,10 @@ fn query_field_names(sdl: &str, type_name: &str) -> BTreeSet<String> {
         if in_description || trimmed.is_empty() {
             continue;
         }
-        let name: String = trimmed.chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+        let name: String = trimmed
+            .chars()
+            .take_while(|c| c.is_alphanumeric() || *c == '_')
+            .collect();
         if !name.is_empty() {
             fields.insert(name);
         }
@@ -149,7 +164,10 @@ fn query_field_names(sdl: &str, type_name: &str) -> BTreeSet<String> {
 fn render_page(page: &ServicePage) -> String {
     let mut out = String::new();
     out.push_str(&format!("# {}\n\n", page.title));
-    out.push_str(&format!("Cargo feature: `{}` (`cargo build --features {}`)\n\n", page.feature, page.feature));
+    out.push_str(&format!(
+        "Cargo feature: `{}` (`cargo build --features {}`)\n\n",
+        page.feature, page.feature
+    ));
     if let Some(note) = page.note {
         out.push_str(&format!("> {note}\n\n"));
     }
@@ -202,109 +220,820 @@ fn main() {
         sdl: ec2_sdl,
     });
 
-    page!(pages, "vpc", "VPC", "ec2", None, vapor::schema::vpc::queries::VpcQuery);
-    page!(pages, "s3", "S3", "s3", None, vapor::schema::s3::queries::S3Query);
-    page!(pages, "lambda", "Lambda", "lambda", None, vapor::schema::lambda::queries::LambdaQuery);
-    page!(pages, "ssm", "Systems Manager", "ssm", None, vapor::schema::ssm::queries::SsmQuery);
-    page!(pages, "ecs", "ECS", "ecs", None, vapor::schema::ecs::queries::EcsQuery);
-    page!(pages, "eks", "EKS", "eks", None, vapor::schema::eks::queries::EksQuery);
-    page!(pages, "ecr", "ECR", "ecr", None, vapor::schema::ecr::queries::EcrQuery);
-    page!(pages, "batch", "Batch", "batch", None, vapor::schema::batch::queries::BatchQuery);
-    page!(pages, "elbv2", "Elastic Load Balancing v2", "elbv2", None, vapor::schema::elbv2::queries::Elbv2Query);
-    page!(pages, "asg", "Auto Scaling", "autoscaling", None, vapor::schema::asg::queries::AsgQuery);
-    page!(pages, "dynamodb", "DynamoDB", "dynamodb", None, vapor::schema::dynamodb::queries::DynamodbQuery);
-    page!(pages, "rds", "RDS", "rds", None, vapor::schema::rds::queries::RdsQuery);
-    page!(pages, "efs", "EFS", "efs", None, vapor::schema::efs::queries::EfsQuery);
-    page!(pages, "elasticache", "ElastiCache", "elasticache", None, vapor::schema::elasticache::queries::ElastiCacheQuery);
-    page!(pages, "redshift", "Redshift", "redshift", None, vapor::schema::redshift::queries::RedshiftQuery);
-    page!(pages, "redshift_serverless", "Redshift Serverless", "redshiftserverless", None, vapor::schema::redshift_serverless::queries::RedshiftServerlessQuery);
-    page!(pages, "memorydb", "MemoryDB", "memorydb", None, vapor::schema::memorydb::queries::MemoryDbQuery);
-    page!(pages, "neptune", "Neptune", "neptune", None, vapor::schema::neptune::queries::NeptuneQuery);
-    page!(pages, "documentdb", "DocumentDB", "docdb", None, vapor::schema::documentdb::queries::DocumentDbQuery);
-    page!(pages, "athena", "Athena", "athena", None, vapor::schema::athena::queries::AthenaQuery);
-    page!(pages, "glue", "Glue", "glue", None, vapor::schema::glue::queries::GlueQuery);
-    page!(pages, "emr", "EMR", "emr", None, vapor::schema::emr::queries::EmrQuery);
-    page!(pages, "kinesis", "Kinesis Data Streams", "kinesis", None, vapor::schema::kinesis::queries::KinesisQuery);
-    page!(pages, "firehose", "Kinesis Data Firehose", "firehose", None, vapor::schema::firehose::queries::FirehoseQuery);
-    page!(pages, "msk", "MSK (Managed Streaming for Kafka)", "kafka", Some("Pulls in the `ec2` feature since broker AZ enrichment needs `describe_subnets`."), vapor::schema::msk::queries::MskQuery);
-    page!(pages, "route53", "Route 53", "route53", None, vapor::schema::route53::queries::Route53Query);
-    page!(pages, "cloudfront", "CloudFront", "cloudfront", None, vapor::schema::cloudfront::queries::CloudFrontQuery);
-    page!(pages, "apigateway", "API Gateway (REST)", "apigateway", None, vapor::schema::apigateway::queries::ApiGatewayQuery);
-    page!(pages, "apigatewayv2", "API Gateway v2 (HTTP/WebSocket)", "apigatewayv2", None, vapor::schema::apigatewayv2::queries::ApiGatewayV2Query);
-    page!(pages, "global_accelerator", "Global Accelerator", "globalaccelerator", None, vapor::schema::global_accelerator::queries::GlobalAcceleratorQuery);
-    page!(pages, "direct_connect", "Direct Connect", "directconnect", None, vapor::schema::direct_connect::queries::DirectConnectQuery);
-    page!(pages, "network_firewall", "Network Firewall", "networkfirewall", None, vapor::schema::network_firewall::queries::NetworkFirewallQuery);
-    page!(pages, "iam", "IAM", "iam", None, vapor::schema::iam::queries::IamQuery);
-    page!(pages, "kms", "KMS", "kms", None, vapor::schema::kms::queries::KmsQuery);
-    page!(pages, "secrets_manager", "Secrets Manager", "secretsmanager", None, vapor::schema::secrets_manager::queries::SecretsManagerQuery);
-    page!(pages, "acm", "Certificate Manager", "acm", None, vapor::schema::acm::queries::AcmQuery);
-    page!(pages, "cognito", "Cognito Identity Provider", "cognitoidentityprovider", None, vapor::schema::cognito::queries::CognitoQuery);
-    page!(pages, "guardduty", "GuardDuty", "guardduty", None, vapor::schema::guardduty::queries::GuardDutyQuery);
-    page!(pages, "inspector", "Inspector v2", "inspector2", None, vapor::schema::inspector::queries::InspectorQuery);
-    page!(pages, "security_hub", "Security Hub", "securityhub", None, vapor::schema::security_hub::queries::SecurityHubQuery);
-    page!(pages, "macie", "Macie v2", "macie2", None, vapor::schema::macie::queries::MacieQuery);
-    page!(pages, "shield", "Shield", "shield", None, vapor::schema::shield::queries::ShieldQuery);
-    page!(pages, "wafv2", "WAF v2", "wafv2", None, vapor::schema::wafv2::queries::Wafv2Query);
-    page!(pages, "sts", "STS", "sts", None, vapor::schema::sts::queries::StsQuery);
-    page!(pages, "cloudwatch", "CloudWatch (includes Logs)", "cloudwatch", None, vapor::schema::cloudwatch::queries::CloudWatchQuery);
-    page!(pages, "cloudtrail", "CloudTrail", "cloudtrail", None, vapor::schema::cloudtrail::queries::CloudTrailQuery);
-    page!(pages, "config_svc", "AWS Config", "config", None, vapor::schema::config_svc::queries::AwsConfigQuery);
-    page!(pages, "cloudformation", "CloudFormation", "cloudformation", None, vapor::schema::cloudformation::queries::CloudFormationQuery);
-    page!(pages, "codepipeline", "CodePipeline", "codepipeline", None, vapor::schema::codepipeline::queries::CodePipelineQuery);
-    page!(pages, "codebuild", "CodeBuild", "codebuild", None, vapor::schema::codebuild::queries::CodeBuildQuery);
-    page!(pages, "codedeploy", "CodeDeploy", "codedeploy", None, vapor::schema::codedeploy::queries::CodeDeployQuery);
-    page!(pages, "step_functions", "Step Functions", "sfn", None, vapor::schema::step_functions::queries::StepFunctionsQuery);
-    page!(pages, "eventbridge", "EventBridge", "eventbridge", None, vapor::schema::eventbridge::queries::EventBridgeQuery);
-    page!(pages, "sns", "SNS", "sns", None, vapor::schema::sns::queries::SnsQuery);
-    page!(pages, "sqs", "SQS", "sqs", None, vapor::schema::sqs::queries::SqsQuery);
-    page!(pages, "service_quotas", "Service Quotas", "servicequotas", None, vapor::schema::service_quotas::queries::ServiceQuotasQuery);
-    page!(pages, "health", "Health", "health", None, vapor::schema::health::queries::HealthQuery);
-    page!(pages, "organizations", "Organizations", "organizations", None, vapor::schema::organizations::queries::OrganizationsQuery);
-    page!(pages, "appconfig", "AppConfig", "appconfig", None, vapor::schema::appconfig::queries::AppConfigQuery);
-    page!(pages, "appsync", "AppSync", "appsync", None, vapor::schema::appsync::queries::AppSyncQuery);
-    page!(pages, "cost_explorer", "Cost Explorer", "costexplorer", None, vapor::schema::cost_explorer::queries::CostExplorerQuery);
-    page!(pages, "sagemaker", "SageMaker", "sagemaker", None, vapor::schema::sagemaker::queries::SageMakerQuery);
-    page!(pages, "transfer", "Transfer Family", "transfer", None, vapor::schema::transfer::queries::TransferQuery);
-    page!(pages, "opensearch", "OpenSearch", "opensearch", None, vapor::schema::opensearch::queries::OpenSearchQuery);
-    page!(pages, "backup", "Backup", "backup", None, vapor::schema::backup::queries::BackupQuery);
-    page!(pages, "sso_admin", "IAM Identity Center (SSO Admin)", "ssoadmin", None, vapor::schema::sso_admin::queries::SsoAdminQuery);
-    page!(pages, "acm_pca", "ACM Private CA", "acmpca", None, vapor::schema::acm_pca::queries::AcmPcaQuery);
-    page!(pages, "ram", "Resource Access Manager", "ram", None, vapor::schema::ram::queries::RamQuery);
-    page!(pages, "control_tower", "Control Tower", "controltower", None, vapor::schema::control_tower::queries::ControlTowerQuery);
-    page!(pages, "fms", "Firewall Manager", "fms", None, vapor::schema::fms::queries::FmsQuery);
-    page!(pages, "audit_manager", "Audit Manager", "auditmanager", None, vapor::schema::audit_manager::queries::AuditManagerQuery);
-    page!(pages, "detective", "Detective", "detective", None, vapor::schema::detective::queries::DetectiveQuery);
-    page!(pages, "ses", "Simple Email Service v2", "sesv2", None, vapor::schema::ses::queries::SesQuery);
-    page!(pages, "elastic_beanstalk", "Elastic Beanstalk", "elasticbeanstalk", None, vapor::schema::elastic_beanstalk::queries::ElasticBeanstalkQuery);
-    page!(pages, "app_runner", "App Runner", "apprunner", None, vapor::schema::app_runner::queries::AppRunnerQuery);
-    page!(pages, "fsx", "FSx", "fsx", None, vapor::schema::fsx::queries::FsxQuery);
-    page!(pages, "mq", "Amazon MQ", "mq", None, vapor::schema::mq::queries::MqQuery);
-    page!(pages, "dms", "Database Migration Service", "dms", None, vapor::schema::dms::queries::DmsQuery);
-    page!(pages, "workspaces", "WorkSpaces", "workspaces", None, vapor::schema::workspaces::queries::WorkspacesQuery);
-    page!(pages, "storage_gateway", "Storage Gateway", "storagegateway", None, vapor::schema::storage_gateway::queries::StorageGatewayQuery);
-    page!(pages, "datasync", "DataSync", "datasync", None, vapor::schema::datasync::queries::DataSyncQuery);
-    page!(pages, "lightsail", "Lightsail", "lightsail", None, vapor::schema::lightsail::queries::LightsailQuery);
-    page!(pages, "qldb", "QLDB", "qldb", None, vapor::schema::qldb::queries::QldbQuery);
-    page!(pages, "keyspaces", "Amazon Keyspaces", "keyspaces", None, vapor::schema::keyspaces::queries::KeyspacesQuery);
-    page!(pages, "bedrock", "Bedrock", "bedrock", None, vapor::schema::bedrock::queries::BedrockQuery);
-    page!(pages, "xray", "X-Ray", "xray", None, vapor::schema::xray::queries::XRayQuery);
-    page!(pages, "timestream", "Timestream", "timestream", None, vapor::schema::timestream::queries::TimestreamQuery);
-    page!(pages, "lake_formation", "Lake Formation", "lakeformation", None, vapor::schema::lake_formation::queries::LakeFormationQuery);
-    page!(pages, "quicksight", "QuickSight", "quicksight", None, vapor::schema::quicksight::queries::QuickSightQuery);
-    page!(pages, "comprehend", "Comprehend", "comprehend", None, vapor::schema::comprehend::queries::ComprehendQuery);
-    page!(pages, "rekognition", "Rekognition", "rekognition", None, vapor::schema::rekognition::queries::RekognitionQuery);
-    page!(pages, "transcribe", "Transcribe", "transcribe", None, vapor::schema::transcribe::queries::TranscribeQuery);
-    page!(pages, "translate", "Translate", "translate", None, vapor::schema::translate::queries::TranslateQuery);
-    page!(pages, "polly", "Polly", "polly", None, vapor::schema::polly::queries::PollyQuery);
-    page!(pages, "codeartifact", "CodeArtifact", "codeartifact", None, vapor::schema::codeartifact::queries::CodeArtifactQuery);
-    page!(pages, "codecommit", "CodeCommit", "codecommit", None, vapor::schema::codecommit::queries::CodeCommitQuery);
-    page!(pages, "iot", "IoT Core", "iot", None, vapor::schema::iot::queries::IotQuery);
-    page!(pages, "license_manager", "License Manager", "licensemanager", None, vapor::schema::license_manager::queries::LicenseManagerQuery);
-    page!(pages, "budgets", "Budgets", "budgets", None, vapor::schema::budgets::queries::BudgetsQuery);
-    page!(pages, "connect", "Connect", "connect", None, vapor::schema::connect::queries::ConnectQuery);
-    page!(pages, "pinpoint", "Pinpoint", "pinpoint", None, vapor::schema::pinpoint::queries::PinpointQuery);
+    page!(
+        pages,
+        "vpc",
+        "VPC",
+        "ec2",
+        None,
+        vapor::schema::vpc::queries::VpcQuery
+    );
+    page!(
+        pages,
+        "s3",
+        "S3",
+        "s3",
+        None,
+        vapor::schema::s3::queries::S3Query
+    );
+    page!(
+        pages,
+        "lambda",
+        "Lambda",
+        "lambda",
+        None,
+        vapor::schema::lambda::queries::LambdaQuery
+    );
+    page!(
+        pages,
+        "ssm",
+        "Systems Manager",
+        "ssm",
+        None,
+        vapor::schema::ssm::queries::SsmQuery
+    );
+    page!(
+        pages,
+        "ecs",
+        "ECS",
+        "ecs",
+        None,
+        vapor::schema::ecs::queries::EcsQuery
+    );
+    page!(
+        pages,
+        "eks",
+        "EKS",
+        "eks",
+        None,
+        vapor::schema::eks::queries::EksQuery
+    );
+    page!(
+        pages,
+        "ecr",
+        "ECR",
+        "ecr",
+        None,
+        vapor::schema::ecr::queries::EcrQuery
+    );
+    page!(
+        pages,
+        "batch",
+        "Batch",
+        "batch",
+        None,
+        vapor::schema::batch::queries::BatchQuery
+    );
+    page!(
+        pages,
+        "elbv2",
+        "Elastic Load Balancing v2",
+        "elbv2",
+        None,
+        vapor::schema::elbv2::queries::Elbv2Query
+    );
+    page!(
+        pages,
+        "asg",
+        "Auto Scaling",
+        "autoscaling",
+        None,
+        vapor::schema::asg::queries::AsgQuery
+    );
+    page!(
+        pages,
+        "dynamodb",
+        "DynamoDB",
+        "dynamodb",
+        None,
+        vapor::schema::dynamodb::queries::DynamodbQuery
+    );
+    page!(
+        pages,
+        "rds",
+        "RDS",
+        "rds",
+        None,
+        vapor::schema::rds::queries::RdsQuery
+    );
+    page!(
+        pages,
+        "efs",
+        "EFS",
+        "efs",
+        None,
+        vapor::schema::efs::queries::EfsQuery
+    );
+    page!(
+        pages,
+        "elasticache",
+        "ElastiCache",
+        "elasticache",
+        None,
+        vapor::schema::elasticache::queries::ElastiCacheQuery
+    );
+    page!(
+        pages,
+        "redshift",
+        "Redshift",
+        "redshift",
+        None,
+        vapor::schema::redshift::queries::RedshiftQuery
+    );
+    page!(
+        pages,
+        "redshift_serverless",
+        "Redshift Serverless",
+        "redshiftserverless",
+        None,
+        vapor::schema::redshift_serverless::queries::RedshiftServerlessQuery
+    );
+    page!(
+        pages,
+        "memorydb",
+        "MemoryDB",
+        "memorydb",
+        None,
+        vapor::schema::memorydb::queries::MemoryDbQuery
+    );
+    page!(
+        pages,
+        "neptune",
+        "Neptune",
+        "neptune",
+        None,
+        vapor::schema::neptune::queries::NeptuneQuery
+    );
+    page!(
+        pages,
+        "documentdb",
+        "DocumentDB",
+        "docdb",
+        None,
+        vapor::schema::documentdb::queries::DocumentDbQuery
+    );
+    page!(
+        pages,
+        "athena",
+        "Athena",
+        "athena",
+        None,
+        vapor::schema::athena::queries::AthenaQuery
+    );
+    page!(
+        pages,
+        "glue",
+        "Glue",
+        "glue",
+        None,
+        vapor::schema::glue::queries::GlueQuery
+    );
+    page!(
+        pages,
+        "emr",
+        "EMR",
+        "emr",
+        None,
+        vapor::schema::emr::queries::EmrQuery
+    );
+    page!(
+        pages,
+        "kinesis",
+        "Kinesis Data Streams",
+        "kinesis",
+        None,
+        vapor::schema::kinesis::queries::KinesisQuery
+    );
+    page!(
+        pages,
+        "firehose",
+        "Kinesis Data Firehose",
+        "firehose",
+        None,
+        vapor::schema::firehose::queries::FirehoseQuery
+    );
+    page!(
+        pages,
+        "msk",
+        "MSK (Managed Streaming for Kafka)",
+        "kafka",
+        Some("Pulls in the `ec2` feature since broker AZ enrichment needs `describe_subnets`."),
+        vapor::schema::msk::queries::MskQuery
+    );
+    page!(
+        pages,
+        "route53",
+        "Route 53",
+        "route53",
+        None,
+        vapor::schema::route53::queries::Route53Query
+    );
+    page!(
+        pages,
+        "cloudfront",
+        "CloudFront",
+        "cloudfront",
+        None,
+        vapor::schema::cloudfront::queries::CloudFrontQuery
+    );
+    page!(
+        pages,
+        "apigateway",
+        "API Gateway (REST)",
+        "apigateway",
+        None,
+        vapor::schema::apigateway::queries::ApiGatewayQuery
+    );
+    page!(
+        pages,
+        "apigatewayv2",
+        "API Gateway v2 (HTTP/WebSocket)",
+        "apigatewayv2",
+        None,
+        vapor::schema::apigatewayv2::queries::ApiGatewayV2Query
+    );
+    page!(
+        pages,
+        "global_accelerator",
+        "Global Accelerator",
+        "globalaccelerator",
+        None,
+        vapor::schema::global_accelerator::queries::GlobalAcceleratorQuery
+    );
+    page!(
+        pages,
+        "direct_connect",
+        "Direct Connect",
+        "directconnect",
+        None,
+        vapor::schema::direct_connect::queries::DirectConnectQuery
+    );
+    page!(
+        pages,
+        "network_firewall",
+        "Network Firewall",
+        "networkfirewall",
+        None,
+        vapor::schema::network_firewall::queries::NetworkFirewallQuery
+    );
+    page!(
+        pages,
+        "iam",
+        "IAM",
+        "iam",
+        None,
+        vapor::schema::iam::queries::IamQuery
+    );
+    page!(
+        pages,
+        "kms",
+        "KMS",
+        "kms",
+        None,
+        vapor::schema::kms::queries::KmsQuery
+    );
+    page!(
+        pages,
+        "secrets_manager",
+        "Secrets Manager",
+        "secretsmanager",
+        None,
+        vapor::schema::secrets_manager::queries::SecretsManagerQuery
+    );
+    page!(
+        pages,
+        "acm",
+        "Certificate Manager",
+        "acm",
+        None,
+        vapor::schema::acm::queries::AcmQuery
+    );
+    page!(
+        pages,
+        "cognito",
+        "Cognito Identity Provider",
+        "cognitoidentityprovider",
+        None,
+        vapor::schema::cognito::queries::CognitoQuery
+    );
+    page!(
+        pages,
+        "guardduty",
+        "GuardDuty",
+        "guardduty",
+        None,
+        vapor::schema::guardduty::queries::GuardDutyQuery
+    );
+    page!(
+        pages,
+        "inspector",
+        "Inspector v2",
+        "inspector2",
+        None,
+        vapor::schema::inspector::queries::InspectorQuery
+    );
+    page!(
+        pages,
+        "security_hub",
+        "Security Hub",
+        "securityhub",
+        None,
+        vapor::schema::security_hub::queries::SecurityHubQuery
+    );
+    page!(
+        pages,
+        "macie",
+        "Macie v2",
+        "macie2",
+        None,
+        vapor::schema::macie::queries::MacieQuery
+    );
+    page!(
+        pages,
+        "shield",
+        "Shield",
+        "shield",
+        None,
+        vapor::schema::shield::queries::ShieldQuery
+    );
+    page!(
+        pages,
+        "wafv2",
+        "WAF v2",
+        "wafv2",
+        None,
+        vapor::schema::wafv2::queries::Wafv2Query
+    );
+    page!(
+        pages,
+        "sts",
+        "STS",
+        "sts",
+        None,
+        vapor::schema::sts::queries::StsQuery
+    );
+    page!(
+        pages,
+        "cloudwatch",
+        "CloudWatch (includes Logs)",
+        "cloudwatch",
+        None,
+        vapor::schema::cloudwatch::queries::CloudWatchQuery
+    );
+    page!(
+        pages,
+        "cloudtrail",
+        "CloudTrail",
+        "cloudtrail",
+        None,
+        vapor::schema::cloudtrail::queries::CloudTrailQuery
+    );
+    page!(
+        pages,
+        "config_svc",
+        "AWS Config",
+        "config",
+        None,
+        vapor::schema::config_svc::queries::AwsConfigQuery
+    );
+    page!(
+        pages,
+        "cloudformation",
+        "CloudFormation",
+        "cloudformation",
+        None,
+        vapor::schema::cloudformation::queries::CloudFormationQuery
+    );
+    page!(
+        pages,
+        "codepipeline",
+        "CodePipeline",
+        "codepipeline",
+        None,
+        vapor::schema::codepipeline::queries::CodePipelineQuery
+    );
+    page!(
+        pages,
+        "codebuild",
+        "CodeBuild",
+        "codebuild",
+        None,
+        vapor::schema::codebuild::queries::CodeBuildQuery
+    );
+    page!(
+        pages,
+        "codedeploy",
+        "CodeDeploy",
+        "codedeploy",
+        None,
+        vapor::schema::codedeploy::queries::CodeDeployQuery
+    );
+    page!(
+        pages,
+        "step_functions",
+        "Step Functions",
+        "sfn",
+        None,
+        vapor::schema::step_functions::queries::StepFunctionsQuery
+    );
+    page!(
+        pages,
+        "eventbridge",
+        "EventBridge",
+        "eventbridge",
+        None,
+        vapor::schema::eventbridge::queries::EventBridgeQuery
+    );
+    page!(
+        pages,
+        "sns",
+        "SNS",
+        "sns",
+        None,
+        vapor::schema::sns::queries::SnsQuery
+    );
+    page!(
+        pages,
+        "sqs",
+        "SQS",
+        "sqs",
+        None,
+        vapor::schema::sqs::queries::SqsQuery
+    );
+    page!(
+        pages,
+        "service_quotas",
+        "Service Quotas",
+        "servicequotas",
+        None,
+        vapor::schema::service_quotas::queries::ServiceQuotasQuery
+    );
+    page!(
+        pages,
+        "health",
+        "Health",
+        "health",
+        None,
+        vapor::schema::health::queries::HealthQuery
+    );
+    page!(
+        pages,
+        "organizations",
+        "Organizations",
+        "organizations",
+        None,
+        vapor::schema::organizations::queries::OrganizationsQuery
+    );
+    page!(
+        pages,
+        "appconfig",
+        "AppConfig",
+        "appconfig",
+        None,
+        vapor::schema::appconfig::queries::AppConfigQuery
+    );
+    page!(
+        pages,
+        "appsync",
+        "AppSync",
+        "appsync",
+        None,
+        vapor::schema::appsync::queries::AppSyncQuery
+    );
+    page!(
+        pages,
+        "cost_explorer",
+        "Cost Explorer",
+        "costexplorer",
+        None,
+        vapor::schema::cost_explorer::queries::CostExplorerQuery
+    );
+    page!(
+        pages,
+        "sagemaker",
+        "SageMaker",
+        "sagemaker",
+        None,
+        vapor::schema::sagemaker::queries::SageMakerQuery
+    );
+    page!(
+        pages,
+        "transfer",
+        "Transfer Family",
+        "transfer",
+        None,
+        vapor::schema::transfer::queries::TransferQuery
+    );
+    page!(
+        pages,
+        "opensearch",
+        "OpenSearch",
+        "opensearch",
+        None,
+        vapor::schema::opensearch::queries::OpenSearchQuery
+    );
+    page!(
+        pages,
+        "backup",
+        "Backup",
+        "backup",
+        None,
+        vapor::schema::backup::queries::BackupQuery
+    );
+    page!(
+        pages,
+        "sso_admin",
+        "IAM Identity Center (SSO Admin)",
+        "ssoadmin",
+        None,
+        vapor::schema::sso_admin::queries::SsoAdminQuery
+    );
+    page!(
+        pages,
+        "acm_pca",
+        "ACM Private CA",
+        "acmpca",
+        None,
+        vapor::schema::acm_pca::queries::AcmPcaQuery
+    );
+    page!(
+        pages,
+        "ram",
+        "Resource Access Manager",
+        "ram",
+        None,
+        vapor::schema::ram::queries::RamQuery
+    );
+    page!(
+        pages,
+        "control_tower",
+        "Control Tower",
+        "controltower",
+        None,
+        vapor::schema::control_tower::queries::ControlTowerQuery
+    );
+    page!(
+        pages,
+        "fms",
+        "Firewall Manager",
+        "fms",
+        None,
+        vapor::schema::fms::queries::FmsQuery
+    );
+    page!(
+        pages,
+        "audit_manager",
+        "Audit Manager",
+        "auditmanager",
+        None,
+        vapor::schema::audit_manager::queries::AuditManagerQuery
+    );
+    page!(
+        pages,
+        "detective",
+        "Detective",
+        "detective",
+        None,
+        vapor::schema::detective::queries::DetectiveQuery
+    );
+    page!(
+        pages,
+        "ses",
+        "Simple Email Service v2",
+        "sesv2",
+        None,
+        vapor::schema::ses::queries::SesQuery
+    );
+    page!(
+        pages,
+        "elastic_beanstalk",
+        "Elastic Beanstalk",
+        "elasticbeanstalk",
+        None,
+        vapor::schema::elastic_beanstalk::queries::ElasticBeanstalkQuery
+    );
+    page!(
+        pages,
+        "app_runner",
+        "App Runner",
+        "apprunner",
+        None,
+        vapor::schema::app_runner::queries::AppRunnerQuery
+    );
+    page!(
+        pages,
+        "fsx",
+        "FSx",
+        "fsx",
+        None,
+        vapor::schema::fsx::queries::FsxQuery
+    );
+    page!(
+        pages,
+        "mq",
+        "Amazon MQ",
+        "mq",
+        None,
+        vapor::schema::mq::queries::MqQuery
+    );
+    page!(
+        pages,
+        "dms",
+        "Database Migration Service",
+        "dms",
+        None,
+        vapor::schema::dms::queries::DmsQuery
+    );
+    page!(
+        pages,
+        "workspaces",
+        "WorkSpaces",
+        "workspaces",
+        None,
+        vapor::schema::workspaces::queries::WorkspacesQuery
+    );
+    page!(
+        pages,
+        "storage_gateway",
+        "Storage Gateway",
+        "storagegateway",
+        None,
+        vapor::schema::storage_gateway::queries::StorageGatewayQuery
+    );
+    page!(
+        pages,
+        "datasync",
+        "DataSync",
+        "datasync",
+        None,
+        vapor::schema::datasync::queries::DataSyncQuery
+    );
+    page!(
+        pages,
+        "lightsail",
+        "Lightsail",
+        "lightsail",
+        None,
+        vapor::schema::lightsail::queries::LightsailQuery
+    );
+    page!(
+        pages,
+        "qldb",
+        "QLDB",
+        "qldb",
+        None,
+        vapor::schema::qldb::queries::QldbQuery
+    );
+    page!(
+        pages,
+        "keyspaces",
+        "Amazon Keyspaces",
+        "keyspaces",
+        None,
+        vapor::schema::keyspaces::queries::KeyspacesQuery
+    );
+    page!(
+        pages,
+        "bedrock",
+        "Bedrock",
+        "bedrock",
+        None,
+        vapor::schema::bedrock::queries::BedrockQuery
+    );
+    page!(
+        pages,
+        "xray",
+        "X-Ray",
+        "xray",
+        None,
+        vapor::schema::xray::queries::XRayQuery
+    );
+    page!(
+        pages,
+        "timestream",
+        "Timestream",
+        "timestream",
+        None,
+        vapor::schema::timestream::queries::TimestreamQuery
+    );
+    page!(
+        pages,
+        "lake_formation",
+        "Lake Formation",
+        "lakeformation",
+        None,
+        vapor::schema::lake_formation::queries::LakeFormationQuery
+    );
+    page!(
+        pages,
+        "quicksight",
+        "QuickSight",
+        "quicksight",
+        None,
+        vapor::schema::quicksight::queries::QuickSightQuery
+    );
+    page!(
+        pages,
+        "comprehend",
+        "Comprehend",
+        "comprehend",
+        None,
+        vapor::schema::comprehend::queries::ComprehendQuery
+    );
+    page!(
+        pages,
+        "rekognition",
+        "Rekognition",
+        "rekognition",
+        None,
+        vapor::schema::rekognition::queries::RekognitionQuery
+    );
+    page!(
+        pages,
+        "transcribe",
+        "Transcribe",
+        "transcribe",
+        None,
+        vapor::schema::transcribe::queries::TranscribeQuery
+    );
+    page!(
+        pages,
+        "translate",
+        "Translate",
+        "translate",
+        None,
+        vapor::schema::translate::queries::TranslateQuery
+    );
+    page!(
+        pages,
+        "polly",
+        "Polly",
+        "polly",
+        None,
+        vapor::schema::polly::queries::PollyQuery
+    );
+    page!(
+        pages,
+        "codeartifact",
+        "CodeArtifact",
+        "codeartifact",
+        None,
+        vapor::schema::codeartifact::queries::CodeArtifactQuery
+    );
+    page!(
+        pages,
+        "codecommit",
+        "CodeCommit",
+        "codecommit",
+        None,
+        vapor::schema::codecommit::queries::CodeCommitQuery
+    );
+    page!(
+        pages,
+        "iot",
+        "IoT Core",
+        "iot",
+        None,
+        vapor::schema::iot::queries::IotQuery
+    );
+    page!(
+        pages,
+        "license_manager",
+        "License Manager",
+        "licensemanager",
+        None,
+        vapor::schema::license_manager::queries::LicenseManagerQuery
+    );
+    page!(
+        pages,
+        "budgets",
+        "Budgets",
+        "budgets",
+        None,
+        vapor::schema::budgets::queries::BudgetsQuery
+    );
+    page!(
+        pages,
+        "connect",
+        "Connect",
+        "connect",
+        None,
+        vapor::schema::connect::queries::ConnectQuery
+    );
+    page!(
+        pages,
+        "pinpoint",
+        "Pinpoint",
+        "pinpoint",
+        None,
+        vapor::schema::pinpoint::queries::PinpointQuery
+    );
 
-    assert_eq!(pages.len(), 102, "expected 102 service pages (one per registry.rs QueryRoot entry)");
+    assert_eq!(
+        pages.len(),
+        102,
+        "expected 102 service pages (one per registry.rs QueryRoot entry)"
+    );
 
     // Drift check: every field in the fully-merged schema's `type Query` must
     // be accounted for by exactly one of the per-service pages above, and
@@ -334,7 +1063,9 @@ fn main() {
             eprintln!("  fields in the full schema but missing from a service page: {missing:?}");
         }
         if !extra.is_empty() {
-            eprintln!("  fields documented on a service page but absent from the full schema: {extra:?}");
+            eprintln!(
+                "  fields documented on a service page but absent from the full schema: {extra:?}"
+            );
         }
         std::process::exit(1);
     }
@@ -348,9 +1079,13 @@ fn main() {
         fs::write(&path, render_page(page)).unwrap_or_else(|e| panic!("write {path:?}: {e}"));
     }
 
-    fs::write(docs_src.join("SUMMARY.md"), render_summary(&pages)).expect("write docs/src/SUMMARY.md");
+    fs::write(docs_src.join("SUMMARY.md"), render_summary(&pages))
+        .expect("write docs/src/SUMMARY.md");
 
-    println!("gen-docs: wrote {} service pages to docs/src/services/", pages.len());
+    println!(
+        "gen-docs: wrote {} service pages to docs/src/services/",
+        pages.len()
+    );
 }
 
 #[cfg(test)]
@@ -400,7 +1135,11 @@ mod tests {
         let fields = query_field_names(sdl, "Query");
         assert_eq!(
             fields,
-            BTreeSet::from(["fieldOne".to_string(), "fieldTwo".to_string(), "fieldThree".to_string()])
+            BTreeSet::from([
+                "fieldOne".to_string(),
+                "fieldTwo".to_string(),
+                "fieldThree".to_string()
+            ])
         );
     }
 

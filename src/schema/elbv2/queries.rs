@@ -1,7 +1,9 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::elbv2::Elbv2Client;
-use crate::schema::elbv2::types::{Listener, ListenerRule, LoadBalancer, TargetGroup, TargetHealthInfo};
+use crate::schema::elbv2::types::{
+    Listener, ListenerRule, LoadBalancer, TargetGroup, TargetHealthInfo,
+};
 use crate::schema::pagination::Page;
 
 #[derive(Default)]
@@ -89,7 +91,9 @@ impl Elbv2Query {
         next_token: Option<String>,
     ) -> Result<Page<ListenerRule>> {
         let client = ctx.data::<Elbv2Client>()?;
-        let (results, next_token) = client.describe_rules(listener_arn, limit, next_token).await?;
+        let (results, next_token) = client
+            .describe_rules(listener_arn, limit, next_token)
+            .await?;
         Ok(Page {
             items: results.into_iter().map(ListenerRule::from).collect(),
             next_token,
@@ -100,7 +104,9 @@ impl Elbv2Query {
 #[cfg(test)]
 mod tests {
     use crate::aws::elbv2::Elbv2Client;
-    use crate::aws::test_util::{request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::Elbv2Query;

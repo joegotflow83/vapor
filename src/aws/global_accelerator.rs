@@ -276,7 +276,10 @@ mod tests {
     #[tokio::test]
     async fn list_listeners_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"AcceleratorArn":"acc-1","NextToken":"tok-1"}"#),
+            request(
+                ENDPOINT,
+                r#"{"AcceleratorArn":"acc-1","NextToken":"tok-1"}"#,
+            ),
             json_response(200, r#"{"Listeners":[{"ListenerArn":"arn:listener-b"}]}"#),
         )]);
         let client = GlobalAcceleratorClient::new(&sdk_config(http_client.clone()));
@@ -386,7 +389,10 @@ mod tests {
     #[tokio::test]
     async fn list_endpoint_groups_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"ListenerArn":"listener-1","NextToken":"tok-1"}"#),
+            request(
+                ENDPOINT,
+                r#"{"ListenerArn":"listener-1","NextToken":"tok-1"}"#,
+            ),
             json_response(
                 200,
                 r#"{"EndpointGroups":[{"EndpointGroupArn":"arn:group-b"}]}"#,

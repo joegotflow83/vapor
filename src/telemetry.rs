@@ -118,12 +118,18 @@ mod tests {
     /// async execution (a scoped `with_default(|| ...)` closure only covers
     /// the synchronous part of building the future, not subsequent `.await`
     /// polls) and returns how many `vapor::audit` events fired.
-    async fn audit_event_count(body: impl std::future::Future<Output = async_graphql::Response>) -> usize {
+    async fn audit_event_count(
+        body: impl std::future::Future<Output = async_graphql::Response>,
+    ) -> usize {
         let capture = std::sync::Arc::new(AuditCapture::default());
         let guard = tracing::subscriber::set_default(capture.clone());
         let response = body.await;
         drop(guard);
-        assert!(response.errors.is_empty(), "unexpected errors: {:?}", response.errors);
+        assert!(
+            response.errors.is_empty(),
+            "unexpected errors: {:?}",
+            response.errors
+        );
         capture.count.load(Ordering::SeqCst)
     }
 

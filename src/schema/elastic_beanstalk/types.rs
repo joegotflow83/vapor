@@ -194,7 +194,10 @@ mod tests {
         assert_eq!(result.environment_id, Some("e-abc123".to_string()));
         assert_eq!(result.status, Some("Ready".to_string()));
         assert_eq!(result.health, Some("Green".to_string()));
-        assert_eq!(result.cname, Some("my-env.elasticbeanstalk.com".to_string()));
+        assert_eq!(
+            result.cname,
+            Some("my-env.elasticbeanstalk.com".to_string())
+        );
         assert_eq!(
             result.date_created.map(|d| d.to_rfc3339()),
             Some("2024-01-01T00:00:00+00:00".to_string())

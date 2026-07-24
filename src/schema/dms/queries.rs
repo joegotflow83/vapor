@@ -19,9 +19,14 @@ impl DmsQuery {
         next_token: Option<String>,
     ) -> Result<Page<DmsReplicationInstance>> {
         let client = ctx.data::<DmsClient>()?;
-        let (instances, next_token) = client.describe_replication_instances(limit, next_token).await?;
+        let (instances, next_token) = client
+            .describe_replication_instances(limit, next_token)
+            .await?;
         Ok(Page {
-            items: instances.into_iter().map(DmsReplicationInstance::from).collect(),
+            items: instances
+                .into_iter()
+                .map(DmsReplicationInstance::from)
+                .collect(),
             next_token,
         })
     }
@@ -37,7 +42,9 @@ impl DmsQuery {
         next_token: Option<String>,
     ) -> Result<Page<DmsEndpoint>> {
         let client = ctx.data::<DmsClient>()?;
-        let (endpoints, next_token) = client.describe_endpoints(endpoint_type, limit, next_token).await?;
+        let (endpoints, next_token) = client
+            .describe_endpoints(endpoint_type, limit, next_token)
+            .await?;
         Ok(Page {
             items: endpoints.into_iter().map(DmsEndpoint::from).collect(),
             next_token,
@@ -64,7 +71,9 @@ impl DmsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::dms::DmsClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::DmsQuery;
@@ -95,10 +104,22 @@ mod tests {
             data["dmsReplicationInstances"]["items"][0]["replicationInstanceIdentifier"],
             "my-repl"
         );
-        assert_eq!(data["dmsReplicationInstances"]["items"][0]["replicationInstanceClass"], "dms.t3.medium");
-        assert_eq!(data["dmsReplicationInstances"]["items"][0]["allocatedStorage"], 50);
-        assert_eq!(data["dmsReplicationInstances"]["items"][0]["publiclyAccessible"], true);
-        assert_eq!(data["dmsReplicationInstances"]["items"][0]["multiAz"], false);
+        assert_eq!(
+            data["dmsReplicationInstances"]["items"][0]["replicationInstanceClass"],
+            "dms.t3.medium"
+        );
+        assert_eq!(
+            data["dmsReplicationInstances"]["items"][0]["allocatedStorage"],
+            50
+        );
+        assert_eq!(
+            data["dmsReplicationInstances"]["items"][0]["publiclyAccessible"],
+            true
+        );
+        assert_eq!(
+            data["dmsReplicationInstances"]["items"][0]["multiAz"],
+            false
+        );
         assert_eq!(data["dmsReplicationInstances"]["nextToken"], "cursor-a");
         http_client.relaxed_requests_match();
     }
@@ -106,7 +127,10 @@ mod tests {
     #[tokio::test]
     async fn dms_endpoints_forwards_type_filter_and_maps_items() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"Filters":[{"Name":"endpoint-type","Values":["source"]}]}"#),
+            request(
+                ENDPOINT,
+                r#"{"Filters":[{"Name":"endpoint-type","Values":["source"]}]}"#,
+            ),
             json_response(
                 200,
                 r#"{"Endpoints":[{"EndpointIdentifier":"my-src","EndpointArn":"arn:aws:dms:us-east-1:1:endpoint:abc","EndpointType":"source","EngineName":"postgres","Status":"active","Port":5432}]}"#,
@@ -123,7 +147,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["dmsEndpoints"]["items"][0]["endpointIdentifier"], "my-src");
+        assert_eq!(
+            data["dmsEndpoints"]["items"][0]["endpointIdentifier"],
+            "my-src"
+        );
         assert_eq!(data["dmsEndpoints"]["items"][0]["endpointType"], "source");
         assert_eq!(data["dmsEndpoints"]["items"][0]["engineName"], "postgres");
         assert_eq!(data["dmsEndpoints"]["items"][0]["port"], 5432);
@@ -151,9 +178,15 @@ mod tests {
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
-        assert_eq!(data["dmsReplicationTasks"]["items"][0]["replicationTaskIdentifier"], "my-task");
+        assert_eq!(
+            data["dmsReplicationTasks"]["items"][0]["replicationTaskIdentifier"],
+            "my-task"
+        );
         assert_eq!(data["dmsReplicationTasks"]["items"][0]["status"], "running");
-        assert_eq!(data["dmsReplicationTasks"]["items"][0]["migrationType"], "full-load-and-cdc");
+        assert_eq!(
+            data["dmsReplicationTasks"]["items"][0]["migrationType"],
+            "full-load-and-cdc"
+        );
         assert_eq!(
             data["dmsReplicationTasks"]["items"][0]["replicationTaskCreationDate"],
             "2023-11-14T22:13:20+00:00"

@@ -223,7 +223,10 @@ impl QuickSightClient {
         let mut token = next_token;
 
         loop {
-            let mut req = self.inner.list_data_sources().aws_account_id(&aws_account_id);
+            let mut req = self
+                .inner
+                .list_data_sources()
+                .aws_account_id(&aws_account_id);
             if let Some(ref t) = token {
                 req = req.next_token(t);
             }
@@ -313,7 +316,9 @@ mod tests {
     async fn list_users_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(
-                &format!("{BASE}/accounts/123456789012/namespaces/default/users?next-token=cursor-a"),
+                &format!(
+                    "{BASE}/accounts/123456789012/namespaces/default/users?next-token=cursor-a"
+                ),
                 "",
             ),
             json_response(200, r#"{"UserList":[{"UserName":"carol"}]}"#),
@@ -416,10 +421,7 @@ mod tests {
         let d1 = &items[0];
         assert_eq!(d1.dashboard_id, Some("d-1".to_string()));
         assert_eq!(d1.name, Some("Sales".to_string()));
-        assert_eq!(
-            d1.created_time,
-            Some(DateTime::from_secs(1_704_067_200))
-        );
+        assert_eq!(d1.created_time, Some(DateTime::from_secs(1_704_067_200)));
         assert_eq!(
             d1.last_updated_time,
             Some(DateTime::from_secs(1_704_153_600))

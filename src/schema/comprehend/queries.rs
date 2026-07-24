@@ -77,7 +77,9 @@ impl ComprehendQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::comprehend::ComprehendClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::ComprehendQuery;
@@ -87,7 +89,10 @@ mod tests {
     #[tokio::test]
     async fn comprehend_entity_recognizers_maps_items_and_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"Filter":{"Status":"TRAINED"},"MaxResults":1}"#),
+            request(
+                ENDPOINT,
+                r#"{"Filter":{"Status":"TRAINED"},"MaxResults":1}"#,
+            ),
             json_response(
                 200,
                 r#"{"EntityRecognizerPropertiesList":[{"EntityRecognizerArn":"er-1","LanguageCode":"EN","Status":"TRAINED","SubmitTime":1700000000,"EndTime":1700000100,"TrainingStartTime":1700000000,"TrainingEndTime":1700000100}],"NextToken":"cursor-b"}"#,
@@ -120,7 +125,10 @@ mod tests {
     #[tokio::test]
     async fn comprehend_document_classifiers_maps_items_and_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, r#"{"Filter":{"Status":"TRAINED"},"MaxResults":1}"#),
+            request(
+                ENDPOINT,
+                r#"{"Filter":{"Status":"TRAINED"},"MaxResults":1}"#,
+            ),
             json_response(
                 200,
                 r#"{"DocumentClassifierPropertiesList":[{"DocumentClassifierArn":"dc-1","LanguageCode":"EN","Status":"TRAINED","Mode":"MULTI_CLASS","SubmitTime":1700000000,"EndTime":1700000100}],"NextToken":"cursor-c"}"#,
@@ -145,7 +153,10 @@ mod tests {
         assert_eq!(items[0]["mode"], "MULTI_CLASS");
         assert_eq!(items[0]["submitTime"], "2023-11-14T22:13:20+00:00");
         assert_eq!(items[0]["endTime"], "2023-11-14T22:15:00+00:00");
-        assert_eq!(json["comprehendDocumentClassifiers"]["nextToken"], "cursor-c");
+        assert_eq!(
+            json["comprehendDocumentClassifiers"]["nextToken"],
+            "cursor-c"
+        );
         http_client.relaxed_requests_match();
     }
 

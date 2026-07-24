@@ -37,9 +37,7 @@ impl GlueQuery {
         next_token: Option<String>,
     ) -> Result<Page<GlueTable>> {
         let client = ctx.data::<GlueClient>()?;
-        let (tables, next_token) = client
-            .get_tables(&database_name, limit, next_token)
-            .await?;
+        let (tables, next_token) = client.get_tables(&database_name, limit, next_token).await?;
         Ok(Page {
             items: tables.iter().map(GlueTable::from).collect(),
             next_token,
@@ -96,7 +94,9 @@ impl GlueQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::glue::GlueClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::GlueQuery;
@@ -189,10 +189,7 @@ mod tests {
         let json = res.data.into_json().unwrap();
         let items = &json["glueCrawlers"]["items"];
         assert_eq!(items[0]["name"], "crawler-a");
-        assert_eq!(
-            items[0]["role"],
-            "arn:aws:iam::111111111111:role/GlueRole"
-        );
+        assert_eq!(items[0]["role"], "arn:aws:iam::111111111111:role/GlueRole");
         assert_eq!(items[0]["databaseName"], "db-1");
         assert_eq!(items[0]["state"], "READY");
         assert_eq!(items[0]["lastCrawlStatus"], "SUCCEEDED");
@@ -214,7 +211,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"JobName":"job-a","MaxResults":1}"#),
-                json_response(200, r#"{"JobRuns":[{"Id":"run-1","JobRunState":"SUCCEEDED"}]}"#),
+                json_response(
+                    200,
+                    r#"{"JobRuns":[{"Id":"run-1","JobRunState":"SUCCEEDED"}]}"#,
+                ),
             ),
         ]);
         let schema = build_query_schema(GlueQuery)
@@ -231,10 +231,7 @@ mod tests {
         let json = res.data.into_json().unwrap();
         let items = &json["glueJobs"]["items"];
         assert_eq!(items[0]["name"], "job-a");
-        assert_eq!(
-            items[0]["role"],
-            "arn:aws:iam::111111111111:role/GlueRole"
-        );
+        assert_eq!(items[0]["role"], "arn:aws:iam::111111111111:role/GlueRole");
         assert_eq!(items[0]["commandName"], "glueetl");
         assert_eq!(items[0]["maxCapacity"], 10.0);
         assert_eq!(items[0]["glueVersion"], "3.0");

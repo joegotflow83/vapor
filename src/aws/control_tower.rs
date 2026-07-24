@@ -26,8 +26,13 @@ impl ControlTowerClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_controltower::types::LandingZoneDetail>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_controltower::types::LandingZoneDetail>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut arns: Vec<String> = Vec::new();
         let mut token = next_token;
 
@@ -86,8 +91,13 @@ impl ControlTowerClient {
         target_identifier: Option<String>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_controltower::types::EnabledControlSummary>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_controltower::types::EnabledControlSummary>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -121,10 +131,10 @@ impl ControlTowerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use aws_sdk_controltower::types::LandingZoneStatus;
     use crate::aws::test_util::{
         json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
     };
+    use aws_sdk_controltower::types::LandingZoneStatus;
 
     const BASE: &str = "https://controltower.us-east-1.amazonaws.com";
 
@@ -326,7 +336,10 @@ mod tests {
     #[tokio::test]
     async fn list_enabled_controls_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/list-enabled-controls"), r#"{"maxResults":1}"#),
+            request(
+                &format!("{BASE}/list-enabled-controls"),
+                r#"{"maxResults":1}"#,
+            ),
             json_response(
                 200,
                 r#"{"enabledControls":[{"arn":"ec-arn-1"}],"nextToken":"page2-token"}"#,
@@ -348,7 +361,10 @@ mod tests {
     async fn list_enabled_controls_pages_through_until_exhausted_when_limit_not_reached() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/list-enabled-controls"), r#"{"maxResults":10}"#),
+                request(
+                    &format!("{BASE}/list-enabled-controls"),
+                    r#"{"maxResults":10}"#,
+                ),
                 json_response(
                     200,
                     r#"{"enabledControls":[{"arn":"ec-arn-1"},{"arn":"ec-arn-2"}],"nextToken":"p2"}"#,
@@ -400,4 +416,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

@@ -1,5 +1,7 @@
 use aws_config::SdkConfig;
-use aws_sdk_macie2::types::{BucketMetadata, CriterionAdditionalProperties, Finding, FindingCriteria};
+use aws_sdk_macie2::types::{
+    BucketMetadata, CriterionAdditionalProperties, Finding, FindingCriteria,
+};
 
 use crate::error::VaporError;
 
@@ -225,7 +227,10 @@ mod tests {
         )]);
         let client = MacieClient::new(&sdk_config(http_client.clone()));
 
-        let (ids, token) = client.list_findings(None, None, Some(1), None).await.unwrap();
+        let (ids, token) = client
+            .list_findings(None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(ids, vec!["f-1".to_string()]);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -270,7 +275,10 @@ mod tests {
         )]);
         let client = MacieClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_findings(None, None, None, None).await.unwrap_err();
+        let err = client
+            .list_findings(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -296,7 +304,10 @@ mod tests {
     #[tokio::test]
     async fn get_findings_fetches_findings_for_given_ids() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/findings/describe"), r#"{"findingIds":["f-1"]}"#),
+            request(
+                &format!("{BASE}/findings/describe"),
+                r#"{"findingIds":["f-1"]}"#,
+            ),
             json_response(
                 200,
                 r#"{"findings":[{"id":"f-1","title":"Exposed credentials","severity":{"description":"High","score":3},"type":"SensitiveData:S3Object/Multiple"}]}"#,
@@ -359,7 +370,10 @@ mod tests {
     #[tokio::test]
     async fn get_findings_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/findings/describe"), r#"{"findingIds":["f-1"]}"#),
+            request(
+                &format!("{BASE}/findings/describe"),
+                r#"{"findingIds":["f-1"]}"#,
+            ),
             json_error_response("ResourceNotFoundException", "no such finding"),
         )]);
         let client = MacieClient::new(&sdk_config(http_client.clone()));
@@ -403,7 +417,10 @@ mod tests {
     #[tokio::test]
     async fn describe_buckets_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/datasources/s3"), r#"{"nextToken":"cursor-a"}"#),
+            request(
+                &format!("{BASE}/datasources/s3"),
+                r#"{"nextToken":"cursor-a"}"#,
+            ),
             json_response(200, r#"{"buckets":[]}"#),
         )]);
         let client = MacieClient::new(&sdk_config(http_client.clone()));
@@ -459,10 +476,7 @@ mod tests {
         ]);
         let client = MacieClient::new(&sdk_config(http_client.clone()));
 
-        let (buckets, token) = client
-            .describe_buckets(Some(10), None)
-            .await
-            .unwrap();
+        let (buckets, token) = client.describe_buckets(Some(10), None).await.unwrap();
 
         assert_eq!(buckets.len(), 3);
         assert_eq!(token, None);
@@ -489,4 +503,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

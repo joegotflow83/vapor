@@ -20,7 +20,10 @@ impl CodeDeployQuery {
         let client = ctx.data::<CodeDeployClient>()?;
         let (names, next_token) = client.list_applications(limit, next_token).await?;
         if names.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token,
+            });
         }
         let apps = client.batch_get_applications(names).await?;
         Ok(Page {
@@ -43,9 +46,14 @@ impl CodeDeployQuery {
             .list_deployment_groups(&application_name, limit, next_token)
             .await?;
         if names.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token,
+            });
         }
-        let groups = client.batch_get_deployment_groups(&application_name, names).await?;
+        let groups = client
+            .batch_get_deployment_groups(&application_name, names)
+            .await?;
         Ok(Page {
             items: groups.into_iter().map(DeploymentGroup::from).collect(),
             next_token,
@@ -65,10 +73,18 @@ impl CodeDeployQuery {
     ) -> Result<Page<Deployment>> {
         let client = ctx.data::<CodeDeployClient>()?;
         let (ids, next_token) = client
-            .list_deployments(application_name.as_deref(), deployment_group_name.as_deref(), limit, next_token)
+            .list_deployments(
+                application_name.as_deref(),
+                deployment_group_name.as_deref(),
+                limit,
+                next_token,
+            )
             .await?;
         if ids.is_empty() {
-            return Ok(Page { items: Vec::new(), next_token });
+            return Ok(Page {
+                items: Vec::new(),
+                next_token,
+            });
         }
         let deployments = client.batch_get_deployments(ids).await?;
         Ok(Page {
@@ -107,10 +123,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(
-                    200,
-                    r#"{"applications":["app-1"],"nextToken":"cursor-b"}"#,
-                ),
+                json_response(200, r#"{"applications":["app-1"],"nextToken":"cursor-b"}"#),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"applicationNames":["app-1"]}"#),
@@ -155,7 +168,13 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["deployApplications"]["items"].as_array().unwrap().len(), 0);
+        assert_eq!(
+            json["deployApplications"]["items"]
+                .as_array()
+                .unwrap()
+                .len(),
+            0
+        );
         assert!(json["deployApplications"]["nextToken"].is_null());
         // Only one queued event (list_applications) — a second call would
         // fail `relaxed_requests_match` below if batch_get_applications were

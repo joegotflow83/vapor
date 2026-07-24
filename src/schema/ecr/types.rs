@@ -56,11 +56,7 @@ pub struct EcrImage {
 
 impl From<aws_sdk_ecr::types::ImageDetail> for EcrImage {
     fn from(img: aws_sdk_ecr::types::ImageDetail) -> Self {
-        let image_tags = img
-            .image_tags()
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
+        let image_tags = img.image_tags().iter().map(|s| s.to_string()).collect();
 
         Self {
             registry_id: img.registry_id().map(|s| s.to_string()),
@@ -115,7 +111,11 @@ impl From<&aws_sdk_ecr::types::ImageScanFinding> for EcrImageScanFinding {
             description: f.description().map(|s| s.to_string()),
             uri: f.uri().map(|s| s.to_string()),
             severity: f.severity().map(|s| s.as_str().to_string()),
-            attributes: f.attributes().iter().map(EcrFindingAttribute::from).collect(),
+            attributes: f
+                .attributes()
+                .iter()
+                .map(EcrFindingAttribute::from)
+                .collect(),
         }
     }
 }
@@ -164,8 +164,8 @@ impl From<ImageScanFindingsResult> for EcrImageScanFindings {
 mod tests {
     use super::*;
     use aws_sdk_ecr::types::{
-        EncryptionConfiguration, EncryptionType, ImageDetail, ImageScanningConfiguration,
-        ImageScanStatus, ImageTagMutability, Repository, ScanStatus,
+        EncryptionConfiguration, EncryptionType, ImageDetail, ImageScanStatus,
+        ImageScanningConfiguration, ImageTagMutability, Repository, ScanStatus,
     };
     use aws_smithy_types::DateTime as SmithyDateTime;
 
@@ -194,7 +194,10 @@ mod tests {
         // `Repository` exposes no repository_id; mapping always yields None.
         assert!(repo.repository_id.is_none());
         assert_eq!(repo.repository_name, Some("my-app".to_string()));
-        assert_eq!(repo.repository_uri, Some("123456789012.dkr.ecr.us-east-1.amazonaws.com/my-app".to_string()));
+        assert_eq!(
+            repo.repository_uri,
+            Some("123456789012.dkr.ecr.us-east-1.amazonaws.com/my-app".to_string())
+        );
         assert_eq!(
             repo.created_at.map(|d| d.to_rfc3339()),
             Some("2024-01-01T00:00:00+00:00".to_string())
@@ -233,7 +236,10 @@ mod tests {
         let repo = EcrRepository::from(sdk);
         assert_eq!(repo.repository_name, Some("encrypted-repo".to_string()));
         assert_eq!(repo.encryption_type, Some("KMS".to_string()));
-        assert_eq!(repo.kms_key, Some("arn:aws:kms:us-east-1:123456789012:key/abc-123".to_string()));
+        assert_eq!(
+            repo.kms_key,
+            Some("arn:aws:kms:us-east-1:123456789012:key/abc-123".to_string())
+        );
     }
 
     #[test]
@@ -272,19 +278,26 @@ mod tests {
         assert_eq!(img.registry_id, Some("123456789012".to_string()));
         assert_eq!(img.repository_name, Some("my-app".to_string()));
         assert_eq!(img.image_digest, Some("sha256:abc123def456".to_string()));
-        assert_eq!(img.image_tags, vec!["latest".to_string(), "v1.0".to_string()]);
+        assert_eq!(
+            img.image_tags,
+            vec!["latest".to_string(), "v1.0".to_string()]
+        );
         assert_eq!(img.image_size_in_bytes, Some(10_485_760i64));
         assert!(img.image_pushed_at.is_some());
         assert_eq!(img.image_scan_status, Some("COMPLETE".to_string()));
-        assert_eq!(img.artifact_media_type, Some("application/vnd.oci.image.manifest.v1+json".to_string()));
-        assert_eq!(img.image_manifest_media_type, Some("application/vnd.docker.distribution.manifest.v2+json".to_string()));
+        assert_eq!(
+            img.artifact_media_type,
+            Some("application/vnd.oci.image.manifest.v1+json".to_string())
+        );
+        assert_eq!(
+            img.image_manifest_media_type,
+            Some("application/vnd.docker.distribution.manifest.v2+json".to_string())
+        );
     }
 
     #[test]
     fn test_ecr_image_no_tags() {
-        let sdk = ImageDetail::builder()
-            .image_digest("sha256:def456")
-            .build();
+        let sdk = ImageDetail::builder().image_digest("sha256:def456").build();
 
         let img = EcrImage::from(sdk);
         assert_eq!(img.image_digest, Some("sha256:def456".to_string()));
@@ -325,10 +338,7 @@ mod tests {
     #[test]
     fn test_ecr_finding_attribute_no_value() {
         use aws_sdk_ecr::types::Attribute;
-        let attr = Attribute::builder()
-            .key("cve_id")
-            .build()
-            .unwrap();
+        let attr = Attribute::builder().key("cve_id").build().unwrap();
         let out = EcrFindingAttribute::from(&attr);
         assert_eq!(out.key, "cve_id");
         assert!(out.value.is_none());

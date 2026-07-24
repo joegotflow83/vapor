@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
 use chrono::{DateTime, Utc};
 
-use crate::aws::connect::{ConnectContactFlowInfo, ConnectInstanceInfo, ConnectQueueInfo, ConnectUserInfo};
+use crate::aws::connect::{
+    ConnectContactFlowInfo, ConnectInstanceInfo, ConnectQueueInfo, ConnectUserInfo,
+};
 
 #[derive(SimpleObject, Clone)]
 pub struct ConnectInstance {
@@ -102,7 +104,9 @@ impl From<ConnectUserInfo> for ConnectUser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::connect::{ConnectContactFlowInfo, ConnectInstanceInfo, ConnectQueueInfo, ConnectUserInfo};
+    use crate::aws::connect::{
+        ConnectContactFlowInfo, ConnectInstanceInfo, ConnectQueueInfo, ConnectUserInfo,
+    };
 
     #[test]
     fn test_connect_instance_from_full() {
@@ -148,7 +152,9 @@ mod tests {
     fn test_connect_queue_from_full() {
         let info = ConnectQueueInfo {
             queue_id: Some("queue-456".to_string()),
-            queue_arn: Some("arn:aws:connect:us-east-1:123456789:instance/inst-123/queue/queue-456".to_string()),
+            queue_arn: Some(
+                "arn:aws:connect:us-east-1:123456789:instance/inst-123/queue/queue-456".to_string(),
+            ),
             name: Some("BasicQueue".to_string()),
             description: Some("Main support queue".to_string()),
             queue_type: Some("STANDARD".to_string()),
@@ -181,7 +187,10 @@ mod tests {
     fn test_connect_contact_flow_from_full() {
         let info = ConnectContactFlowInfo {
             id: Some("flow-789".to_string()),
-            arn: Some("arn:aws:connect:us-east-1:123456789:instance/inst-123/contact-flow/flow-789".to_string()),
+            arn: Some(
+                "arn:aws:connect:us-east-1:123456789:instance/inst-123/contact-flow/flow-789"
+                    .to_string(),
+            ),
             name: Some("Default inbound flow".to_string()),
             contact_flow_type: Some("CONTACT_FLOW".to_string()),
             description: None,
@@ -211,7 +220,9 @@ mod tests {
     fn test_connect_user_from_full() {
         let info = ConnectUserInfo {
             id: Some("user-abc".to_string()),
-            arn: Some("arn:aws:connect:us-east-1:123456789:instance/inst-123/agent/user-abc".to_string()),
+            arn: Some(
+                "arn:aws:connect:us-east-1:123456789:instance/inst-123/agent/user-abc".to_string(),
+            ),
             username: Some("agent.smith".to_string()),
             routing_profile_id: Some("rp-123".to_string()),
             hierarchy_group_id: Some("hg-456".to_string()),

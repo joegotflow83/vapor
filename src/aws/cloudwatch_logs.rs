@@ -75,7 +75,13 @@ impl CloudWatchLogsClient {
         order_by: Option<String>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_cloudwatchlogs::types::LogStream>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_cloudwatchlogs::types::LogStream>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let sdk_order_by = order_by.as_deref().map(|s| match s {
             "LastEventTime" => OrderBy::LastEventTime,
             _ => OrderBy::LogStreamName,
@@ -128,7 +134,13 @@ impl CloudWatchLogsClient {
         log_group_name: Option<String>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_cloudwatchlogs::types::MetricFilter>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_cloudwatchlogs::types::MetricFilter>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut filters = Vec::new();
         let mut token = next_token;
 
@@ -174,7 +186,13 @@ impl CloudWatchLogsClient {
         end_time: Option<i64>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_cloudwatchlogs::types::FilteredLogEvent>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_cloudwatchlogs::types::FilteredLogEvent>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut events = Vec::new();
         let mut token = next_token;
 
@@ -220,7 +238,9 @@ impl CloudWatchLogsClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://logs.us-east-1.amazonaws.com/";
 
@@ -330,7 +350,10 @@ mod tests {
         )]);
         let client = CloudWatchLogsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_log_groups(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_log_groups(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -506,15 +529,7 @@ mod tests {
         let client = CloudWatchLogsClient::new(&sdk_config(http_client.clone()));
 
         let (events, token) = client
-            .filter_log_events(
-                "my-group".to_string(),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )
+            .filter_log_events("my-group".to_string(), None, None, None, None, None, None)
             .await
             .unwrap();
 
@@ -559,10 +574,7 @@ mod tests {
     async fn filter_log_events_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"logGroupName":"my-group","limit":1}"#),
-            json_response(
-                200,
-                r#"{"events":[{"eventId":"e1"}],"nextToken":"page2"}"#,
-            ),
+            json_response(200, r#"{"events":[{"eventId":"e1"}],"nextToken":"page2"}"#),
         )]);
         let client = CloudWatchLogsClient::new(&sdk_config(http_client.clone()));
 

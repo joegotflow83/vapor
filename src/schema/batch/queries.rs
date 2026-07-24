@@ -34,7 +34,10 @@ impl BatchQuery {
             .describe_compute_environments(limit, next_token)
             .await?;
         Ok(Page {
-            items: envs.into_iter().map(BatchComputeEnvironment::from).collect(),
+            items: envs
+                .into_iter()
+                .map(BatchComputeEnvironment::from)
+                .collect(),
             next_token,
         })
     }
@@ -64,13 +67,16 @@ impl BatchQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::batch::BatchClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::BatchQuery;
 
     const JOB_QUEUES: &str = "https://batch.us-east-1.amazonaws.com/v1/describejobqueues";
-    const COMPUTE_ENVS: &str = "https://batch.us-east-1.amazonaws.com/v1/describecomputeenvironments";
+    const COMPUTE_ENVS: &str =
+        "https://batch.us-east-1.amazonaws.com/v1/describecomputeenvironments";
     const JOB_DEFS: &str = "https://batch.us-east-1.amazonaws.com/v1/describejobdefinitions";
 
     #[tokio::test]

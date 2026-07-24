@@ -68,7 +68,9 @@ impl CloudTrailQuery {
                     .attribute_key(LookupAttributeKey::EventName)
                     .attribute_value(name)
                     .build()
-                    .map_err(|e| async_graphql::Error::new(format!("Failed to build attribute: {e}")))?,
+                    .map_err(|e| {
+                        async_graphql::Error::new(format!("Failed to build attribute: {e}"))
+                    })?,
             );
         }
         if let Some(ref user) = username {
@@ -77,7 +79,9 @@ impl CloudTrailQuery {
                     .attribute_key(LookupAttributeKey::Username)
                     .attribute_value(user)
                     .build()
-                    .map_err(|e| async_graphql::Error::new(format!("Failed to build attribute: {e}")))?,
+                    .map_err(|e| {
+                        async_graphql::Error::new(format!("Failed to build attribute: {e}"))
+                    })?,
             );
         }
 
@@ -155,10 +159,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(
-                    200,
-                    r#"{"trailList":[{"Name":"t1","TrailARN":"arn1"}]}"#,
-                ),
+                json_response(200, r#"{"trailList":[{"Name":"t1","TrailARN":"arn1"}]}"#),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"Name":"arn1"}"#),

@@ -1,7 +1,9 @@
 use async_graphql::{Context, Object, Result};
 
 use crate::aws::datasync::DataSyncClient;
-use crate::schema::datasync::types::{DataSyncAgent, DataSyncLocation, DataSyncTask, DataSyncTaskExecution};
+use crate::schema::datasync::types::{
+    DataSyncAgent, DataSyncLocation, DataSyncTask, DataSyncTaskExecution,
+};
 use crate::schema::pagination::Page;
 
 #[derive(Default)]
@@ -67,9 +69,14 @@ impl DataSyncQuery {
         next_token: Option<String>,
     ) -> Result<Page<DataSyncTaskExecution>> {
         let client = ctx.data::<DataSyncClient>()?;
-        let (executions, next_token) = client.list_task_executions(task_arn, limit, next_token).await?;
+        let (executions, next_token) = client
+            .list_task_executions(task_arn, limit, next_token)
+            .await?;
         Ok(Page {
-            items: executions.into_iter().map(DataSyncTaskExecution::from).collect(),
+            items: executions
+                .into_iter()
+                .map(DataSyncTaskExecution::from)
+                .collect(),
             next_token,
         })
     }
@@ -86,7 +93,9 @@ impl DataSyncQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::datasync::DataSyncClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::DataSyncQuery;
@@ -105,7 +114,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"AgentArn":"arn:agent-1"}"#),
-                json_response(200, r#"{"AgentArn":"arn:agent-1","CreationTime":1700000000}"#),
+                json_response(
+                    200,
+                    r#"{"AgentArn":"arn:agent-1","CreationTime":1700000000}"#,
+                ),
             ),
         ]);
         let schema = build_query_schema(DataSyncQuery)
@@ -210,7 +222,10 @@ mod tests {
                 ),
             ),
             ReplayEvent::new(
-                request(ENDPOINT, r#"{"TaskExecutionArn":"arn:task-1/execution/exec-1"}"#),
+                request(
+                    ENDPOINT,
+                    r#"{"TaskExecutionArn":"arn:task-1/execution/exec-1"}"#,
+                ),
                 json_response(
                     200,
                     r#"{"TaskExecutionArn":"arn:task-1/execution/exec-1","Status":"SUCCESS","StartTime":1700000000,"EstimatedFilesToTransfer":100,"FilesTransferred":100,"BytesTransferred":204800}"#,

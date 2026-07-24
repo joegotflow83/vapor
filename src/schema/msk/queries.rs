@@ -93,7 +93,8 @@ mod tests {
     use crate::aws::ec2::Ec2Client;
     use crate::aws::msk::MskClient;
     use crate::aws::test_util::{
-        json_error_response, json_response, request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+        json_error_response, json_response, request, sdk_config, xml_response, ReplayEvent,
+        StaticReplayClient,
     };
     use crate::schema::test_util::build_query_schema;
 
@@ -102,7 +103,8 @@ mod tests {
     const KAFKA_BASE: &str = "https://kafka.us-east-1.amazonaws.com";
     const EC2_ENDPOINT: &str = "https://ec2.us-east-1.amazonaws.com/";
     const CLUSTER_ARN: &str = "arn:aws:kafka:us-east-1:123456789012:cluster/c1/abc-123";
-    const CLUSTER_ARN_ENCODED: &str = "arn%3Aaws%3Akafka%3Aus-east-1%3A123456789012%3Acluster%2Fc1%2Fabc-123";
+    const CLUSTER_ARN_ENCODED: &str =
+        "arn%3Aaws%3Akafka%3Aus-east-1%3A123456789012%3Acluster%2Fc1%2Fabc-123";
 
     // `msk_clusters` is a bare passthrough to the already-tested
     // `MskClient::list_clusters_v2` (pagination/limit/error-mapping covered
@@ -147,7 +149,10 @@ mod tests {
     #[tokio::test]
     async fn msk_broker_nodes_enriches_az_and_dedupes_subnet_ids() {
         let msk_http = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"), ""),
+            request(
+                &format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"nodeInfoList":[{"nodeARN":"arn:node1","instanceType":"kafka.m5.large","brokerNodeInfo":{"brokerId":1.0,"clientSubnet":"subnet-1","clientVpcIpAddress":"10.0.0.5","attachedENIId":"eni-1"}},{"nodeARN":"arn:node2","instanceType":"kafka.m5.large","brokerNodeInfo":{"brokerId":2.0,"clientSubnet":"subnet-1"}}]}"#,
@@ -194,7 +199,10 @@ mod tests {
     #[tokio::test]
     async fn msk_broker_nodes_skips_ec2_call_when_no_subnet_info() {
         let msk_http = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"), ""),
+            request(
+                &format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"nodeInfoList":[{"nodeARN":"arn:node1","instanceType":"kafka.m5.large"}]}"#,
@@ -214,7 +222,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["mskBrokerNodes"]["items"][0]["az"], serde_json::Value::Null);
+        assert_eq!(
+            json["mskBrokerNodes"]["items"][0]["az"],
+            serde_json::Value::Null
+        );
         msk_http.relaxed_requests_match();
         ec2_http.relaxed_requests_match();
     }
@@ -222,14 +233,20 @@ mod tests {
     #[tokio::test]
     async fn msk_broker_nodes_propagates_describe_subnets_errors() {
         let msk_http = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"), ""),
+            request(
+                &format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"),
+                "",
+            ),
             json_response(
                 200,
                 r#"{"nodeInfoList":[{"nodeARN":"arn:node1","brokerNodeInfo":{"brokerId":1.0,"clientSubnet":"subnet-1"}}]}"#,
             ),
         )]);
         let ec2_http = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(EC2_ENDPOINT, "Action=DescribeSubnets&Version=2016-11-15&SubnetId.1=subnet-1"),
+            request(
+                EC2_ENDPOINT,
+                "Action=DescribeSubnets&Version=2016-11-15&SubnetId.1=subnet-1",
+            ),
             crate::aws::test_util::ec2_error_response("InvalidSubnetID.NotFound", "no such subnet"),
         )]);
         let schema = build_query_schema(MskQuery)
@@ -251,7 +268,10 @@ mod tests {
     #[tokio::test]
     async fn msk_broker_nodes_propagates_list_nodes_errors() {
         let msk_http = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"), ""),
+            request(
+                &format!("{KAFKA_BASE}/v1/clusters/{CLUSTER_ARN_ENCODED}/nodes"),
+                "",
+            ),
             json_error_response("NotFoundException", "cluster not found"),
         )]);
         let ec2_http = StaticReplayClient::new(vec![]);

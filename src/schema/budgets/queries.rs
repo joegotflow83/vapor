@@ -19,7 +19,9 @@ impl BudgetsQuery {
         next_token: Option<String>,
     ) -> Result<Page<Budget>> {
         let client = ctx.data::<BudgetsClient>()?;
-        let (items, token) = client.describe_budgets(&account_id, limit, next_token).await?;
+        let (items, token) = client
+            .describe_budgets(&account_id, limit, next_token)
+            .await?;
         Ok(Page {
             items: items.into_iter().map(Budget::from).collect(),
             next_token: token,
@@ -51,7 +53,9 @@ impl BudgetsQuery {
 mod tests {
     use super::*;
     use crate::aws::budgets::BudgetsClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     const ENDPOINT: &str = "https://budgets.amazonaws.com/";

@@ -150,10 +150,7 @@ impl IamQuery {
     /// Use this to audit CIS AWS Benchmark 1.x controls: minimum length ≥14,
     /// all complexity flags enabled, max_password_age ≤90, reuse prevention ≥24,
     /// hard_expiry enabled.
-    async fn iam_password_policy(
-        &self,
-        ctx: &Context<'_>,
-    ) -> Result<Option<IamPasswordPolicy>> {
+    async fn iam_password_policy(&self, ctx: &Context<'_>) -> Result<Option<IamPasswordPolicy>> {
         let iam = ctx.data::<IamClient>()?;
         let policy = iam.get_account_password_policy().await?;
         Ok(policy.map(IamPasswordPolicy::from))
@@ -208,7 +205,9 @@ impl IamQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::iam::IamClient;
-    use crate::aws::test_util::{request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        request, sdk_config, xml_error_response, xml_response, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::IamQuery;
@@ -220,7 +219,10 @@ mod tests {
     #[tokio::test]
     async fn iam_roles_forwards_path_prefix_and_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListRoles&Version=2010-05-08&PathPrefix=%2Fapp%2F&MaxItems=1"),
+            request(
+                ENDPOINT,
+                "Action=ListRoles&Version=2010-05-08&PathPrefix=%2Fapp%2F&MaxItems=1",
+            ),
             xml_response(
                 200,
                 "<ListRolesResponse><ListRolesResult><Roles><member>\
@@ -254,7 +256,10 @@ mod tests {
     #[tokio::test]
     async fn iam_policies_forwards_scope_and_path_prefix() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListPolicies&Version=2010-05-08&Scope=AWS&PathPrefix=%2F&MaxItems=1"),
+            request(
+                ENDPOINT,
+                "Action=ListPolicies&Version=2010-05-08&Scope=AWS&PathPrefix=%2F&MaxItems=1",
+            ),
             xml_response(
                 200,
                 "<ListPoliciesResponse><ListPoliciesResult><Policies><member>\
@@ -287,7 +292,10 @@ mod tests {
     #[tokio::test]
     async fn iam_policies_defaults_scope_to_local_when_omitted() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=ListPolicies&Version=2010-05-08&Scope=Local"),
+            request(
+                ENDPOINT,
+                "Action=ListPolicies&Version=2010-05-08&Scope=Local",
+            ),
             xml_response(
                 200,
                 "<ListPoliciesResponse><ListPoliciesResult><Policies></Policies>\
@@ -298,7 +306,9 @@ mod tests {
             .data(IamClient::new(&sdk_config(http_client.clone())))
             .finish();
 
-        let res = schema.execute(r#"{ iamPolicies { items { policyName } nextToken } }"#).await;
+        let res = schema
+            .execute(r#"{ iamPolicies { items { policyName } nextToken } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
@@ -389,7 +399,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["iamAttachedRolePolicies"]["items"][0]["policyName"], "AdministratorAccess");
+        assert_eq!(
+            json["iamAttachedRolePolicies"]["items"][0]["policyName"],
+            "AdministratorAccess"
+        );
         assert_eq!(json["iamAttachedRolePolicies"]["nextToken"], "page2");
         http_client.relaxed_requests_match();
     }
@@ -423,7 +436,10 @@ mod tests {
         assert_eq!(json["iamPolicyDocument"]["policyArn"], POLICY_ARN);
         assert_eq!(json["iamPolicyDocument"]["versionId"], "v2");
         assert_eq!(json["iamPolicyDocument"]["isDefaultVersion"], false);
-        assert_eq!(json["iamPolicyDocument"]["document"], r#"{"Version":"2012-10-17"}"#);
+        assert_eq!(
+            json["iamPolicyDocument"]["document"],
+            r#"{"Version":"2012-10-17"}"#
+        );
         http_client.relaxed_requests_match();
     }
 
@@ -469,7 +485,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["iamRoleInlinePolicies"]["items"][0]["policyName"], "inline-policy-1");
+        assert_eq!(
+            json["iamRoleInlinePolicies"]["items"][0]["policyName"],
+            "inline-policy-1"
+        );
         assert_eq!(
             json["iamRoleInlinePolicies"]["items"][0]["document"],
             r#"{"Version":"2012-10-17"}"#
@@ -494,7 +513,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ iamPasswordPolicy { minimumPasswordLength requireSymbols maxPasswordAge } }"#)
+            .execute(
+                r#"{ iamPasswordPolicy { minimumPasswordLength requireSymbols maxPasswordAge } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -512,14 +533,19 @@ mod tests {
         // an empty-body response gets filled in by the SDK's own
         // `*_correct_errors` default synthesis instead).
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=GetAccountPasswordPolicy&Version=2010-05-08"),
+            request(
+                ENDPOINT,
+                "Action=GetAccountPasswordPolicy&Version=2010-05-08",
+            ),
             xml_error_response("NoSuchEntity", "no custom password policy"),
         )]);
         let schema = build_query_schema(IamQuery)
             .data(IamClient::new(&sdk_config(http_client.clone())))
             .finish();
 
-        let res = schema.execute(r#"{ iamPasswordPolicy { requireSymbols } }"#).await;
+        let res = schema
+            .execute(r#"{ iamPasswordPolicy { requireSymbols } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
@@ -552,7 +578,10 @@ mod tests {
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
-        assert_eq!(json["iamMfaDevices"]["items"][0]["serialNumber"], "arn:aws:iam::123456789012:mfa/alice");
+        assert_eq!(
+            json["iamMfaDevices"]["items"][0]["serialNumber"],
+            "arn:aws:iam::123456789012:mfa/alice"
+        );
         assert_eq!(json["iamMfaDevices"]["nextToken"], "page2");
         http_client.relaxed_requests_match();
     }
@@ -567,7 +596,10 @@ mod tests {
         // plain `for` loop's calls land in source order in the mock queue).
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(ENDPOINT, "Action=ListAccessKeys&Version=2010-05-08&UserName=alice"),
+                request(
+                    ENDPOINT,
+                    "Action=ListAccessKeys&Version=2010-05-08&UserName=alice",
+                ),
                 xml_response(
                     200,
                     "<ListAccessKeysResponse><ListAccessKeysResult><AccessKeyMetadata>\
@@ -637,7 +669,10 @@ mod tests {
         // codepipeline's `.ok().flatten()` per-item error-swallowing.
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(ENDPOINT, "Action=ListAccessKeys&Version=2010-05-08&UserName=alice"),
+                request(
+                    ENDPOINT,
+                    "Action=ListAccessKeys&Version=2010-05-08&UserName=alice",
+                ),
                 xml_response(
                     200,
                     "<ListAccessKeysResponse><ListAccessKeysResult><AccessKeyMetadata><member>\

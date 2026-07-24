@@ -60,7 +60,13 @@ impl SsoAdminQuery {
     ) -> Result<Page<SsoAccountAssignment>> {
         let client = ctx.data::<SsoAdminClient>()?;
         let (assignments, next_token) = client
-            .list_account_assignments(&instance_arn, &account_id, &permission_set_arn, limit, next_token)
+            .list_account_assignments(
+                &instance_arn,
+                &account_id,
+                &permission_set_arn,
+                limit,
+                next_token,
+            )
             .await?;
         Ok(Page {
             items: assignments
@@ -81,7 +87,9 @@ impl SsoAdminQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::sso_admin::SsoAdminClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::SsoAdminQuery;
@@ -110,10 +118,7 @@ mod tests {
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();
         let items = &json["ssoInstances"]["items"];
-        assert_eq!(
-            items[0]["instanceArn"],
-            "arn:aws:sso:::instance/ssoins-1"
-        );
+        assert_eq!(items[0]["instanceArn"], "arn:aws:sso:::instance/ssoins-1");
         assert_eq!(items[0]["identityStoreId"], "d-1");
         assert_eq!(items[0]["ownerAccountId"], "111111111111");
         assert_eq!(items[0]["name"], "main");
@@ -127,10 +132,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"InstanceArn":"arn:instance","MaxResults":1}"#),
-                json_response(
-                    200,
-                    r#"{"PermissionSets":["ps-1"],"NextToken":"page2"}"#,
-                ),
+                json_response(200, r#"{"PermissionSets":["ps-1"],"NextToken":"page2"}"#),
             ),
             ReplayEvent::new(
                 request(

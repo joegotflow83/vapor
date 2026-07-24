@@ -23,7 +23,10 @@ impl BedrockQuery {
         let models = client
             .list_foundation_models(provider, by_output_modality, by_inference_type)
             .await?;
-        Ok(models.into_iter().map(BedrockFoundationModel::from).collect())
+        Ok(models
+            .into_iter()
+            .map(BedrockFoundationModel::from)
+            .collect())
     }
 
     /// List custom Bedrock models. `limit` caps the number of results
@@ -75,7 +78,9 @@ impl BedrockQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::bedrock::BedrockClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::BedrockQuery;

@@ -1,9 +1,9 @@
 #[cfg(feature = "s3")]
 use aws_config::SdkConfig;
 #[cfg(feature = "s3")]
-use aws_sdk_s3::types::{Bucket, PublicAccessBlockConfiguration, Tag};
-#[cfg(feature = "s3")]
 use aws_sdk_s3::error::ProvideErrorMetadata;
+#[cfg(feature = "s3")]
+use aws_sdk_s3::types::{Bucket, PublicAccessBlockConfiguration, Tag};
 
 #[cfg(feature = "s3")]
 use crate::error::VaporError;
@@ -96,13 +96,7 @@ impl S3Client {
 
     /// Get tags for a bucket. NoSuchTagSet is not an error — returns empty Vec.
     pub async fn get_bucket_tagging(&self, bucket: &str) -> Result<Vec<Tag>, VaporError> {
-        match self
-            .inner
-            .get_bucket_tagging()
-            .bucket(bucket)
-            .send()
-            .await
-        {
+        match self.inner.get_bucket_tagging().bucket(bucket).send().await {
             Ok(output) => Ok(output.tag_set().to_vec()),
             Err(e) => {
                 let svc_err = e.into_service_error();
@@ -155,13 +149,7 @@ impl S3Client {
     /// Get the bucket policy JSON document.
     /// NoSuchBucketPolicy is not an error — returns None when no resource policy is attached.
     pub async fn get_bucket_policy(&self, bucket: &str) -> Result<Option<String>, VaporError> {
-        match self
-            .inner
-            .get_bucket_policy()
-            .bucket(bucket)
-            .send()
-            .await
-        {
+        match self.inner.get_bucket_policy().bucket(bucket).send().await {
             Ok(output) => Ok(output.policy().map(|s| s.to_string())),
             Err(e) => {
                 let svc_err = e.into_service_error();
@@ -390,10 +378,7 @@ mod tests {
         )]);
         let client = S3Client::new(&sdk_config(http_client.clone()));
 
-        let err = client
-            .get_bucket_versioning("my-bucket")
-            .await
-            .unwrap_err();
+        let err = client.get_bucket_versioning("my-bucket").await.unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("AccessDenied".to_string())),
@@ -602,10 +587,7 @@ mod tests {
         )]);
         let client = S3Client::new(&sdk_config(http_client.clone()));
 
-        let err = client
-            .get_bucket_encryption("my-bucket")
-            .await
-            .unwrap_err();
+        let err = client.get_bucket_encryption("my-bucket").await.unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("AccessDenied".to_string())),

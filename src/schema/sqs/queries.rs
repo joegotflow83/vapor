@@ -26,11 +26,7 @@ impl SqsQuery {
     }
 
     /// Fetch full metadata for a single SQS queue by URL.
-    async fn sqs_queue(
-        &self,
-        ctx: &Context<'_>,
-        queue_url: String,
-    ) -> Result<Option<SqsQueue>> {
+    async fn sqs_queue(&self, ctx: &Context<'_>, queue_url: String) -> Result<Option<SqsQueue>> {
         let client = ctx.data::<SqsClient>()?;
         let attrs = client.get_queue_attributes(&queue_url).await?;
         let tags = client.list_queue_tags(&queue_url).await?;
@@ -41,7 +37,9 @@ impl SqsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::sqs::SqsClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::SqsQuery;
@@ -68,9 +66,7 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(
-                r#"{ sqsQueues(prefix: "prod-", limit: 1) { items nextToken } }"#,
-            )
+            .execute(r#"{ sqsQueues(prefix: "prod-", limit: 1) { items nextToken } }"#)
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -90,9 +86,7 @@ mod tests {
             .data(SqsClient::new(&sdk_config(http_client.clone())))
             .finish();
 
-        let res = schema
-            .execute("{ sqsQueues { items nextToken } }")
-            .await;
+        let res = schema.execute("{ sqsQueues { items nextToken } }").await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();

@@ -136,7 +136,10 @@ mod tests {
         let finding = SecurityHubFinding {
             id: "resolved-finding-001".to_string(),
             title: Some("S3 bucket should have block public access settings enabled".to_string()),
-            description: Some("This control checks if Amazon S3 buckets have block public access settings.".to_string()),
+            description: Some(
+                "This control checks if Amazon S3 buckets have block public access settings."
+                    .to_string(),
+            ),
             severity_label: Some("MEDIUM".to_string()),
             workflow_status: Some("RESOLVED".to_string()),
             record_state: Some("ARCHIVED".to_string()),

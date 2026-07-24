@@ -110,12 +110,8 @@ impl ConnectClient {
         limit: Option<i32>,
         next_token: Option<String>,
     ) -> Result<(Vec<ConnectQueueInfo>, Option<String>), VaporError> {
-        let sdk_types: Option<Vec<QueueType>> = queue_types.map(|types| {
-            types
-                .iter()
-                .map(|s| QueueType::from(s.as_str()))
-                .collect()
-        });
+        let sdk_types: Option<Vec<QueueType>> =
+            queue_types.map(|types| types.iter().map(|s| QueueType::from(s.as_str())).collect());
 
         let mut summaries = Vec::new();
         let mut token = next_token;
@@ -333,7 +329,9 @@ impl ConnectClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const BASE: &str = "https://connect.us-east-1.amazonaws.com";
 
@@ -464,10 +462,7 @@ mod tests {
         ]);
         let client = ConnectClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client
-            .list_queues("inst1", None, None, None)
-            .await
-            .unwrap();
+        let (items, token) = client.list_queues("inst1", None, None, None).await.unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].queue_id, Some("q1".to_string()));
@@ -483,7 +478,10 @@ mod tests {
     #[tokio::test]
     async fn list_queues_passes_through_queue_types_filter() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(&format!("{BASE}/queues-summary/inst1?queueTypes=STANDARD"), ""),
+            request(
+                &format!("{BASE}/queues-summary/inst1?queueTypes=STANDARD"),
+                "",
+            ),
             json_response(200, r#"{"QueueSummaryList":[]}"#),
         )]);
         let client = ConnectClient::new(&sdk_config(http_client.clone()));
@@ -506,10 +504,7 @@ mod tests {
         )]);
         let client = ConnectClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client
-            .list_queues("inst1", None, None, None)
-            .await
-            .unwrap();
+        let (items, token) = client.list_queues("inst1", None, None, None).await.unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].queue_id, None);
@@ -539,10 +534,7 @@ mod tests {
         // `.ok()`, so a describe-level error is swallowed into None fields
         // rather than propagating as a `VaporError` (unlike the top-level
         // `list_queues` call itself, which does propagate via `sdk_err`).
-        let (items, token) = client
-            .list_queues("inst1", None, None, None)
-            .await
-            .unwrap();
+        let (items, token) = client.list_queues("inst1", None, None, None).await.unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].queue_id, Some("q1".to_string()));
@@ -564,7 +556,10 @@ mod tests {
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/contact-flows/inst1/f1"), ""),
-                json_response(200, r#"{"ContactFlow":{"Id":"f1","Description":"first flow"}}"#),
+                json_response(
+                    200,
+                    r#"{"ContactFlow":{"Id":"f1","Description":"first flow"}}"#,
+                ),
             ),
         ]);
         let client = ConnectClient::new(&sdk_config(http_client.clone()));
@@ -586,7 +581,10 @@ mod tests {
     async fn list_contact_flows_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/contact-flows-summary/inst1?maxResults=1"), ""),
+                request(
+                    &format!("{BASE}/contact-flows-summary/inst1?maxResults=1"),
+                    "",
+                ),
                 json_response(
                     200,
                     r#"{"ContactFlowSummaryList":[{"Id":"f1"}],"NextToken":"page2-token"}"#,
@@ -649,7 +647,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(&format!("{BASE}/users-summary/inst1?maxResults=1"), ""),
-                json_response(200, r#"{"UserSummaryList":[{"Id":"u1"}],"NextToken":"page2-token"}"#),
+                json_response(
+                    200,
+                    r#"{"UserSummaryList":[{"Id":"u1"}],"NextToken":"page2-token"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/users/inst1/u1"), ""),
@@ -665,4 +666,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

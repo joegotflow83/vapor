@@ -88,9 +88,7 @@ impl From<&ReplicationGroup> for ElastiCacheReplicationGroup {
             description: rg.description().map(|s| s.to_string()),
             status: rg.status().map(|s| s.to_string()),
             member_clusters: rg.member_clusters().iter().map(|s| s.to_string()).collect(),
-            automatic_failover: rg
-                .automatic_failover()
-                .map(|v| v.as_str().to_string()),
+            automatic_failover: rg.automatic_failover().map(|v| v.as_str().to_string()),
             multi_az: rg.multi_az().map(|v| v.as_str().to_string()),
             snapshotting_cluster_id: rg.snapshotting_cluster_id().map(|s| s.to_string()),
             cluster_mode: rg.cluster_mode().map(|v| v.as_str().to_string()),

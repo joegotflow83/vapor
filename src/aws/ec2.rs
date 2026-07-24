@@ -41,12 +41,7 @@ impl Ec2Client {
         }
 
         if let Some(vpc_id) = vpc_id {
-            filters.push(
-                Filter::builder()
-                    .name("vpc-id")
-                    .values(vpc_id)
-                    .build(),
-            );
+            filters.push(Filter::builder().name("vpc-id").values(vpc_id).build());
         }
 
         if let Some(subnet_id) = subnet_id {
@@ -295,7 +290,8 @@ impl Ec2Client {
         &self,
         ids: Vec<String>,
     ) -> Result<Vec<(String, InstanceStateName, InstanceStateName)>, VaporError> {
-        let output = self.inner
+        let output = self
+            .inner
             .start_instances()
             .set_instance_ids(Some(ids))
             .send()
@@ -321,7 +317,8 @@ impl Ec2Client {
         ids: Vec<String>,
         force: bool,
     ) -> Result<Vec<(String, InstanceStateName, InstanceStateName)>, VaporError> {
-        let output = self.inner
+        let output = self
+            .inner
             .stop_instances()
             .set_instance_ids(Some(ids))
             .force(force)
@@ -347,7 +344,8 @@ impl Ec2Client {
         &self,
         ids: Vec<String>,
     ) -> Result<Vec<(String, InstanceStateName, InstanceStateName)>, VaporError> {
-        let output = self.inner
+        let output = self
+            .inner
             .terminate_instances()
             .set_instance_ids(Some(ids))
             .send()
@@ -386,7 +384,12 @@ impl Ec2Client {
         }
 
         if let Some(fingerprint) = fingerprint {
-            filters.push(Filter::builder().name("fingerprint").values(fingerprint).build());
+            filters.push(
+                Filter::builder()
+                    .name("fingerprint")
+                    .values(fingerprint)
+                    .build(),
+            );
         }
 
         let mut request = self.inner.describe_key_pairs();
@@ -489,7 +492,12 @@ impl Ec2Client {
         let mut filters: Vec<Filter> = Vec::new();
 
         if let Some(instance_id) = instance_id {
-            filters.push(Filter::builder().name("instance-id").values(instance_id).build());
+            filters.push(
+                Filter::builder()
+                    .name("instance-id")
+                    .values(instance_id)
+                    .build(),
+            );
         }
 
         let mut request = self.inner.describe_addresses();
@@ -524,10 +532,10 @@ impl Ec2Client {
     ) -> Result<Vec<aws_sdk_ec2::types::Instance>, VaporError> {
         use aws_sdk_ec2::types::{InstanceType, ResourceType, Tag as SdkTag, TagSpecification};
 
-
         let it = InstanceType::from(instance_type.as_str());
 
-        let mut request = self.inner
+        let mut request = self
+            .inner
             .run_instances()
             .image_id(image_id)
             .instance_type(it)
@@ -672,7 +680,12 @@ impl Ec2Client {
     ) -> Result<(Vec<aws_sdk_ec2::types::InternetGateway>, Option<String>), VaporError> {
         let mut filters: Vec<Filter> = Vec::new();
         if let Some(vpc_id) = vpc_id {
-            filters.push(Filter::builder().name("attachment.vpc-id").values(vpc_id).build());
+            filters.push(
+                Filter::builder()
+                    .name("attachment.vpc-id")
+                    .values(vpc_id)
+                    .build(),
+            );
         }
         let mut all: Vec<aws_sdk_ec2::types::InternetGateway> = Vec::new();
         let mut token = next_token;
@@ -766,7 +779,12 @@ impl Ec2Client {
             filters.push(Filter::builder().name("vpc-id").values(vpc_id).build());
         }
         if let Some(service_name) = service_name {
-            filters.push(Filter::builder().name("service-name").values(service_name).build());
+            filters.push(
+                Filter::builder()
+                    .name("service-name")
+                    .values(service_name)
+                    .build(),
+            );
         }
         let mut all: Vec<aws_sdk_ec2::types::VpcEndpoint> = Vec::new();
         let mut token = next_token;
@@ -880,7 +898,13 @@ impl Ec2Client {
         versions: Option<Vec<String>>,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_ec2::types::LaunchTemplateVersion>, Option<String>), VaporError> {
+    ) -> Result<
+        (
+            Vec<aws_sdk_ec2::types::LaunchTemplateVersion>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut all: Vec<aws_sdk_ec2::types::LaunchTemplateVersion> = Vec::new();
         let mut token = next_token;
         loop {
@@ -973,9 +997,10 @@ impl Ec2Client {
         limit: Option<i32>,
         next_token: Option<String>,
     ) -> Result<(Vec<aws_sdk_ec2::types::FlowLog>, Option<String>), VaporError> {
-        let mut filters: Vec<Filter> = vec![
-            Filter::builder().name("resource-type").values("VPC").build(),
-        ];
+        let mut filters: Vec<Filter> = vec![Filter::builder()
+            .name("resource-type")
+            .values("VPC")
+            .build()];
 
         if let Some(ref id) = resource_id {
             filters.push(Filter::builder().name("resource-id").values(id).build());
@@ -1012,7 +1037,9 @@ impl Ec2Client {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{ec2_error_response, request, sdk_config, xml_response, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        ec2_error_response, request, sdk_config, xml_response, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://ec2.us-east-1.amazonaws.com/";
 
@@ -1082,7 +1109,15 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
         let (instances, token) = client
-            .describe_instances(None, None, None, None, None, None, Some("cursor-a".to_string()))
+            .describe_instances(
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some("cursor-a".to_string()),
+            )
             .await
             .unwrap();
 
@@ -1104,7 +1139,10 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let (instances, token) = client.describe_instances(None, None, None, None, None, Some(1), None).await.unwrap();
+        let (instances, token) = client
+            .describe_instances(None, None, None, None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(instances.len(), 1);
         assert_eq!(token, Some("page2".to_string()));
@@ -1135,7 +1173,10 @@ mod tests {
         ]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let (instances, token) = client.describe_instances(None, None, None, None, None, Some(100), None).await.unwrap();
+        let (instances, token) = client
+            .describe_instances(None, None, None, None, None, Some(100), None)
+            .await
+            .unwrap();
 
         assert_eq!(instances.len(), 2);
         assert_eq!(token, None);
@@ -1150,7 +1191,10 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_instances(None, None, None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_instances(None, None, None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -1201,7 +1245,10 @@ mod tests {
     #[tokio::test]
     async fn describe_security_groups_stops_at_limit_with_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeSecurityGroups&Version=2016-11-15&MaxResults=1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeSecurityGroups&Version=2016-11-15&MaxResults=1",
+            ),
             xml_response(
                 200,
                 "<DescribeSecurityGroupsResponse><securityGroupInfo>\
@@ -1211,7 +1258,10 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let (groups, token) = client.describe_security_groups(None, None, None, Some(1), None).await.unwrap();
+        let (groups, token) = client
+            .describe_security_groups(None, None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(groups.len(), 1);
         assert_eq!(token, Some("p2".to_string()));
@@ -1226,10 +1276,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_security_groups(None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_security_groups(None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidGroup.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidGroup.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1238,7 +1293,10 @@ mod tests {
     #[tokio::test]
     async fn describe_vpcs_happy_path_with_ids() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeVpcs&Version=2016-11-15&VpcId.1=vpc-1&VpcId.2=vpc-2"),
+            request(
+                ENDPOINT,
+                "Action=DescribeVpcs&Version=2016-11-15&VpcId.1=vpc-1&VpcId.2=vpc-2",
+            ),
             xml_response(
                 200,
                 "<DescribeVpcsResponse><vpcSet>\
@@ -1249,7 +1307,11 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
         let (vpcs, token) = client
-            .describe_vpcs(Some(vec!["vpc-1".to_string(), "vpc-2".to_string()]), None, None)
+            .describe_vpcs(
+                Some(vec!["vpc-1".to_string(), "vpc-2".to_string()]),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1296,7 +1358,9 @@ mod tests {
         let err = client.describe_vpcs(None, None, None).await.unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidVpcID.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidVpcID.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1351,7 +1415,10 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let (subnets, token) = client.describe_subnets(None, None, None, Some(1), None).await.unwrap();
+        let (subnets, token) = client
+            .describe_subnets(None, None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(subnets.len(), 1);
         assert_eq!(token, Some("p2".to_string()));
@@ -1366,10 +1433,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_subnets(None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_subnets(None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidSubnetID.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidSubnetID.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1388,7 +1460,12 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
         let (volumes, token) = client
-            .describe_volumes(Some(vec!["vol-1".to_string()]), Some("in-use".to_string()), None, None)
+            .describe_volumes(
+                Some(vec!["vol-1".to_string()]),
+                Some("in-use".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1410,7 +1487,10 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let (volumes, token) = client.describe_volumes(None, None, Some(1), None).await.unwrap();
+        let (volumes, token) = client
+            .describe_volumes(None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(volumes.len(), 1);
         assert_eq!(token, Some("p2".to_string()));
@@ -1425,10 +1505,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_volumes(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_volumes(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidVolume.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidVolume.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1475,10 +1560,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_key_pairs(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_key_pairs(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidKeyPair.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidKeyPair.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1535,7 +1625,10 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let (images, token) = client.describe_images(None, None, None, None, None, Some(1), None).await.unwrap();
+        let (images, token) = client
+            .describe_images(None, None, None, None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(images.len(), 1);
         assert_eq!(token, Some("p2".to_string()));
@@ -1545,15 +1638,23 @@ mod tests {
     #[tokio::test]
     async fn describe_images_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeImages&Version=2016-11-15&Owner.1=self"),
+            request(
+                ENDPOINT,
+                "Action=DescribeImages&Version=2016-11-15&Owner.1=self",
+            ),
             ec2_error_response("InvalidAMIID.NotFound", "no such image"),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_images(None, None, None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_images(None, None, None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidAMIID.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidAMIID.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1600,10 +1701,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_addresses(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_addresses(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidAddress.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidAddress.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1659,12 +1765,23 @@ mod tests {
         let client = ec2_client_with_fixed_token(http_client.clone());
 
         let err = client
-            .run_instances("ami-1".to_string(), "t3.micro".to_string(), 1, 1, None, None, None, None)
+            .run_instances(
+                "ami-1".to_string(),
+                "t3.micro".to_string(),
+                1,
+                1,
+                None,
+                None,
+                None,
+                None,
+            )
             .await
             .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InsufficientInstanceCapacity".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InsufficientInstanceCapacity".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1689,15 +1806,23 @@ mod tests {
     #[tokio::test]
     async fn reboot_instances_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=RebootInstances&Version=2016-11-15&InstanceId.1=i-1"),
+            request(
+                ENDPOINT,
+                "Action=RebootInstances&Version=2016-11-15&InstanceId.1=i-1",
+            ),
             ec2_error_response("IncorrectInstanceState", "instance not running"),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.reboot_instances(vec!["i-1".to_string()]).await.unwrap_err();
+        let err = client
+            .reboot_instances(vec!["i-1".to_string()])
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("IncorrectInstanceState".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("IncorrectInstanceState".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1706,7 +1831,10 @@ mod tests {
     #[tokio::test]
     async fn start_instances_happy_path() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=StartInstances&Version=2016-11-15&InstanceId.1=i-1"),
+            request(
+                ENDPOINT,
+                "Action=StartInstances&Version=2016-11-15&InstanceId.1=i-1",
+            ),
             xml_response(
                 200,
                 "<StartInstancesResponse><instancesSet><item><instanceId>i-1</instanceId>\
@@ -1717,11 +1845,18 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let changes = client.start_instances(vec!["i-1".to_string()]).await.unwrap();
+        let changes = client
+            .start_instances(vec!["i-1".to_string()])
+            .await
+            .unwrap();
 
         assert_eq!(
             changes,
-            vec![("i-1".to_string(), InstanceStateName::Stopped, InstanceStateName::Pending)]
+            vec![(
+                "i-1".to_string(),
+                InstanceStateName::Stopped,
+                InstanceStateName::Pending
+            )]
         );
         http_client.relaxed_requests_match();
     }
@@ -1729,15 +1864,23 @@ mod tests {
     #[tokio::test]
     async fn start_instances_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=StartInstances&Version=2016-11-15&InstanceId.1=i-1"),
+            request(
+                ENDPOINT,
+                "Action=StartInstances&Version=2016-11-15&InstanceId.1=i-1",
+            ),
             ec2_error_response("IncorrectInstanceState", "instance not stopped"),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.start_instances(vec!["i-1".to_string()]).await.unwrap_err();
+        let err = client
+            .start_instances(vec!["i-1".to_string()])
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("IncorrectInstanceState".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("IncorrectInstanceState".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1746,7 +1889,10 @@ mod tests {
     #[tokio::test]
     async fn stop_instances_happy_path() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=StopInstances&Version=2016-11-15&InstanceId.1=i-1&Force=true"),
+            request(
+                ENDPOINT,
+                "Action=StopInstances&Version=2016-11-15&InstanceId.1=i-1&Force=true",
+            ),
             xml_response(
                 200,
                 "<StopInstancesResponse><instancesSet><item><instanceId>i-1</instanceId>\
@@ -1757,11 +1903,18 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let changes = client.stop_instances(vec!["i-1".to_string()], true).await.unwrap();
+        let changes = client
+            .stop_instances(vec!["i-1".to_string()], true)
+            .await
+            .unwrap();
 
         assert_eq!(
             changes,
-            vec![("i-1".to_string(), InstanceStateName::Running, InstanceStateName::Stopping)]
+            vec![(
+                "i-1".to_string(),
+                InstanceStateName::Running,
+                InstanceStateName::Stopping
+            )]
         );
         http_client.relaxed_requests_match();
     }
@@ -1769,7 +1922,10 @@ mod tests {
     #[tokio::test]
     async fn terminate_instances_happy_path() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=TerminateInstances&Version=2016-11-15&InstanceId.1=i-1"),
+            request(
+                ENDPOINT,
+                "Action=TerminateInstances&Version=2016-11-15&InstanceId.1=i-1",
+            ),
             xml_response(
                 200,
                 "<TerminateInstancesResponse><instancesSet><item><instanceId>i-1</instanceId>\
@@ -1780,11 +1936,18 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let changes = client.terminate_instances(vec!["i-1".to_string()]).await.unwrap();
+        let changes = client
+            .terminate_instances(vec!["i-1".to_string()])
+            .await
+            .unwrap();
 
         assert_eq!(
             changes,
-            vec![("i-1".to_string(), InstanceStateName::Running, InstanceStateName::ShuttingDown)]
+            vec![(
+                "i-1".to_string(),
+                InstanceStateName::Running,
+                InstanceStateName::ShuttingDown
+            )]
         );
         http_client.relaxed_requests_match();
     }
@@ -1807,7 +1970,12 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
         let (route_tables, token) = client
-            .describe_route_tables(Some(vec!["rtb-1".to_string()]), Some("vpc-1".to_string()), None, None)
+            .describe_route_tables(
+                Some(vec!["rtb-1".to_string()]),
+                Some("vpc-1".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1830,7 +1998,10 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let (route_tables, token) = client.describe_route_tables(None, None, Some(1), None).await.unwrap();
+        let (route_tables, token) = client
+            .describe_route_tables(None, None, Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(route_tables.len(), 1);
         assert_eq!(token, Some("p2".to_string()));
@@ -1845,10 +2016,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_route_tables(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_route_tables(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidRouteTableID.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidRouteTableID.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1872,7 +2048,12 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
         let (acls, token) = client
-            .describe_network_acls(Some(vec!["acl-1".to_string()]), Some("vpc-1".to_string()), None, None)
+            .describe_network_acls(
+                Some(vec!["acl-1".to_string()]),
+                Some("vpc-1".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1891,10 +2072,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_network_acls(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_network_acls(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidNetworkAclID.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidNetworkAclID.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1918,7 +2104,12 @@ mod tests {
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
         let (gateways, token) = client
-            .describe_internet_gateways(Some(vec!["igw-1".to_string()]), Some("vpc-1".to_string()), None, None)
+            .describe_internet_gateways(
+                Some(vec!["igw-1".to_string()]),
+                Some("vpc-1".to_string()),
+                None,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1931,15 +2122,26 @@ mod tests {
     #[tokio::test]
     async fn describe_internet_gateways_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeInternetGateways&Version=2016-11-15"),
-            ec2_error_response("InvalidInternetGatewayID.NotFound", "no such internet gateway"),
+            request(
+                ENDPOINT,
+                "Action=DescribeInternetGateways&Version=2016-11-15",
+            ),
+            ec2_error_response(
+                "InvalidInternetGatewayID.NotFound",
+                "no such internet gateway",
+            ),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_internet_gateways(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_internet_gateways(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidInternetGatewayID.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidInternetGatewayID.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -1990,10 +2192,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_nat_gateways(None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_nat_gateways(None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("NatGatewayNotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("NatGatewayNotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -2043,10 +2250,15 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_vpc_endpoints(None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_vpc_endpoints(None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidVpcEndpointId.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidVpcEndpointId.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -2055,7 +2267,10 @@ mod tests {
     #[tokio::test]
     async fn describe_transit_gateways_happy_path_with_ids() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeTransitGateways&Version=2016-11-15&TransitGatewayIds.1=tgw-1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeTransitGateways&Version=2016-11-15&TransitGatewayIds.1=tgw-1",
+            ),
             xml_response(
                 200,
                 "<DescribeTransitGatewaysResponse><transitGatewaySet>\
@@ -2079,15 +2294,26 @@ mod tests {
     #[tokio::test]
     async fn describe_transit_gateways_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeTransitGateways&Version=2016-11-15"),
-            ec2_error_response("InvalidTransitGatewayID.NotFound", "no such transit gateway"),
+            request(
+                ENDPOINT,
+                "Action=DescribeTransitGateways&Version=2016-11-15",
+            ),
+            ec2_error_response(
+                "InvalidTransitGatewayID.NotFound",
+                "no such transit gateway",
+            ),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_transit_gateways(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_transit_gateways(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidTransitGatewayID.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidTransitGatewayID.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -2130,15 +2356,26 @@ mod tests {
     #[tokio::test]
     async fn describe_launch_templates_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeLaunchTemplates&Version=2016-11-15"),
-            ec2_error_response("InvalidLaunchTemplateId.NotFound", "no such launch template"),
+            request(
+                ENDPOINT,
+                "Action=DescribeLaunchTemplates&Version=2016-11-15",
+            ),
+            ec2_error_response(
+                "InvalidLaunchTemplateId.NotFound",
+                "no such launch template",
+            ),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_launch_templates(None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_launch_templates(None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidLaunchTemplateId.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidLaunchTemplateId.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -2181,7 +2418,10 @@ mod tests {
     #[tokio::test]
     async fn describe_launch_template_versions_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeLaunchTemplateVersions&Version=2016-11-15&LaunchTemplateId=lt-1"),
+            request(
+                ENDPOINT,
+                "Action=DescribeLaunchTemplateVersions&Version=2016-11-15&LaunchTemplateId=lt-1",
+            ),
             ec2_error_response("InvalidLaunchTemplateId.VersionNotFound", "no such version"),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
@@ -2192,7 +2432,10 @@ mod tests {
             .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidLaunchTemplateId.VersionNotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => assert_eq!(
+                code,
+                Some("InvalidLaunchTemplateId.VersionNotFound".to_string())
+            ),
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -2236,15 +2479,23 @@ mod tests {
     #[tokio::test]
     async fn describe_snapshots_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(ENDPOINT, "Action=DescribeSnapshots&Version=2016-11-15&Owner.1=self"),
+            request(
+                ENDPOINT,
+                "Action=DescribeSnapshots&Version=2016-11-15&Owner.1=self",
+            ),
             ec2_error_response("InvalidSnapshot.NotFound", "no such snapshot"),
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_snapshots(None, None, None, None, None).await.unwrap_err();
+        let err = client
+            .describe_snapshots(None, None, None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidSnapshot.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidSnapshot.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
@@ -2285,13 +2536,17 @@ mod tests {
         )]);
         let client = Ec2Client::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_flow_logs(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_flow_logs(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
-            VaporError::AwsSdk { code, .. } => assert_eq!(code, Some("InvalidFlowLogId.NotFound".to_string())),
+            VaporError::AwsSdk { code, .. } => {
+                assert_eq!(code, Some("InvalidFlowLogId.NotFound".to_string()))
+            }
             other => panic!("expected VaporError::AwsSdk, got {other:?}"),
         }
         http_client.relaxed_requests_match();
     }
 }
-

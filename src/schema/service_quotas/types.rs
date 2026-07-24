@@ -46,9 +46,15 @@ mod tests {
 
         let result = ServiceQuota::from(&sdk_quota);
         assert_eq!(result.service_code, "ec2");
-        assert_eq!(result.service_name, Some("Amazon Elastic Compute Cloud (Amazon EC2)".to_string()));
+        assert_eq!(
+            result.service_name,
+            Some("Amazon Elastic Compute Cloud (Amazon EC2)".to_string())
+        );
         assert_eq!(result.quota_code, "L-1216C47A");
-        assert_eq!(result.quota_name, Some("Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances".to_string()));
+        assert_eq!(
+            result.quota_name,
+            Some("Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances".to_string())
+        );
         assert_eq!(result.value, Some(32.0));
         assert_eq!(result.unit, Some("None".to_string()));
         assert!(result.adjustable);

@@ -3,8 +3,7 @@ use async_graphql::{Context, Object, Result};
 use crate::aws::ses::SesClient;
 use crate::schema::pagination::Page;
 use crate::schema::ses::types::{
-    SesAccountDetails, SesConfigurationSet, SesEmailTemplate, SesIdentity,
-    SesSuppressedDestination,
+    SesAccountDetails, SesConfigurationSet, SesEmailTemplate, SesIdentity, SesSuppressedDestination,
 };
 
 #[derive(Default)]
@@ -101,7 +100,9 @@ impl SesQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::ses::SesClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::SesQuery;
@@ -169,7 +170,10 @@ mod tests {
     async fn ses_configuration_sets_maps_items_and_fans_out_details() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/v2/email/configuration-sets?PageSize=1"), ""),
+                request(
+                    &format!("{BASE}/v2/email/configuration-sets?PageSize=1"),
+                    "",
+                ),
                 json_response(
                     200,
                     r#"{"ConfigurationSets":["set-a"],"NextToken":"page2"}"#,
@@ -235,9 +239,7 @@ mod tests {
     async fn ses_suppressed_destinations_forwards_filters_and_maps_items() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(
-                &format!(
-                    "{BASE}/v2/email/suppression/addresses?Reason=BOUNCE&PageSize=1"
-                ),
+                &format!("{BASE}/v2/email/suppression/addresses?Reason=BOUNCE&PageSize=1"),
                 "",
             ),
             json_response(

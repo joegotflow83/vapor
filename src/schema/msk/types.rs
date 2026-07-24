@@ -87,8 +87,12 @@ impl From<SdkNodeInfo> for BrokerNode {
             broker_id: n.broker_node_info().and_then(|b| b.broker_id()),
             instance_type: n.instance_type().map(|v| v.to_string()),
             az: None,
-            client_vpc_ip: n.broker_node_info().and_then(|b| b.client_vpc_ip_address().map(|v| v.to_string())),
-            attached_eni_id: n.broker_node_info().and_then(|b| b.attached_eni_id().map(|v| v.to_string())),
+            client_vpc_ip: n
+                .broker_node_info()
+                .and_then(|b| b.client_vpc_ip_address().map(|v| v.to_string())),
+            attached_eni_id: n
+                .broker_node_info()
+                .and_then(|b| b.attached_eni_id().map(|v| v.to_string())),
         }
     }
 }
@@ -107,7 +111,10 @@ mod tests {
             .creation_time(aws_smithy_types::DateTime::from_secs(1_700_000_000))
             .build();
         let msk = MskCluster::from(cluster);
-        assert_eq!(msk.arn, "arn:aws:kafka:us-east-1:123456789012:cluster/my-cluster/abc-123");
+        assert_eq!(
+            msk.arn,
+            "arn:aws:kafka:us-east-1:123456789012:cluster/my-cluster/abc-123"
+        );
         assert_eq!(msk.name, "my-cluster");
         assert_eq!(msk.state, Some("ACTIVE".to_string()));
         assert_eq!(msk.cluster_type, Some("PROVISIONED".to_string()));

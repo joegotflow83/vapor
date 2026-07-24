@@ -123,7 +123,10 @@ mod tests {
             Some("arn:aws:config:us-east-1:123456789012:config-rule/config-rule-abc".to_string())
         );
         assert_eq!(result.rule_id, Some("config-rule-abc".to_string()));
-        assert_eq!(result.description, Some("Checks S3 bucket versioning".to_string()));
+        assert_eq!(
+            result.description,
+            Some("Checks S3 bucket versioning".to_string())
+        );
         assert_eq!(result.state, Some("ACTIVE".to_string()));
         assert_eq!(
             result.source_identifier,

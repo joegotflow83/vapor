@@ -98,7 +98,9 @@ impl DirectConnectClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://directconnect.us-east-1.amazonaws.com/";
 
@@ -163,7 +165,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"connections":[{"connectionId":"dxcon-1"}],"nextToken":"page2"}"#),
+                json_response(
+                    200,
+                    r#"{"connections":[{"connectionId":"dxcon-1"}],"nextToken":"page2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"nextToken":"page2"}"#),
@@ -210,7 +215,10 @@ mod tests {
         )]);
         let client = DirectConnectClient::new(&sdk_config(http_client.clone()));
 
-        let (vifs, token) = client.describe_virtual_interfaces(None, None, None).await.unwrap();
+        let (vifs, token) = client
+            .describe_virtual_interfaces(None, None, None)
+            .await
+            .unwrap();
 
         assert_eq!(vifs.len(), 2);
         assert_eq!(vifs[0].virtual_interface_id(), Some("dxvif-1"));
@@ -222,7 +230,10 @@ mod tests {
     async fn describe_virtual_interfaces_filters_by_connection_id() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"connectionId":"dxcon-1"}"#),
-            json_response(200, r#"{"virtualInterfaces":[{"virtualInterfaceId":"dxvif-1","connectionId":"dxcon-1"}]}"#),
+            json_response(
+                200,
+                r#"{"virtualInterfaces":[{"virtualInterfaceId":"dxvif-1","connectionId":"dxcon-1"}]}"#,
+            ),
         )]);
         let client = DirectConnectClient::new(&sdk_config(http_client.clone()));
 
@@ -266,7 +277,10 @@ mod tests {
         )]);
         let client = DirectConnectClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.describe_virtual_interfaces(None, None, None).await.unwrap_err();
+        let err = client
+            .describe_virtual_interfaces(None, None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

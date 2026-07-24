@@ -10,11 +10,7 @@ pub struct EksQuery;
 #[Object]
 impl EksQuery {
     /// Describe a single EKS cluster by name.
-    async fn eks_cluster(
-        &self,
-        ctx: &Context<'_>,
-        name: String,
-    ) -> Result<Option<EksCluster>> {
+    async fn eks_cluster(&self, ctx: &Context<'_>, name: String) -> Result<Option<EksCluster>> {
         let client = ctx.data::<EksClient>()?;
         let result = client.describe_cluster(&name).await?;
         Ok(result.map(EksCluster::from))
@@ -137,7 +133,9 @@ impl EksQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::eks::EksClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::EksQuery;
@@ -216,9 +214,7 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(
-                r#"{ eksClusters(clusterNames: ["c1"]) { items { name status } nextToken } }"#,
-            )
+            .execute(r#"{ eksClusters(clusterNames: ["c1"]) { items { name status } nextToken } }"#)
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -233,7 +229,10 @@ mod tests {
     async fn eks_nodegroups_without_names_discovers_then_describes_and_forwards_next_token() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/clusters/demo/node-groups?maxResults=1"), ""),
+                request(
+                    &format!("{BASE}/clusters/demo/node-groups?maxResults=1"),
+                    "",
+                ),
                 json_response(200, r#"{"nodegroups":["ng-1"],"nextToken":"page2"}"#),
             ),
             ReplayEvent::new(
@@ -294,8 +293,14 @@ mod tests {
     async fn eks_fargate_profiles_discovers_then_describes_and_forwards_next_token() {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
-                request(&format!("{BASE}/clusters/demo/fargate-profiles?maxResults=1"), ""),
-                json_response(200, r#"{"fargateProfileNames":["fp-1"],"nextToken":"page2"}"#),
+                request(
+                    &format!("{BASE}/clusters/demo/fargate-profiles?maxResults=1"),
+                    "",
+                ),
+                json_response(
+                    200,
+                    r#"{"fargateProfileNames":["fp-1"],"nextToken":"page2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(&format!("{BASE}/clusters/demo/fargate-profiles/fp-1"), ""),

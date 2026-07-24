@@ -39,9 +39,7 @@ impl CostExplorerQuery {
         granularity: String,
     ) -> Result<Vec<ForecastResult>> {
         let client = ctx.data::<CostExplorerClient>()?;
-        let results = client
-            .get_cost_forecast(&start, &end, &granularity)
-            .await?;
+        let results = client.get_cost_forecast(&start, &end, &granularity).await?;
         Ok(results.into_iter().map(ForecastResult::from).collect())
     }
 }
@@ -53,7 +51,9 @@ impl CostExplorerQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::cost_explorer::CostExplorerClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::CostExplorerQuery;

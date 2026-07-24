@@ -63,10 +63,10 @@ impl DynamodbClient {
             .await
             .map_err(crate::error::sdk_err)?;
 
-        output
-            .table()
-            .cloned()
-            .ok_or_else(|| VaporError::AwsSdk { code: None, message: format!("Table '{}' not found", name) })
+        output.table().cloned().ok_or_else(|| VaporError::AwsSdk {
+            code: None,
+            message: format!("Table '{}' not found", name),
+        })
     }
 
     /// Scan a DynamoDB table (single page only, not auto-paginated).
@@ -108,27 +108,39 @@ pub fn attribute_value_to_json(av: &AttributeValue) -> serde_json::Value {
         AttributeValue::Null(_) => serde_json::Value::Null,
         AttributeValue::B(blob) => {
             use base64::Engine;
-            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(blob.as_ref()))
+            serde_json::Value::String(
+                base64::engine::general_purpose::STANDARD.encode(blob.as_ref()),
+            )
         }
         AttributeValue::L(list) => {
             serde_json::Value::Array(list.iter().map(attribute_value_to_json).collect())
         }
         AttributeValue::M(map) => {
-            let obj: serde_json::Map<String, serde_json::Value> =
-                map.iter().map(|(k, v)| (k.clone(), attribute_value_to_json(v))).collect();
+            let obj: serde_json::Map<String, serde_json::Value> = map
+                .iter()
+                .map(|(k, v)| (k.clone(), attribute_value_to_json(v)))
+                .collect();
             serde_json::Value::Object(obj)
         }
-        AttributeValue::Ss(ss) => {
-            serde_json::Value::Array(ss.iter().map(|s| serde_json::Value::String(s.clone())).collect())
-        }
-        AttributeValue::Ns(ns) => {
-            serde_json::Value::Array(ns.iter().map(|n| serde_json::Value::String(n.clone())).collect())
-        }
+        AttributeValue::Ss(ss) => serde_json::Value::Array(
+            ss.iter()
+                .map(|s| serde_json::Value::String(s.clone()))
+                .collect(),
+        ),
+        AttributeValue::Ns(ns) => serde_json::Value::Array(
+            ns.iter()
+                .map(|n| serde_json::Value::String(n.clone()))
+                .collect(),
+        ),
         AttributeValue::Bs(bs) => {
             use base64::Engine;
             serde_json::Value::Array(
                 bs.iter()
-                    .map(|b| serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(b.as_ref())))
+                    .map(|b| {
+                        serde_json::Value::String(
+                            base64::engine::general_purpose::STANDARD.encode(b.as_ref()),
+                        )
+                    })
                     .collect(),
             )
         }
@@ -140,7 +152,9 @@ pub fn attribute_value_to_json(av: &AttributeValue) -> serde_json::Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://dynamodb.us-east-1.amazonaws.com/";
 
@@ -167,7 +181,10 @@ mod tests {
         )]);
         let client = DynamodbClient::new(&sdk_config(http_client.clone()));
 
-        let (names, token) = client.list_tables(None, Some("cursor-a".to_string())).await.unwrap();
+        let (names, token) = client
+            .list_tables(None, Some("cursor-a".to_string()))
+            .await
+            .unwrap();
 
         assert_eq!(names, vec!["t3".to_string()]);
         assert_eq!(token, None);
@@ -178,7 +195,10 @@ mod tests {
     async fn list_tables_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"Limit":2}"#),
-            json_response(200, r#"{"TableNames":["a1","a2"],"LastEvaluatedTableName":"a2"}"#),
+            json_response(
+                200,
+                r#"{"TableNames":["a1","a2"],"LastEvaluatedTableName":"a2"}"#,
+            ),
         )]);
         let client = DynamodbClient::new(&sdk_config(http_client.clone()));
 
@@ -194,7 +214,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"Limit":10}"#),
-                json_response(200, r#"{"TableNames":["a1","a2"],"LastEvaluatedTableName":"a2"}"#),
+                json_response(
+                    200,
+                    r#"{"TableNames":["a1","a2"],"LastEvaluatedTableName":"a2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"ExclusiveStartTableName":"a2","Limit":8}"#),
@@ -205,7 +228,10 @@ mod tests {
 
         let (names, token) = client.list_tables(Some(10), None).await.unwrap();
 
-        assert_eq!(names, vec!["a1".to_string(), "a2".to_string(), "a3".to_string()]);
+        assert_eq!(
+            names,
+            vec!["a1".to_string(), "a2".to_string(), "a3".to_string()]
+        );
         assert_eq!(token, None);
         http_client.relaxed_requests_match();
     }
@@ -244,7 +270,10 @@ mod tests {
         let table = client.describe_table("my-table").await.unwrap();
 
         assert_eq!(table.table_name(), Some("my-table"));
-        assert_eq!(table.table_status(), Some(&aws_sdk_dynamodb::types::TableStatus::Active));
+        assert_eq!(
+            table.table_status(),
+            Some(&aws_sdk_dynamodb::types::TableStatus::Active)
+        );
         assert_eq!(table.item_count(), Some(42));
         http_client.relaxed_requests_match();
     }
@@ -385,7 +414,10 @@ mod tests {
             attribute_value_to_json(&AttributeValue::Bool(true)),
             serde_json::Value::Bool(true)
         );
-        assert_eq!(attribute_value_to_json(&AttributeValue::Null(true)), serde_json::Value::Null);
+        assert_eq!(
+            attribute_value_to_json(&AttributeValue::Null(true)),
+            serde_json::Value::Null
+        );
     }
 
     #[test]

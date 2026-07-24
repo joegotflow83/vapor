@@ -53,7 +53,9 @@ impl XRayQuery {
 
 #[cfg(test)]
 mod tests {
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::aws::xray::XRayClient;
     use crate::schema::test_util::build_query_schema;
 
@@ -94,7 +96,10 @@ mod tests {
         assert_eq!(items[0]["groupArn"], "arn:g1");
         assert_eq!(items[0]["filterExpression"], "service(\"api\")");
         assert_eq!(items[0]["insightsConfiguration"]["insightsEnabled"], true);
-        assert_eq!(items[0]["insightsConfiguration"]["notificationsEnabled"], false);
+        assert_eq!(
+            items[0]["insightsConfiguration"]["notificationsEnabled"],
+            false
+        );
 
         assert_eq!(items[1]["groupName"], "g2");
         assert_eq!(items[1]["groupArn"], serde_json::Value::Null);
@@ -205,7 +210,9 @@ mod tests {
             .data(XRayClient::new(&sdk_config(http_client.clone())))
             .finish();
 
-        let res = schema.execute(r#"{ xrayEncryptionConfig { keyId } }"#).await;
+        let res = schema
+            .execute(r#"{ xrayEncryptionConfig { keyId } }"#)
+            .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
         let json = res.data.into_json().unwrap();

@@ -96,7 +96,10 @@ mod tests {
             "arn:aws:health:us-east-1::event/RDS/AWS_RDS_MAINTENANCE/456"
         );
         assert_eq!(result.service, Some("RDS".to_string()));
-        assert_eq!(result.event_type_code, Some("AWS_RDS_MAINTENANCE".to_string()));
+        assert_eq!(
+            result.event_type_code,
+            Some("AWS_RDS_MAINTENANCE".to_string())
+        );
         assert_eq!(result.region, Some("us-east-1".to_string()));
         assert_eq!(result.status, Some("upcoming".to_string()));
         assert_eq!(

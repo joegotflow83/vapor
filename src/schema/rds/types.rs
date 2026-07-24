@@ -82,7 +82,10 @@ impl From<aws_sdk_rds::types::DbInstance> for DbInstance {
             publicly_accessible: db.publicly_accessible().unwrap_or(false),
             storage_encrypted: db.storage_encrypted().unwrap_or(false),
             allocated_storage: db.allocated_storage(),
-            endpoint_address: db.endpoint().and_then(|e| e.address()).map(|s| s.to_string()),
+            endpoint_address: db
+                .endpoint()
+                .and_then(|e| e.address())
+                .map(|s| s.to_string()),
             endpoint_port: db.endpoint().and_then(|e| e.port()),
             vpc_id: db
                 .db_subnet_group()
@@ -192,7 +195,10 @@ pub struct DbSnapshot {
 impl From<aws_sdk_rds::types::DbSnapshot> for DbSnapshot {
     fn from(snap: aws_sdk_rds::types::DbSnapshot) -> Self {
         Self {
-            id: snap.db_snapshot_identifier().unwrap_or_default().to_string(),
+            id: snap
+                .db_snapshot_identifier()
+                .unwrap_or_default()
+                .to_string(),
             arn: snap.db_snapshot_arn().map(|s| s.to_string()),
             db_instance_id: snap.db_instance_identifier().map(|s| s.to_string()),
             snapshot_type: snap.snapshot_type().map(|s| s.to_string()),
@@ -341,7 +347,10 @@ mod tests {
             .build();
         let result = DbInstance::from(db);
         assert_eq!(result.id, "my-db");
-        assert_eq!(result.arn, Some("arn:aws:rds:us-east-1:123:db:my-db".to_string()));
+        assert_eq!(
+            result.arn,
+            Some("arn:aws:rds:us-east-1:123:db:my-db".to_string())
+        );
         assert_eq!(result.engine, Some("postgres".to_string()));
         assert_eq!(result.engine_version, Some("14.3".to_string()));
         assert_eq!(result.status, Some("available".to_string()));
@@ -360,7 +369,10 @@ mod tests {
         assert_eq!(result.db_name, Some("mydb".to_string()));
         assert_eq!(result.master_username, Some("admin".to_string()));
         assert_eq!(result.backup_retention_period, Some(7));
-        assert_eq!(result.preferred_backup_window, Some("02:00-03:00".to_string()));
+        assert_eq!(
+            result.preferred_backup_window,
+            Some("02:00-03:00".to_string())
+        );
         assert_eq!(
             result.preferred_maintenance_window,
             Some("sun:05:00-sun:06:00".to_string())
@@ -551,7 +563,10 @@ mod tests {
             .build();
         let result = DbParameterGroup::from(pg);
         assert_eq!(result.name, "my-pg");
-        assert_eq!(result.arn, Some("arn:aws:rds:us-east-1:123:pg:my-pg".to_string()));
+        assert_eq!(
+            result.arn,
+            Some("arn:aws:rds:us-east-1:123:pg:my-pg".to_string())
+        );
         assert_eq!(result.family, Some("postgres14".to_string()));
         assert_eq!(result.description, Some("My parameter group".to_string()));
     }

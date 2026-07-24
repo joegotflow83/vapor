@@ -1,7 +1,9 @@
 use async_graphql::SimpleObject;
 use chrono::{DateTime, Utc};
 
-use crate::aws::timestream::{TimestreamDatabaseInfo, TimestreamRetentionInfo, TimestreamTableInfo};
+use crate::aws::timestream::{
+    TimestreamDatabaseInfo, TimestreamRetentionInfo, TimestreamTableInfo,
+};
 use crate::schema::time::to_utc;
 
 #[derive(SimpleObject, Clone)]
@@ -70,8 +72,10 @@ impl From<TimestreamTableInfo> for TimestreamTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::aws::timestream::{
+        TimestreamDatabaseInfo, TimestreamRetentionInfo, TimestreamTableInfo,
+    };
     use aws_smithy_types::DateTime as SmithyDateTime;
-    use crate::aws::timestream::{TimestreamDatabaseInfo, TimestreamRetentionInfo, TimestreamTableInfo};
 
     #[test]
     fn test_retention_from() {
@@ -109,8 +113,14 @@ mod tests {
         assert_eq!(result.database_name, Some("my-db".to_string()));
         assert_eq!(result.table_count, Some(5));
         assert!(result.kms_key_id.is_some());
-        assert_eq!(result.creation_time, Some(DateTime::<Utc>::from_timestamp(1_000_000, 0).unwrap()));
-        assert_eq!(result.last_updated_time, Some(DateTime::<Utc>::from_timestamp(2_000_000, 0).unwrap()));
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::from_timestamp(1_000_000, 0).unwrap())
+        );
+        assert_eq!(
+            result.last_updated_time,
+            Some(DateTime::<Utc>::from_timestamp(2_000_000, 0).unwrap())
+        );
     }
 
     #[test]
@@ -134,7 +144,10 @@ mod tests {
             database_name: Some("my-db".to_string()),
             table_name: Some("my-table".to_string()),
             table_status: Some("ACTIVE".to_string()),
-            arn: Some("arn:aws:timestream:us-east-1:123456789012:database/my-db/table/my-table".to_string()),
+            arn: Some(
+                "arn:aws:timestream:us-east-1:123456789012:database/my-db/table/my-table"
+                    .to_string(),
+            ),
             creation_time: Some(SmithyDateTime::from_secs(1_000_000)),
             last_updated_time: Some(SmithyDateTime::from_secs(2_000_000)),
             retention_properties: Some(TimestreamRetentionInfo {
@@ -146,7 +159,10 @@ mod tests {
         assert_eq!(result.table_name, Some("my-table".to_string()));
         assert_eq!(result.table_status, Some("ACTIVE".to_string()));
         assert!(result.retention_properties.is_some());
-        assert_eq!(result.creation_time, Some(DateTime::<Utc>::from_timestamp(1_000_000, 0).unwrap()));
+        assert_eq!(
+            result.creation_time,
+            Some(DateTime::<Utc>::from_timestamp(1_000_000, 0).unwrap())
+        );
         let ret = result.retention_properties.unwrap();
         assert_eq!(ret.memory_store_retention_period_in_hours, Some(72));
         assert_eq!(ret.magnetic_store_retention_period_in_days, Some(30));

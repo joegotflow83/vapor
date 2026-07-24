@@ -54,7 +54,12 @@ impl StepFunctionsQuery {
     ) -> Result<Page<Execution>> {
         let client = ctx.data::<StepFunctionsClient>()?;
         let (execs, token) = client
-            .list_executions(&state_machine_arn, status_filter.as_deref(), limit, next_token)
+            .list_executions(
+                &state_machine_arn,
+                status_filter.as_deref(),
+                limit,
+                next_token,
+            )
             .await?;
         Ok(Page {
             items: execs.into_iter().map(Execution::from).collect(),
@@ -76,7 +81,9 @@ impl StepFunctionsQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::step_functions::StepFunctionsClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::StepFunctionsQuery;

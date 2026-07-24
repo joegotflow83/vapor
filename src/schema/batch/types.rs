@@ -93,7 +93,10 @@ mod tests {
         };
 
         assert_eq!(q.name, "my-queue");
-        assert_eq!(q.arn, Some("arn:aws:batch:us-east-1:123456789012:job-queue/my-queue".to_string()));
+        assert_eq!(
+            q.arn,
+            Some("arn:aws:batch:us-east-1:123456789012:job-queue/my-queue".to_string())
+        );
         assert_eq!(q.state, Some("ENABLED".to_string()));
         assert_eq!(q.status, Some("VALID".to_string()));
         assert_eq!(q.priority, 10);
@@ -132,7 +135,10 @@ mod tests {
         assert_eq!(ce.name, "my-ce");
         assert_eq!(ce.state, Some("ENABLED".to_string()));
         assert_eq!(ce.compute_type, Some("MANAGED".to_string()));
-        assert_eq!(ce.instance_types, vec!["m5.large".to_string(), "m5.xlarge".to_string()]);
+        assert_eq!(
+            ce.instance_types,
+            vec!["m5.large".to_string(), "m5.xlarge".to_string()]
+        );
         assert_eq!(ce.max_vcpus, Some(256));
         assert_eq!(ce.desired_vcpus, Some(0));
     }
@@ -163,7 +169,9 @@ mod tests {
     fn test_batch_job_definition_full() {
         let jd = BatchJobDefinition {
             name: "my-job-def".to_string(),
-            arn: Some("arn:aws:batch:us-east-1:123456789012:job-definition/my-job-def:1".to_string()),
+            arn: Some(
+                "arn:aws:batch:us-east-1:123456789012:job-definition/my-job-def:1".to_string(),
+            ),
             revision: 1,
             status: Some("ACTIVE".to_string()),
             job_type: Some("container".to_string()),

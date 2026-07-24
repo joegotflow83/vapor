@@ -137,10 +137,7 @@ mod tests {
         )]);
         let client = SqsClient::new(&sdk_config(http_client.clone()));
 
-        let (urls, token) = client
-            .list_queues(Some("prod-"), None, None)
-            .await
-            .unwrap();
+        let (urls, token) = client.list_queues(Some("prod-"), None, None).await.unwrap();
 
         assert_eq!(urls.len(), 0);
         assert_eq!(token, None);
@@ -169,10 +166,7 @@ mod tests {
     async fn list_queues_stops_at_limit_and_returns_resume_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"MaxResults":1}"#),
-            json_response(
-                200,
-                r#"{"QueueUrls":["url-1"],"NextToken":"page2-token"}"#,
-            ),
+            json_response(200, r#"{"QueueUrls":["url-1"],"NextToken":"page2-token"}"#),
         )]);
         let client = SqsClient::new(&sdk_config(http_client.clone()));
 
@@ -188,10 +182,7 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"MaxResults":10}"#),
-                json_response(
-                    200,
-                    r#"{"QueueUrls":["url-1","url-2"],"NextToken":"p2"}"#,
-                ),
+                json_response(200, r#"{"QueueUrls":["url-1","url-2"],"NextToken":"p2"}"#),
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"NextToken":"p2","MaxResults":8}"#),
@@ -260,10 +251,7 @@ mod tests {
     #[tokio::test]
     async fn get_queue_attributes_returns_empty_map_when_attributes_missing() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(
-                BASE,
-                r#"{"QueueUrl":"q-url","AttributeNames":["All"]}"#,
-            ),
+            request(BASE, r#"{"QueueUrl":"q-url","AttributeNames":["All"]}"#),
             json_response(200, "{}"),
         )]);
         let client = SqsClient::new(&sdk_config(http_client.clone()));
@@ -277,10 +265,7 @@ mod tests {
     #[tokio::test]
     async fn get_queue_attributes_propagates_errors() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
-            request(
-                BASE,
-                r#"{"QueueUrl":"q-url","AttributeNames":["All"]}"#,
-            ),
+            request(BASE, r#"{"QueueUrl":"q-url","AttributeNames":["All"]}"#),
             json_error_response("InvalidAttributeName", "unknown attribute"),
         )]);
         let client = SqsClient::new(&sdk_config(http_client.clone()));
@@ -352,4 +337,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

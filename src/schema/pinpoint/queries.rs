@@ -35,7 +35,9 @@ impl PinpointQuery {
         next_token: Option<String>,
     ) -> Result<Page<PinpointCampaign>> {
         let client = ctx.data::<PinpointClient>()?;
-        let (items, next_token) = client.get_campaigns(&application_id, limit, next_token).await?;
+        let (items, next_token) = client
+            .get_campaigns(&application_id, limit, next_token)
+            .await?;
         Ok(Page {
             items: items.into_iter().map(PinpointCampaign::from).collect(),
             next_token,
@@ -52,7 +54,9 @@ impl PinpointQuery {
         next_token: Option<String>,
     ) -> Result<Page<PinpointSegment>> {
         let client = ctx.data::<PinpointClient>()?;
-        let (items, next_token) = client.get_segments(&application_id, limit, next_token).await?;
+        let (items, next_token) = client
+            .get_segments(&application_id, limit, next_token)
+            .await?;
         Ok(Page {
             items: items.into_iter().map(PinpointSegment::from).collect(),
             next_token,
@@ -63,7 +67,9 @@ impl PinpointQuery {
 #[cfg(test)]
 mod tests {
     use crate::aws::pinpoint::PinpointClient;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     use super::PinpointQuery;
@@ -96,7 +102,10 @@ mod tests {
             data["pinpointApps"]["items"][0]["arn"],
             "arn:aws:mobiletargeting:us-east-1:123456789012:apps/app-1"
         );
-        assert_eq!(data["pinpointApps"]["items"][0]["creationDate"], "2024-01-01T00:00:00Z");
+        assert_eq!(
+            data["pinpointApps"]["items"][0]["creationDate"],
+            "2024-01-01T00:00:00Z"
+        );
         assert_eq!(data["pinpointApps"]["items"][0]["tags"][0]["key"], "env");
         assert_eq!(data["pinpointApps"]["items"][0]["tags"][0]["value"], "prod");
         assert_eq!(data["pinpointApps"]["nextToken"], "cursor-a");
@@ -124,11 +133,23 @@ mod tests {
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
         assert_eq!(data["pinpointCampaigns"]["items"][0]["id"], "camp-1");
-        assert_eq!(data["pinpointCampaigns"]["items"][0]["applicationId"], "app-1");
-        assert_eq!(data["pinpointCampaigns"]["items"][0]["name"], "Campaign One");
+        assert_eq!(
+            data["pinpointCampaigns"]["items"][0]["applicationId"],
+            "app-1"
+        );
+        assert_eq!(
+            data["pinpointCampaigns"]["items"][0]["name"],
+            "Campaign One"
+        );
         assert_eq!(data["pinpointCampaigns"]["items"][0]["status"], "EXECUTING");
-        assert_eq!(data["pinpointCampaigns"]["items"][0]["creationDate"], "2024-01-01T00:00:00Z");
-        assert_eq!(data["pinpointCampaigns"]["items"][0]["lastModifiedDate"], "2024-01-02T00:00:00Z");
+        assert_eq!(
+            data["pinpointCampaigns"]["items"][0]["creationDate"],
+            "2024-01-01T00:00:00Z"
+        );
+        assert_eq!(
+            data["pinpointCampaigns"]["items"][0]["lastModifiedDate"],
+            "2024-01-02T00:00:00Z"
+        );
         assert_eq!(data["pinpointCampaigns"]["nextToken"], "cursor-b");
         http_client.relaxed_requests_match();
     }
@@ -154,11 +175,23 @@ mod tests {
         assert!(res.errors.is_empty(), "{:?}", res.errors);
         let data = res.data.into_json().unwrap();
         assert_eq!(data["pinpointSegments"]["items"][0]["id"], "seg-1");
-        assert_eq!(data["pinpointSegments"]["items"][0]["applicationId"], "app-1");
+        assert_eq!(
+            data["pinpointSegments"]["items"][0]["applicationId"],
+            "app-1"
+        );
         assert_eq!(data["pinpointSegments"]["items"][0]["name"], "Segment One");
-        assert_eq!(data["pinpointSegments"]["items"][0]["segmentType"], "DIMENSIONAL");
-        assert_eq!(data["pinpointSegments"]["items"][0]["creationDate"], "2024-01-01T00:00:00Z");
-        assert_eq!(data["pinpointSegments"]["items"][0]["lastModifiedDate"], "2024-01-02T00:00:00Z");
+        assert_eq!(
+            data["pinpointSegments"]["items"][0]["segmentType"],
+            "DIMENSIONAL"
+        );
+        assert_eq!(
+            data["pinpointSegments"]["items"][0]["creationDate"],
+            "2024-01-01T00:00:00Z"
+        );
+        assert_eq!(
+            data["pinpointSegments"]["items"][0]["lastModifiedDate"],
+            "2024-01-02T00:00:00Z"
+        );
         assert_eq!(data["pinpointSegments"]["nextToken"], "cursor-c");
         http_client.relaxed_requests_match();
     }

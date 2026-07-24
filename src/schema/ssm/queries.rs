@@ -132,7 +132,9 @@ impl SsmQuery {
 
         let sdk_filters = filters.map(|fs| fs.iter().map(|f| f.to_sdk_filter()).collect());
 
-        let (results, token) = ssm.describe_parameters(sdk_filters, limit, next_token).await?;
+        let (results, token) = ssm
+            .describe_parameters(sdk_filters, limit, next_token)
+            .await?;
         Ok(Page {
             items: results.into_iter().map(ParameterMeta::from).collect(),
             next_token: token,
@@ -218,10 +220,7 @@ mod tests {
         assert_eq!(item["computerName"], "ip-10-0-1-42");
         assert_eq!(item["name"], "my-managed-instance");
         assert_eq!(item["resourceType"], "ManagedInstance");
-        assert_eq!(
-            item["iamRole"],
-            "arn:aws:iam::123456789012:role/SSMRole"
-        );
+        assert_eq!(item["iamRole"], "arn:aws:iam::123456789012:role/SSMRole");
         assert!(item["registrationDate"].is_string());
         assert_eq!(json["managedInstances"]["nextToken"], "page2-token");
         http_client.relaxed_requests_match();
@@ -350,7 +349,9 @@ mod tests {
             .finish();
 
         let res = schema
-            .execute(r#"{ parametersByPath(path: "/app/") { items { name value tier } nextToken } }"#)
+            .execute(
+                r#"{ parametersByPath(path: "/app/") { items { name value tier } nextToken } }"#,
+            )
             .await;
 
         assert!(res.errors.is_empty(), "unexpected errors: {:?}", res.errors);
@@ -359,7 +360,10 @@ mod tests {
         assert_eq!(item["name"], "/app/x");
         assert_eq!(item["value"], "***");
         assert_eq!(item["tier"], "INTELLIGENT_TIERING");
-        assert_eq!(json["parametersByPath"]["nextToken"], serde_json::Value::Null);
+        assert_eq!(
+            json["parametersByPath"]["nextToken"],
+            serde_json::Value::Null
+        );
         http_client.relaxed_requests_match();
     }
 

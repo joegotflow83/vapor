@@ -172,10 +172,7 @@ impl KmsClient {
     /// is enabled. Returns `None` for keys that don't support rotation (asymmetric, HMAC,
     /// AWS-managed, or keys with imported material) — `UnsupportedOperationException` is
     /// treated as "not applicable" rather than an error.
-    pub async fn get_key_rotation_status(
-        &self,
-        key_id: &str,
-    ) -> Result<Option<bool>, VaporError> {
+    pub async fn get_key_rotation_status(&self, key_id: &str) -> Result<Option<bool>, VaporError> {
         match self
             .inner
             .get_key_rotation_status()
@@ -218,7 +215,9 @@ impl KmsClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_error_response, json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
 
     const ENDPOINT: &str = "https://kms.us-east-1.amazonaws.com/";
 
@@ -229,11 +228,17 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, "{}"),
-                json_response(200, r#"{"Keys":[{"KeyId":"key-1","KeyArn":"arn:aws:kms:us-east-1:123456789012:key/key-1"}],"Truncated":false}"#),
+                json_response(
+                    200,
+                    r#"{"Keys":[{"KeyId":"key-1","KeyArn":"arn:aws:kms:us-east-1:123456789012:key/key-1"}],"Truncated":false}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"KeyId":"key-1"}"#),
-                json_response(200, r#"{"KeyMetadata":{"KeyId":"key-1","Enabled":true,"KeyState":"Enabled"}}"#),
+                json_response(
+                    200,
+                    r#"{"KeyMetadata":{"KeyId":"key-1","Enabled":true,"KeyState":"Enabled"}}"#,
+                ),
             ),
         ]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
@@ -305,7 +310,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"Limit":10}"#),
-                json_response(200, r#"{"Keys":[{"KeyId":"key-1"}],"Truncated":true,"NextMarker":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"Keys":[{"KeyId":"key-1"}],"Truncated":true,"NextMarker":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"Marker":"p2","Limit":9}"#),
@@ -381,7 +389,10 @@ mod tests {
     async fn list_aliases_lists_all_when_no_limit_no_filter() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, "{}"),
-            json_response(200, r#"{"Aliases":[{"AliasName":"alias/a","TargetKeyId":"key-1"}],"Truncated":false}"#),
+            json_response(
+                200,
+                r#"{"Aliases":[{"AliasName":"alias/a","TargetKeyId":"key-1"}],"Truncated":false}"#,
+            ),
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 
@@ -397,11 +408,17 @@ mod tests {
     async fn list_aliases_filters_by_key_id() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"KeyId":"key-1"}"#),
-            json_response(200, r#"{"Aliases":[{"AliasName":"alias/a"}],"Truncated":false}"#),
+            json_response(
+                200,
+                r#"{"Aliases":[{"AliasName":"alias/a"}],"Truncated":false}"#,
+            ),
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, _token) = client.list_aliases(Some("key-1"), None, None).await.unwrap();
+        let (items, _token) = client
+            .list_aliases(Some("key-1"), None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items.len(), 1);
         http_client.relaxed_requests_match();
@@ -411,7 +428,10 @@ mod tests {
     async fn list_aliases_resumes_from_provided_next_token() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"Marker":"cursor-a"}"#),
-            json_response(200, r#"{"Aliases":[{"AliasName":"alias/b"}],"Truncated":false}"#),
+            json_response(
+                200,
+                r#"{"Aliases":[{"AliasName":"alias/b"}],"Truncated":false}"#,
+            ),
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 
@@ -450,11 +470,17 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"Limit":10}"#),
-                json_response(200, r#"{"Aliases":[{"AliasName":"alias/a"}],"Truncated":true,"NextMarker":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"Aliases":[{"AliasName":"alias/a"}],"Truncated":true,"NextMarker":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"Marker":"p2","Limit":9}"#),
-                json_response(200, r#"{"Aliases":[{"AliasName":"alias/b"}],"Truncated":false}"#),
+                json_response(
+                    200,
+                    r#"{"Aliases":[{"AliasName":"alias/b"}],"Truncated":false}"#,
+                ),
             ),
         ]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
@@ -496,7 +522,10 @@ mod tests {
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_key_policy_names("key-1", None, None).await.unwrap();
+        let (items, token) = client
+            .list_key_policy_names("key-1", None, None)
+            .await
+            .unwrap();
 
         assert_eq!(items, vec!["default".to_string()]);
         assert_eq!(token, None);
@@ -532,7 +561,10 @@ mod tests {
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client.list_key_policy_names("key-1", Some(1), None).await.unwrap();
+        let (items, token) = client
+            .list_key_policy_names("key-1", Some(1), None)
+            .await
+            .unwrap();
 
         assert_eq!(items, vec!["default".to_string()]);
         assert_eq!(token, Some("page2".to_string()));
@@ -547,7 +579,10 @@ mod tests {
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 
-        let err = client.list_key_policy_names("key-1", None, None).await.unwrap_err();
+        let err = client
+            .list_key_policy_names("key-1", None, None)
+            .await
+            .unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {
@@ -582,7 +617,10 @@ mod tests {
         // wrapper treats as "not applicable" rather than an error.
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"KeyId":"key-1"}"#),
-            json_error_response("UnsupportedOperationException", "not supported for asymmetric keys"),
+            json_error_response(
+                "UnsupportedOperationException",
+                "not supported for asymmetric keys",
+            ),
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 
@@ -618,7 +656,10 @@ mod tests {
     async fn get_key_policy_returns_policy() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(ENDPOINT, r#"{"KeyId":"key-1","PolicyName":"default"}"#),
-            json_response(200, r#"{"Policy":"{\"Version\":\"2012-10-17\"}","PolicyName":"default"}"#),
+            json_response(
+                200,
+                r#"{"Policy":"{\"Version\":\"2012-10-17\"}","PolicyName":"default"}"#,
+            ),
         )]);
         let client = KmsClient::new(&sdk_config(http_client.clone()));
 

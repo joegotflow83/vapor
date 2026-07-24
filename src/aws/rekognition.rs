@@ -102,8 +102,13 @@ impl RekognitionClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_rekognition::types::ProjectDescription>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_rekognition::types::ProjectDescription>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -302,7 +307,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(BASE, r#"{"MaxResults":10}"#),
-                json_response(200, r#"{"CollectionIds":["col-1","col-2"],"NextToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"CollectionIds":["col-1","col-2"],"NextToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(BASE, r#"{"NextToken":"p2","MaxResults":8}"#),
@@ -584,10 +592,7 @@ mod tests {
         ]);
         let client = RekognitionClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client
-            .list_stream_processors(Some(1), None)
-            .await
-            .unwrap();
+        let (items, token) = client.list_stream_processors(Some(1), None).await.unwrap();
 
         assert_eq!(items.len(), 1);
         assert_eq!(token, Some("page2-token".to_string()));
@@ -623,10 +628,7 @@ mod tests {
         ]);
         let client = RekognitionClient::new(&sdk_config(http_client.clone()));
 
-        let (items, token) = client
-            .list_stream_processors(Some(10), None)
-            .await
-            .unwrap();
+        let (items, token) = client.list_stream_processors(Some(10), None).await.unwrap();
 
         assert_eq!(items.len(), 3);
         assert_eq!(token, None);
@@ -641,10 +643,7 @@ mod tests {
         )]);
         let client = RekognitionClient::new(&sdk_config(http_client.clone()));
 
-        let err = client
-            .list_stream_processors(None, None)
-            .await
-            .unwrap_err();
+        let err = client.list_stream_processors(None, None).await.unwrap_err();
 
         match err {
             VaporError::AwsSdk { code, message } => {

@@ -24,8 +24,13 @@ impl SecretsManagerClient {
         &self,
         limit: Option<i32>,
         next_token: Option<String>,
-    ) -> Result<(Vec<aws_sdk_secretsmanager::types::SecretListEntry>, Option<String>), VaporError>
-    {
+    ) -> Result<
+        (
+            Vec<aws_sdk_secretsmanager::types::SecretListEntry>,
+            Option<String>,
+        ),
+        VaporError,
+    > {
         let mut items = Vec::new();
         let mut token = next_token;
 
@@ -70,10 +75,8 @@ impl SecretsManagerClient {
     pub async fn get_secret_value(
         &self,
         secret_id: &str,
-    ) -> Result<
-        aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOutput,
-        VaporError,
-    > {
+    ) -> Result<aws_sdk_secretsmanager::operation::get_secret_value::GetSecretValueOutput, VaporError>
+    {
         self.inner
             .get_secret_value()
             .secret_id(secret_id)
@@ -85,10 +88,7 @@ impl SecretsManagerClient {
     /// Get the resource-based policy document attached to a secret.
     /// Returns None when no resource policy is attached (empty body response).
     /// Reveals cross-account access grants — critical for secrets storing credentials or API keys.
-    pub async fn get_resource_policy(
-        &self,
-        secret_id: &str,
-    ) -> Result<Option<String>, VaporError> {
+    pub async fn get_resource_policy(&self, secret_id: &str) -> Result<Option<String>, VaporError> {
         let output = self
             .inner
             .get_resource_policy()
@@ -96,7 +96,10 @@ impl SecretsManagerClient {
             .send()
             .await
             .map_err(crate::error::sdk_err)?;
-        Ok(output.resource_policy().filter(|s| !s.is_empty()).map(|s| s.to_string()))
+        Ok(output
+            .resource_policy()
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string()))
     }
 }
 
@@ -345,10 +348,7 @@ mod tests {
     async fn get_resource_policy_returns_none_when_empty_string() {
         let http_client = StaticReplayClient::new(vec![ReplayEvent::new(
             request(BASE, r#"{"SecretId":"s-1"}"#),
-            json_response(
-                200,
-                r#"{"ARN":"arn:s-1","Name":"s-1","ResourcePolicy":""}"#,
-            ),
+            json_response(200, r#"{"ARN":"arn:s-1","Name":"s-1","ResourcePolicy":""}"#),
         )]);
         let client = SecretsManagerClient::new(&sdk_config(http_client.clone()));
 
@@ -378,4 +378,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

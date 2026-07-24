@@ -28,7 +28,11 @@ impl From<Namespace> for RedshiftServerlessNamespace {
             admin_username: n.admin_username().map(|v| v.to_string()),
             iam_roles: n.iam_roles().to_vec(),
             kms_key_id: n.kms_key_id().map(|v| v.to_string()),
-            log_exports: n.log_exports().iter().map(|e| e.as_str().to_string()).collect(),
+            log_exports: n
+                .log_exports()
+                .iter()
+                .map(|e| e.as_str().to_string())
+                .collect(),
             status: n.status().map(|s| s.as_str().to_string()),
             creation_date: to_utc(n.creation_date()),
         }
@@ -65,7 +69,9 @@ impl From<Workgroup> for RedshiftServerlessWorkgroup {
             max_capacity: w.max_capacity(),
             enhanced_vpc_routing: w.enhanced_vpc_routing(),
             publicly_accessible: w.publicly_accessible(),
-            endpoint_address: w.endpoint().and_then(|e| e.address().map(|v| v.to_string())),
+            endpoint_address: w
+                .endpoint()
+                .and_then(|e| e.address().map(|v| v.to_string())),
             endpoint_port: w.endpoint().and_then(|e| e.port()),
             security_group_ids: w.security_group_ids().to_vec(),
             subnet_ids: w.subnet_ids().to_vec(),
@@ -92,7 +98,10 @@ mod tests {
         let result = RedshiftServerlessNamespace::from(ns);
         assert_eq!(result.namespace_name, Some("my-ns".to_string()));
         assert_eq!(result.namespace_id, Some("ns-123".to_string()));
-        assert_eq!(result.namespace_arn, Some("arn:aws:redshift-serverless:us-east-1:123:namespace/ns-123".to_string()));
+        assert_eq!(
+            result.namespace_arn,
+            Some("arn:aws:redshift-serverless:us-east-1:123:namespace/ns-123".to_string())
+        );
         assert_eq!(result.status, Some("AVAILABLE".to_string()));
         assert_eq!(result.db_name, Some("dev".to_string()));
         assert_eq!(result.admin_username, Some("admin".to_string()));
@@ -130,7 +139,10 @@ mod tests {
         let result = RedshiftServerlessWorkgroup::from(wg);
         assert_eq!(result.workgroup_name, Some("my-wg".to_string()));
         assert_eq!(result.workgroup_id, Some("wg-456".to_string()));
-        assert_eq!(result.workgroup_arn, Some("arn:aws:redshift-serverless:us-east-1:123:workgroup/wg-456".to_string()));
+        assert_eq!(
+            result.workgroup_arn,
+            Some("arn:aws:redshift-serverless:us-east-1:123:workgroup/wg-456".to_string())
+        );
         assert_eq!(result.status, Some("AVAILABLE".to_string()));
         assert_eq!(result.namespace_name, Some("my-ns".to_string()));
         assert_eq!(result.base_capacity, Some(128));

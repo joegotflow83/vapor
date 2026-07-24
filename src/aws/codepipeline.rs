@@ -1,5 +1,5 @@
 use aws_config::SdkConfig;
-use aws_sdk_codepipeline::types::{PipelineSummary, PipelineExecutionSummary, StageState};
+use aws_sdk_codepipeline::types::{PipelineExecutionSummary, PipelineSummary, StageState};
 
 use crate::error::VaporError;
 
@@ -78,7 +78,10 @@ impl CodePipelineClient {
         let mut token = next_token;
 
         loop {
-            let mut req = self.inner.list_pipeline_executions().pipeline_name(pipeline_name);
+            let mut req = self
+                .inner
+                .list_pipeline_executions()
+                .pipeline_name(pipeline_name);
             if let Some(ref t) = token {
                 req = req.next_token(t);
             }
@@ -243,7 +246,10 @@ mod tests {
         let http_client = StaticReplayClient::new(vec![
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"maxResults":10}"#),
-                json_response(200, r#"{"pipelines":[{"name":"pipeline-1"}],"nextToken":"p2"}"#),
+                json_response(
+                    200,
+                    r#"{"pipelines":[{"name":"pipeline-1"}],"nextToken":"p2"}"#,
+                ),
             ),
             ReplayEvent::new(
                 request(ENDPOINT, r#"{"nextToken":"p2","maxResults":9}"#),
@@ -409,4 +415,3 @@ mod tests {
         http_client.relaxed_requests_match();
     }
 }
-

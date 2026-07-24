@@ -47,7 +47,9 @@ impl DynamodbQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aws::test_util::{json_response, request, sdk_config, ReplayEvent, StaticReplayClient};
+    use crate::aws::test_util::{
+        json_response, request, sdk_config, ReplayEvent, StaticReplayClient,
+    };
     use crate::schema::test_util::build_query_schema;
 
     const ENDPOINT: &str = "https://dynamodb.us-east-1.amazonaws.com/";
@@ -62,9 +64,7 @@ mod tests {
             ),
         )]);
         let client = DynamodbClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(DynamodbQuery)
-            .data(client)
-            .finish();
+        let schema = build_query_schema(DynamodbQuery).data(client).finish();
 
         let res = schema
             .execute(r#"{ dynamoTables(limit: 1) { items nextToken } }"#)
@@ -87,14 +87,10 @@ mod tests {
             ),
         )]);
         let client = DynamodbClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(DynamodbQuery)
-            .data(client)
-            .finish();
+        let schema = build_query_schema(DynamodbQuery).data(client).finish();
 
         let res = schema
-            .execute(
-                r#"{ dynamoTable(name: "my-table") { name status itemCount } }"#,
-            )
+            .execute(r#"{ dynamoTable(name: "my-table") { name status itemCount } }"#)
             .await;
 
         assert!(res.errors.is_empty(), "{:?}", res.errors);
@@ -118,9 +114,7 @@ mod tests {
             ),
         )]);
         let client = DynamodbClient::new(&sdk_config(http_client.clone()));
-        let schema = build_query_schema(DynamodbQuery)
-            .data(client)
-            .finish();
+        let schema = build_query_schema(DynamodbQuery).data(client).finish();
 
         let res = schema
             .execute(
@@ -132,7 +126,10 @@ mod tests {
         let data = res.data.into_json().unwrap();
         assert_eq!(data["dynamoScan"]["count"], 1);
         assert_eq!(data["dynamoScan"]["scannedCount"], 1);
-        assert_eq!(data["dynamoScan"]["lastEvaluatedKey"], serde_json::Value::Null);
+        assert_eq!(
+            data["dynamoScan"]["lastEvaluatedKey"],
+            serde_json::Value::Null
+        );
         let items = data["dynamoScan"]["items"].as_array().unwrap();
         assert_eq!(items.len(), 1);
         let parsed: serde_json::Value = serde_json::from_str(items[0].as_str().unwrap()).unwrap();
