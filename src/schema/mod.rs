@@ -211,3 +211,75 @@ pub mod connect;
 #[cfg(feature = "pinpoint")]
 pub mod pinpoint;
 pub mod root;
+
+#[cfg(test)]
+mod docs_feature_sync {
+    //! Guards against a service being added here but forgotten in Cargo.toml's
+    //! `docs` feature. gen-docs has `required-features = ["docs"]`, so a missing
+    //! entry doesn't fail the build — it silently drops the service's page from
+    //! the published docs. This test turns that silent gap into a loud failure.
+    //!
+    //! Reads both files as text (via `include_str!`, so it's independent of the
+    //! working directory and of which features are enabled) rather than relying
+    //! on `cfg!`, which can only see features that happen to be on.
+
+    /// Every `#[cfg(feature = "...")]` gate in this file. These gate the service
+    /// schema modules, which are exactly what gen-docs renders.
+    fn schema_features() -> Vec<String> {
+        let src = include_str!("mod.rs");
+        let mut out = Vec::new();
+        for line in src.lines() {
+            let line = line.trim();
+            if let Some(rest) = line.strip_prefix("#[cfg(feature = \"") {
+                if let Some(name) = rest.split('"').next() {
+                    out.push(name.to_string());
+                }
+            }
+        }
+        out
+    }
+
+    /// The feature names listed in Cargo.toml's `docs = [ ... ]` array.
+    fn docs_features() -> Vec<String> {
+        let manifest = include_str!("../../Cargo.toml");
+        let start = manifest
+            .find("\ndocs = [")
+            .expect("Cargo.toml should define a `docs` feature");
+        let body_start = manifest[start..].find('[').unwrap() + start + 1;
+        let body_end = manifest[body_start..].find(']').expect("`docs` array should close") + body_start;
+        let body = &manifest[body_start..body_end];
+
+        let mut out = Vec::new();
+        let mut rest = body;
+        while let Some(open) = rest.find('"') {
+            rest = &rest[open + 1..];
+            let close = rest.find('"').expect("unterminated string in `docs` array");
+            out.push(rest[..close].to_string());
+            rest = &rest[close + 1..];
+        }
+        out
+    }
+
+    #[test]
+    fn every_schema_feature_is_in_docs() {
+        let docs = docs_features();
+        // Sanity check that our parsing actually found the array.
+        assert!(
+            docs.len() > 50,
+            "parsed only {} entries from the `docs` feature — parsing likely broke",
+            docs.len()
+        );
+
+        let missing: Vec<String> = schema_features()
+            .into_iter()
+            .filter(|f| !docs.contains(f))
+            .collect();
+
+        assert!(
+            missing.is_empty(),
+            "these features gate schema modules in src/schema/mod.rs but are missing from \
+             Cargo.toml's `docs` feature, so gen-docs would silently omit their pages: {missing:?}. \
+             Add them to the `docs` array."
+        );
+    }
+}

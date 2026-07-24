@@ -10,6 +10,12 @@ path = "src/main.rs"
 [[bin]]
 name = "gen-docs"
 path = "src/bin/gen_docs.rs"
+# gen_docs.rs names every service's schema module unconditionally, so it only
+# compiles with all of them enabled. Declaring that here makes Cargo skip the
+# target instead of failing the build when it isn't — without this, a partial
+# build like `--features release` tries to compile it and dies on ~75 E0433s.
+# `--all-features` satisfies this, which is how CI builds the docs.
+required-features = ["docs"]
 
 [dependencies]
 async-graphql = { version = "7", features = ["chrono"] }
@@ -246,6 +252,29 @@ licensemanager = ["dep:aws-sdk-licensemanager"]
 budgets = ["dep:aws-sdk-budgets"]
 connect = ["dep:aws-sdk-connect"]
 pinpoint = ["dep:aws-sdk-pinpoint"]
+
+# Every service feature. Not a shipping configuration — this exists so the
+# gen-docs binary can declare `required-features = ["docs"]`; see [[bin]] above.
+# Keep in sync when adding a service.
+docs = [
+    "acm", "acmpca", "apigateway", "apigatewayv2", "appconfig", "apprunner",
+    "appsync", "athena", "auditmanager", "autoscaling", "backup", "batch",
+    "bedrock", "budgets", "cloudformation", "cloudfront", "cloudtrail", "cloudwatch",
+    "cloudwatchlogs", "codeartifact", "codebuild", "codecommit", "codedeploy", "codepipeline",
+    "cognitoidentityprovider", "comprehend", "config", "connect", "controltower", "costexplorer",
+    "datasync", "detective", "directconnect", "dms", "docdb", "dynamodb",
+    "ec2", "ecr", "ecs", "efs", "eks", "elasticache",
+    "elasticbeanstalk", "elbv2", "emr", "eventbridge", "firehose", "fms",
+    "fsx", "globalaccelerator", "glue", "guardduty", "health", "iam",
+    "inspector2", "iot", "kafka", "keyspaces", "kinesis", "kms",
+    "lakeformation", "lambda", "licensemanager", "lightsail", "macie2", "memorydb",
+    "mq", "neptune", "networkfirewall", "opensearch", "organizations", "pinpoint",
+    "polly", "qldb", "quicksight", "ram", "rds", "redshift",
+    "redshiftserverless", "rekognition", "route53", "s3", "sagemaker", "secretsmanager",
+    "securityhub", "servicequotas", "sesv2", "sfn", "shield", "sns",
+    "sqs", "ssm", "ssoadmin", "storagegateway", "sts", "timestream",
+    "transcribe", "transfer", "translate", "wafv2", "workspaces", "xray",
+]
 
 # Feature groups for easier combinations
 # Basic AWS services
