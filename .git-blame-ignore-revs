@@ -1,0 +1,7 @@
+# Revisions to ignore in `git blame` (bulk, non-semantic changes).
+# Enable locally with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub honors this file automatically in its blame UI.
+
+# style: apply repo-wide cargo fmt (default rustfmt settings)
+43b57f5ce1ae05b5534130d8e174ba32d9491c54
