@@ -186,10 +186,7 @@ impl From<(String, aws_sdk_iam::types::PolicyVersion)> for IamPolicyDocument {
             policy_arn,
             version_id: version.version_id().unwrap_or("").to_string(),
             is_default_version: version.is_default_version(),
-            document: version
-                .document()
-                .map(percent_decode)
-                .unwrap_or_default(),
+            document: version.document().map(percent_decode).unwrap_or_default(),
             create_date: to_utc(version.create_date()),
         }
     }
