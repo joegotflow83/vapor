@@ -38,6 +38,7 @@ impl CloudTrailQuery {
         Ok(out)
     }
 
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver args mirror the AWS query
     async fn cloudtrail_events(
         &self,
         ctx: &Context<'_>,

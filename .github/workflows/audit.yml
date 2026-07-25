@@ -10,6 +10,10 @@ on:
 
 permissions:
   contents: read
+  # rustsec/audit-check posts results as a GitHub check-run; that API needs
+  # `checks: write`. Without it the action errors with
+  # "Resource not accessible by integration" even when no vulns are found.
+  checks: write
 
 jobs:
   audit:

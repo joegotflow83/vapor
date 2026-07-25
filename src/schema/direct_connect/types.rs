@@ -52,7 +52,7 @@ impl From<VirtualInterface> for DxVirtualInterface {
             virtual_interface_state: v.virtual_interface_state().map(|s| s.as_str().to_string()),
             connection_id: v.connection_id().map(|s| s.to_string()),
             vlan: if v.vlan() == 0 { None } else { Some(v.vlan()) },
-            asn: Some(v.asn() as i32),
+            asn: Some(v.asn()),
             amazon_address: v.amazon_address().map(|s| s.to_string()),
             customer_address: v.customer_address().map(|s| s.to_string()),
         }

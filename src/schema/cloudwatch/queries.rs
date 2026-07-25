@@ -150,6 +150,7 @@ impl CloudWatchQuery {
         })
     }
 
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver args mirror the AWS query
     async fn log_events(
         &self,
         ctx: &Context<'_>,

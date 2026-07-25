@@ -217,7 +217,7 @@ impl LightsailClient {
                     dns_name: lb.dns_name().map(|s| s.to_string()),
                     state: lb.state().map(|s| s.as_str().to_string()),
                     protocol: lb.protocol().map(|s| s.as_str().to_string()),
-                    instance_port: lb.instance_port().map(|p| p as i32),
+                    instance_port: lb.instance_port(),
                     instance_health_summary: lb
                         .instance_health_summary()
                         .iter()

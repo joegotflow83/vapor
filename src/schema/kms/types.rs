@@ -160,8 +160,8 @@ mod tests {
         let ts = aws_sdk_kms::primitives::DateTime::from_secs(1_700_000_000);
         let sdk = aws_sdk_kms::types::KeyMetadata::builder()
             .key_id("dated-key-id")
-            .creation_date(ts.clone())
-            .deletion_date(ts.clone())
+            .creation_date(ts)
+            .deletion_date(ts)
             .valid_to(ts)
             .build()
             .expect("key_id provided");
@@ -208,7 +208,7 @@ mod tests {
             .alias_name("alias/my-key")
             .alias_arn("arn:aws:kms:us-east-1:123456789012:alias/my-key")
             .target_key_id("1234abcd-12ab-34cd-56ef-1234567890ab")
-            .creation_date(ts.clone())
+            .creation_date(ts)
             .last_updated_date(ts)
             .build();
 

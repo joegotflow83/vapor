@@ -49,6 +49,7 @@ impl CodeArtifactQuery {
     }
 
     /// Lists packages in a CodeArtifact repository, optionally capped at `limit` results and resumed via `next_token`.
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver args mirror the AWS query
     async fn code_artifact_packages(
         &self,
         ctx: &Context<'_>,

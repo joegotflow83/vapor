@@ -177,6 +177,7 @@ impl CloudWatchLogsClient {
     /// (verified against pinned `aws-sdk-cloudwatchlogs` 1.139.0's
     /// `operation/filter_log_events/_filter_log_events_input.rs`), so
     /// `limit` is capped to the remaining budget on the request itself.
+    #[allow(clippy::too_many_arguments)] // wide AWS FilterLogEvents parameter set
     pub async fn filter_log_events(
         &self,
         log_group_name: String,

@@ -11,6 +11,7 @@ pub struct CostExplorerQuery;
 impl CostExplorerQuery {
     /// Fetches cost and usage data, optionally capped at `limit` results
     /// (default unlimited) and resumed from `next_token`.
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver args mirror the AWS query
     async fn cost_and_usage(
         &self,
         ctx: &Context<'_>,

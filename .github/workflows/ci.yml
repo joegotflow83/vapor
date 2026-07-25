@@ -24,6 +24,17 @@ jobs:
     steps:
     - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+    - name: Increase Windows page file
+      # Linking all ~102 AWS SDK crates under --all-features exhausts the
+      # Windows runner's default page file, failing with os error 1455
+      # ("The paging file is too small") on rlib mmap. ubuntu/macOS are fine.
+      if: runner.os == 'Windows'
+      uses: al-cheb/configure-pagefile-action@a3b6ebd6b634da88790d9c58d4b37a7f4a7b8708 # v1.4
+      with:
+        minimum-size: 8GB
+        maximum-size: 16GB
+        disk-root: "C:"
+
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       with:

@@ -22,6 +22,10 @@ impl UserPool {
             id: pool.id().unwrap_or_default().to_string(),
             name: pool.name().map(|s| s.to_string()),
             arn: pool.arn().map(|s| s.to_string()),
+            // UserPoolType::status is deprecated in the AWS SDK ("This property
+            // is no longer available"), but we keep surfacing it for API
+            // stability; it now typically returns None.
+            #[allow(deprecated)]
             status: pool.status().map(|s| s.as_str().to_string()),
             creation_date: to_utc(pool.creation_date()),
             last_modified_date: to_utc(pool.last_modified_date()),

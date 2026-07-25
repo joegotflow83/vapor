@@ -45,8 +45,8 @@ impl DataStream {
             stream_mode: s
                 .stream_mode_details()
                 .map(|m| m.stream_mode().as_str().to_string()),
-            shard_count: Some(s.open_shard_count() as i32),
-            retention_period_hours: Some(s.retention_period_hours() as i32),
+            shard_count: Some(s.open_shard_count()),
+            retention_period_hours: Some(s.retention_period_hours()),
             encryption_type: s.encryption_type().map(|e| e.as_str().to_string()),
             key_id: s.key_id().map(|k| k.to_string()),
             created_at: to_utc(Some(s.stream_creation_timestamp())),

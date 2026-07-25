@@ -161,7 +161,7 @@ mod tests {
         let zone = R53HostedZone::from(hz);
         assert_eq!(zone.id, "Z1D633PJN98FT9");
         assert_eq!(zone.name, "example.com.");
-        assert_eq!(zone.private_zone, false);
+        assert!(!zone.private_zone);
         assert_eq!(zone.comment, None);
         assert_eq!(zone.record_count, None);
     }
@@ -182,7 +182,7 @@ mod tests {
             .unwrap();
         let zone = R53HostedZone::from(hz);
         assert_eq!(zone.id, "ZXYZ123");
-        assert_eq!(zone.private_zone, true);
+        assert!(zone.private_zone);
         assert_eq!(zone.comment, Some("My private zone".to_string()));
         assert_eq!(zone.record_count, Some(42));
     }
@@ -228,7 +228,7 @@ mod tests {
         let at = record.alias_target.unwrap();
         assert_eq!(at.hosted_zone_id, "Z2FDTNDATAQYW2");
         assert_eq!(at.dns_name, "d111111abcdef8.cloudfront.net.");
-        assert_eq!(at.evaluate_target_health, false);
+        assert!(!at.evaluate_target_health);
     }
 
     #[test]

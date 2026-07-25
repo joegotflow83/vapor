@@ -32,10 +32,8 @@ impl CognitoQuery {
 
         let results = join_all(futures).await;
         let mut items = Vec::new();
-        for result in results {
-            if let Ok(pool) = result {
-                items.push(UserPool::from_sdk(&pool));
-            }
+        for pool in results.into_iter().flatten() {
+            items.push(UserPool::from_sdk(&pool));
         }
         Ok(Page { items, next_token })
     }

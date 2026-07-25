@@ -47,6 +47,7 @@ impl GuardDutyQuery {
         })
     }
 
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver args mirror the AWS query
     async fn guardduty_findings(
         &self,
         ctx: &Context<'_>,

@@ -581,6 +581,104 @@ impl From<aws_sdk_ec2::types::Snapshot> for Snapshot {
     }
 }
 
+impl From<aws_sdk_ec2::types::Instance> for Instance {
+    fn from(i: aws_sdk_ec2::types::Instance) -> Self {
+        let state = i
+            .state()
+            .and_then(|s| s.name())
+            .map(|n| match n {
+                aws_sdk_ec2::types::InstanceStateName::Pending => InstanceState::Pending,
+                aws_sdk_ec2::types::InstanceStateName::Running => InstanceState::Running,
+                aws_sdk_ec2::types::InstanceStateName::ShuttingDown => InstanceState::ShuttingDown,
+                aws_sdk_ec2::types::InstanceStateName::Terminated => InstanceState::Terminated,
+                aws_sdk_ec2::types::InstanceStateName::Stopping => InstanceState::Stopping,
+                aws_sdk_ec2::types::InstanceStateName::Stopped => InstanceState::Stopped,
+                _ => InstanceState::Unknown,
+            })
+            .unwrap_or(InstanceState::Unknown);
+
+        let tags = i
+            .tags()
+            .iter()
+            .map(|t| Tag {
+                key: t.key().unwrap_or_default().to_string(),
+                value: t.value().unwrap_or_default().to_string(),
+            })
+            .collect();
+
+        let security_groups = i
+            .security_groups()
+            .iter()
+            .map(|sg| SecurityGroupRef {
+                id: sg.group_id().unwrap_or_default().to_string(),
+                name: sg.group_name().unwrap_or_default().to_string(),
+            })
+            .collect();
+
+        let network_interfaces = i
+            .network_interfaces()
+            .iter()
+            .map(|ni| NetworkInterface {
+                id: ni.network_interface_id().unwrap_or_default().to_string(),
+                subnet_id: ni.subnet_id().map(|s| s.to_string()),
+                vpc_id: ni.vpc_id().map(|s| s.to_string()),
+                private_ip: ni.private_ip_address().map(|s| s.to_string()),
+                public_ip: ni
+                    .association()
+                    .and_then(|a| a.public_ip())
+                    .map(|s| s.to_string()),
+                mac_address: ni.mac_address().map(|s| s.to_string()),
+            })
+            .collect();
+
+        let block_devices = i
+            .block_device_mappings()
+            .iter()
+            .map(|bd| BlockDevice {
+                device_name: bd.device_name().unwrap_or_default().to_string(),
+                volume_id: bd.ebs().and_then(|e| e.volume_id()).map(|s| s.to_string()),
+                status: bd
+                    .ebs()
+                    .and_then(|e| e.status())
+                    .map(|s| s.as_str().to_string()),
+                delete_on_termination: bd
+                    .ebs()
+                    .and_then(|e| e.delete_on_termination())
+                    .unwrap_or(false),
+            })
+            .collect();
+
+        let metadata_options = i.metadata_options().map(|m| InstanceMetadataOptions {
+            http_tokens: m.http_tokens().map(|t| t.as_str().to_string()),
+            http_endpoint: m.http_endpoint().map(|e| e.as_str().to_string()),
+            http_put_response_hop_limit: m.http_put_response_hop_limit(),
+            http_protocol_ipv6: m.http_protocol_ipv6().map(|p| p.as_str().to_string()),
+            instance_metadata_tags: m.instance_metadata_tags().map(|t| t.as_str().to_string()),
+        });
+
+        Instance {
+            id: i.instance_id().unwrap_or_default().to_string(),
+            instance_type: i.instance_type().map(|t| t.as_str().to_string()),
+            state,
+            az: i
+                .placement()
+                .and_then(|p| p.availability_zone())
+                .map(|s| s.to_string()),
+            public_ip: i.public_ip_address().map(|s| s.to_string()),
+            private_ip: i.private_ip_address().map(|s| s.to_string()),
+            vpc_id: i.vpc_id().map(|s| s.to_string()),
+            subnet_id: i.subnet_id().map(|s| s.to_string()),
+            key_name: i.key_name().map(|s| s.to_string()),
+            launch_time: to_utc(i.launch_time()),
+            tags,
+            security_groups,
+            network_interfaces,
+            block_devices,
+            metadata_options,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1236,103 +1334,5 @@ mod tests {
         assert!(!snap.encrypted);
         assert_eq!(snap.kms_key_id, None);
         assert!(snap.tags.is_empty());
-    }
-}
-
-impl From<aws_sdk_ec2::types::Instance> for Instance {
-    fn from(i: aws_sdk_ec2::types::Instance) -> Self {
-        let state = i
-            .state()
-            .and_then(|s| s.name())
-            .map(|n| match n {
-                aws_sdk_ec2::types::InstanceStateName::Pending => InstanceState::Pending,
-                aws_sdk_ec2::types::InstanceStateName::Running => InstanceState::Running,
-                aws_sdk_ec2::types::InstanceStateName::ShuttingDown => InstanceState::ShuttingDown,
-                aws_sdk_ec2::types::InstanceStateName::Terminated => InstanceState::Terminated,
-                aws_sdk_ec2::types::InstanceStateName::Stopping => InstanceState::Stopping,
-                aws_sdk_ec2::types::InstanceStateName::Stopped => InstanceState::Stopped,
-                _ => InstanceState::Unknown,
-            })
-            .unwrap_or(InstanceState::Unknown);
-
-        let tags = i
-            .tags()
-            .iter()
-            .map(|t| Tag {
-                key: t.key().unwrap_or_default().to_string(),
-                value: t.value().unwrap_or_default().to_string(),
-            })
-            .collect();
-
-        let security_groups = i
-            .security_groups()
-            .iter()
-            .map(|sg| SecurityGroupRef {
-                id: sg.group_id().unwrap_or_default().to_string(),
-                name: sg.group_name().unwrap_or_default().to_string(),
-            })
-            .collect();
-
-        let network_interfaces = i
-            .network_interfaces()
-            .iter()
-            .map(|ni| NetworkInterface {
-                id: ni.network_interface_id().unwrap_or_default().to_string(),
-                subnet_id: ni.subnet_id().map(|s| s.to_string()),
-                vpc_id: ni.vpc_id().map(|s| s.to_string()),
-                private_ip: ni.private_ip_address().map(|s| s.to_string()),
-                public_ip: ni
-                    .association()
-                    .and_then(|a| a.public_ip())
-                    .map(|s| s.to_string()),
-                mac_address: ni.mac_address().map(|s| s.to_string()),
-            })
-            .collect();
-
-        let block_devices = i
-            .block_device_mappings()
-            .iter()
-            .map(|bd| BlockDevice {
-                device_name: bd.device_name().unwrap_or_default().to_string(),
-                volume_id: bd.ebs().and_then(|e| e.volume_id()).map(|s| s.to_string()),
-                status: bd
-                    .ebs()
-                    .and_then(|e| e.status())
-                    .map(|s| s.as_str().to_string()),
-                delete_on_termination: bd
-                    .ebs()
-                    .and_then(|e| e.delete_on_termination())
-                    .unwrap_or(false),
-            })
-            .collect();
-
-        let metadata_options = i.metadata_options().map(|m| InstanceMetadataOptions {
-            http_tokens: m.http_tokens().map(|t| t.as_str().to_string()),
-            http_endpoint: m.http_endpoint().map(|e| e.as_str().to_string()),
-            http_put_response_hop_limit: m.http_put_response_hop_limit(),
-            http_protocol_ipv6: m.http_protocol_ipv6().map(|p| p.as_str().to_string()),
-            instance_metadata_tags: m.instance_metadata_tags().map(|t| t.as_str().to_string()),
-        });
-
-        Instance {
-            id: i.instance_id().unwrap_or_default().to_string(),
-            instance_type: i.instance_type().map(|t| t.as_str().to_string()),
-            state,
-            az: i
-                .placement()
-                .and_then(|p| p.availability_zone())
-                .map(|s| s.to_string()),
-            public_ip: i.public_ip_address().map(|s| s.to_string()),
-            private_ip: i.private_ip_address().map(|s| s.to_string()),
-            vpc_id: i.vpc_id().map(|s| s.to_string()),
-            subnet_id: i.subnet_id().map(|s| s.to_string()),
-            key_name: i.key_name().map(|s| s.to_string()),
-            launch_time: to_utc(i.launch_time()),
-            tags,
-            security_groups,
-            network_interfaces,
-            block_devices,
-            metadata_options,
-        }
     }
 }

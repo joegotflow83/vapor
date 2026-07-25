@@ -98,9 +98,9 @@ mod tests {
             .status(aws_sdk_acm::types::CertificateStatus::Issued)
             .r#type(aws_sdk_acm::types::CertificateType::AmazonIssued)
             .key_algorithm(aws_sdk_acm::types::KeyAlgorithm::Rsa2048)
-            .issued_at(ts.clone())
-            .not_before(ts.clone())
-            .not_after(ts.clone())
+            .issued_at(ts)
+            .not_before(ts)
+            .not_after(ts)
             .renewal_eligibility(aws_sdk_acm::types::RenewalEligibility::Eligible)
             .in_use_by(
                 "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/my-lb/abc",

@@ -50,7 +50,7 @@ impl From<&aws_sdk_efs::types::FileSystemDescription> for EfsFileSystem {
             size_in_bytes: fs.size_in_bytes().map(|s| s.value()),
             encrypted: fs.encrypted().unwrap_or(false),
             kms_key_id: fs.kms_key_id().map(|s| s.to_string()),
-            number_of_mount_targets: fs.number_of_mount_targets() as i32,
+            number_of_mount_targets: fs.number_of_mount_targets(),
             creation_time: to_utc(Some(fs.creation_time())),
             tags,
         }

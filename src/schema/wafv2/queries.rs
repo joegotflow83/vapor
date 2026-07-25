@@ -37,11 +37,9 @@ impl Wafv2Query {
 
         let results = join_all(futures).await;
         let mut items = Vec::new();
-        for result in results {
-            if let Ok(output) = result {
-                if let Some(acl) = output.web_acl() {
-                    items.push(WebAcl::from_sdk(acl, &scope));
-                }
+        for output in results.into_iter().flatten() {
+            if let Some(acl) = output.web_acl() {
+                items.push(WebAcl::from_sdk(acl, &scope));
             }
         }
         Ok(Page { items, next_token })
@@ -74,11 +72,9 @@ impl Wafv2Query {
 
         let results = join_all(futures).await;
         let mut items = Vec::new();
-        for result in results {
-            if let Ok(output) = result {
-                if let Some(ip_set) = output.ip_set() {
-                    items.push(WafIpSet::from_sdk(ip_set, &scope));
-                }
+        for output in results.into_iter().flatten() {
+            if let Some(ip_set) = output.ip_set() {
+                items.push(WafIpSet::from_sdk(ip_set, &scope));
             }
         }
         Ok(Page { items, next_token })

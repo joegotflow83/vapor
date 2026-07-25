@@ -58,7 +58,7 @@ impl From<aws_sdk_iam::types::Role> for IamRole {
             create_date: to_utc(Some(r.create_date())),
             description: r.description().map(|s| s.to_string()),
             max_session_duration: r.max_session_duration(),
-            assume_role_policy_document: r.assume_role_policy_document().map(|s| percent_decode(s)),
+            assume_role_policy_document: r.assume_role_policy_document().map(percent_decode),
             tags,
         }
     }
@@ -188,7 +188,7 @@ impl From<(String, aws_sdk_iam::types::PolicyVersion)> for IamPolicyDocument {
             is_default_version: version.is_default_version(),
             document: version
                 .document()
-                .map(|d| percent_decode(d))
+                .map(percent_decode)
                 .unwrap_or_default(),
             create_date: to_utc(version.create_date()),
         }

@@ -19,6 +19,7 @@ impl Ec2Client {
     /// `DescribeInstancesInput::max_results` (confirmed `Option<i32>`,
     /// verified against pinned `aws-sdk-ec2` 1.233.0's
     /// `operation/describe_instances/_describe_instances_input.rs`).
+    #[allow(clippy::too_many_arguments)] // wide AWS DescribeInstances parameter set
     pub async fn describe_instances(
         &self,
         ids: Option<Vec<String>>,
@@ -411,6 +412,7 @@ impl Ec2Client {
     /// `DescribeImagesInput::max_results` (confirmed `Option<i32>`, verified
     /// against pinned `aws-sdk-ec2` 1.233.0's
     /// `operation/describe_images/_describe_images_input.rs`).
+    #[allow(clippy::too_many_arguments)] // wide AWS DescribeImages parameter set
     pub async fn describe_images(
         &self,
         ids: Option<Vec<String>>,

@@ -63,8 +63,8 @@ impl CloudTrailClient {
             let mut req = self
                 .inner
                 .lookup_events()
-                .start_time(start_time.clone())
-                .end_time(end_time.clone());
+                .start_time(start_time)
+                .end_time(end_time);
 
             for attr in &attributes {
                 req = req.lookup_attributes(attr.clone());

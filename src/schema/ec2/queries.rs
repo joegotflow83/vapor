@@ -13,6 +13,7 @@ pub struct Ec2Query;
 #[Object]
 impl Ec2Query {
     /// `limit`/`next_token` paginate the returned list.
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver args mirror the AWS query
     async fn instances(
         &self,
         ctx: &Context<'_>,
@@ -164,6 +165,7 @@ impl Ec2Query {
     }
 
     /// `limit`/`next_token` paginate the returned list.
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver args mirror the AWS query
     async fn images(
         &self,
         ctx: &Context<'_>,

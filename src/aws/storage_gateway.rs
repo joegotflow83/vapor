@@ -156,7 +156,7 @@ impl StorageGatewayClient {
             }
         }
 
-        if token.is_none() && limit.map_or(true, |l| (items.len() as i32) < l) {
+        if token.is_none() && limit.is_none_or(|l| (items.len() as i32) < l) {
             items.extend(self.list_tapes(&gateway_arn).await?);
             if let Some(l) = limit {
                 items.truncate(l as usize);

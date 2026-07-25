@@ -35,12 +35,11 @@ impl FirehoseDeliveryStream {
     pub fn from_description(d: SdkDeliveryStream, tags: Vec<FirehoseTag>) -> Self {
         let mut destinations = Vec::new();
         for dest in d.destinations() {
-            if dest.extended_s3_destination_description().is_some()
-                || dest.s3_destination_description().is_some()
+            if (dest.extended_s3_destination_description().is_some()
+                || dest.s3_destination_description().is_some())
+                && !destinations.contains(&"S3".to_string())
             {
-                if !destinations.contains(&"S3".to_string()) {
-                    destinations.push("S3".to_string());
-                }
+                destinations.push("S3".to_string());
             }
             if dest.redshift_destination_description().is_some() {
                 destinations.push("Redshift".to_string());
