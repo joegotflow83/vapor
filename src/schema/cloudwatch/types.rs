@@ -31,7 +31,7 @@ impl AlarmState {
         }
     }
 
-    pub fn to_sdk(&self) -> aws_sdk_cloudwatch::types::StateValue {
+    pub fn to_sdk(self) -> aws_sdk_cloudwatch::types::StateValue {
         match self {
             Self::Ok => aws_sdk_cloudwatch::types::StateValue::Ok,
             Self::Alarm => aws_sdk_cloudwatch::types::StateValue::Alarm,
@@ -40,6 +40,9 @@ impl AlarmState {
     }
 }
 
+// Variant names mirror the AWS SDK / GraphQL `ComparisonOperator` enum verbatim;
+// the shared `Threshold` suffix is part of that public contract, not a smell.
+#[allow(clippy::enum_variant_names)]
 #[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum ComparisonOperator {
     GreaterThanThreshold,

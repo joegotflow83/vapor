@@ -7,7 +7,7 @@ pub enum WafScope {
 }
 
 impl WafScope {
-    pub fn to_sdk(&self) -> aws_sdk_wafv2::types::Scope {
+    pub fn to_sdk(self) -> aws_sdk_wafv2::types::Scope {
         match self {
             WafScope::Regional => aws_sdk_wafv2::types::Scope::Regional,
             WafScope::Cloudfront => aws_sdk_wafv2::types::Scope::Cloudfront,
