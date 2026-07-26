@@ -9,11 +9,18 @@
 //! Output (`docs/src/services/*.md`, `docs/src/SUMMARY.md`) is generated,
 //! not committed — see `.gitignore`.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
-use async_graphql::{EmptyMutation, EmptySubscription, ObjectType, OutputType, Schema};
+use async_graphql::parser::parse_schema;
+use async_graphql::parser::types::{
+    BaseType, FieldDefinition, ObjectType as SdlObjectType, Type as SdlType, TypeKind,
+    TypeSystemDefinition,
+};
+use async_graphql::{
+    EmptyMutation, EmptySubscription, ObjectType, OutputType, Schema, SubscriptionType,
+};
 
 struct ServicePage {
     slug: &'static str,
@@ -29,29 +36,48 @@ struct ServicePage {
     sdl: String,
 }
 
-fn sdl_for<Q>() -> (String, String)
+fn sdl_for<Q>() -> (String, String, Schema<Q, EmptyMutation, EmptySubscription>)
 where
     Q: ObjectType + Default + Send + Sync + 'static,
 {
-    let sdl = clean_sdl(
-        &Schema::build(Q::default(), EmptyMutation, EmptySubscription)
-            .finish()
-            .sdl(),
-    );
-    (Q::type_name().into_owned(), sdl)
+    let schema = Schema::build(Q::default(), EmptyMutation, EmptySubscription).finish();
+    let sdl = clean_sdl(&schema.sdl());
+    (Q::type_name().into_owned(), sdl, schema)
 }
 
-fn sdl_for_with_mutation<Q, M>() -> (String, String)
+fn sdl_for_with_mutation<Q, M>() -> (String, String, Schema<Q, M, EmptySubscription>)
 where
     Q: ObjectType + Default + Send + Sync + 'static,
     M: ObjectType + Default + Send + Sync + 'static,
 {
-    let sdl = clean_sdl(
-        &Schema::build(Q::default(), M::default(), EmptySubscription)
-            .finish()
-            .sdl(),
-    );
-    (Q::type_name().into_owned(), sdl)
+    let schema = Schema::build(Q::default(), M::default(), EmptySubscription).finish();
+    let sdl = clean_sdl(&schema.sdl());
+    (Q::type_name().into_owned(), sdl, schema)
+}
+
+/// Executes every synthesized/curated example against the service's own
+/// (credential-free) schema and records real failures. A resolver that runs
+/// far enough to call `ctx.data::<...Client>()?` and die there produces an
+/// error whose `path` is non-empty (it failed *while resolving* a field) —
+/// that's expected and not a failure. An empty `path` means the query never
+/// started resolving (parse/validation error, e.g. an unknown field), which
+/// is a real authoring mistake in the example.
+async fn validate_examples<Q, M, S>(
+    schema: &Schema<Q, M, S>,
+    examples: &[String],
+    label: &str,
+    failures: &mut Vec<String>,
+) where
+    Q: ObjectType + Send + Sync + 'static,
+    M: ObjectType + Send + Sync + 'static,
+    S: SubscriptionType + Send + Sync + 'static,
+{
+    for example in examples {
+        let resp = schema.execute(example.as_str()).await;
+        for err in resp.errors.iter().filter(|e| e.path.is_empty()) {
+            failures.push(format!("{label}: `{example}` -> {}", err.message));
+        }
+    }
 }
 
 /// Strips the `schema { ... }` root-operation block and any empty
@@ -161,6 +187,264 @@ fn query_field_names(sdl: &str, type_name: &str) -> BTreeSet<String> {
     fields
 }
 
+/// Indexes a service's SDL by type name so synthesis can resolve a query
+/// field's return type to its own field list. The typed registry would be
+/// nicer, but `Schema::registry()` is pub(crate) — parsing our own emitted
+/// SDL back is the supported route and adds no dependency. The SDL fed in is
+/// already `clean_sdl`-processed (no `schema { }` block, no
+/// `EmptyMutation`/`EmptySubscription` stubs), so every definition here is a
+/// real service type.
+fn index_types(sdl: &str) -> BTreeMap<String, TypeKind> {
+    let Ok(doc) = parse_schema(sdl) else {
+        return BTreeMap::new();
+    };
+    doc.definitions
+        .into_iter()
+        .filter_map(|def| match def {
+            TypeSystemDefinition::Type(positioned) => {
+                let type_def = positioned.node;
+                Some((type_def.name.node.to_string(), type_def.kind))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Strips `List`/nullable wrappers down to the named type at the core of a
+/// field or argument type (e.g. `[String!]!` -> `String`).
+fn base_type_name(ty: &SdlType) -> String {
+    match &ty.base {
+        BaseType::Named(name) => name.to_string(),
+        BaseType::List(inner) => base_type_name(inner),
+    }
+}
+
+/// Ranks a field name by how identifier-like it looks, for leaf-selection
+/// preference; lower is preferred. Ties keep declaration order (stable sort).
+fn identifier_rank(name: &str) -> u8 {
+    if matches!(name, "name" | "id" | "arn" | "status" | "state") {
+        0
+    } else if name.ends_with("Name") || name.ends_with("Id") {
+        1
+    } else {
+        2
+    }
+}
+
+/// Selects up to 4 scalar/enum leaf fields from an object type, preferring
+/// identifier-ish names, falling back to declaration order. Fields whose
+/// resolved type is itself an object (i.e. nested, not a leaf) are skipped
+/// entirely.
+fn leaf_field_names(obj: &SdlObjectType, index: &BTreeMap<String, TypeKind>) -> Vec<String> {
+    let mut candidates: Vec<(usize, u8, &FieldDefinition)> = obj
+        .fields
+        .iter()
+        .map(|f| &f.node)
+        .filter(|field| {
+            let type_name = base_type_name(&field.ty.node);
+            !matches!(index.get(&type_name), Some(TypeKind::Object(_)))
+        })
+        .enumerate()
+        .map(|(i, field)| (i, identifier_rank(field.name.node.as_str()), field))
+        .collect();
+    candidates.sort_by_key(|(i, rank, _)| (*rank, *i));
+    candidates
+        .into_iter()
+        .take(4)
+        .map(|(_, _, field)| field.name.node.to_string())
+        .collect()
+}
+
+/// Produces a placeholder literal for a required argument, based on its
+/// resolved type and name. Enum arguments use their first declared value
+/// (unquoted); everything else falls back to a type-appropriate guess.
+fn placeholder_value(arg_name: &str, type_name: &str, index: &BTreeMap<String, TypeKind>) -> String {
+    if let Some(TypeKind::Enum(enum_type)) = index.get(type_name) {
+        if let Some(first) = enum_type.values.first() {
+            return first.node.value.node.to_string();
+        }
+    }
+    match type_name {
+        "Int" | "Float" => "1".to_string(),
+        "Boolean" => "true".to_string(),
+        _ => {
+            let lower = arg_name.to_lowercase();
+            if lower.ends_with("arn") {
+                format!("\"arn:aws:service:us-east-1:123456789012:resource/{arg_name}\"")
+            } else if lower.ends_with("id") {
+                "\"example-id\"".to_string()
+            } else if lower.ends_with("name") {
+                "\"my-db\"".to_string()
+            } else {
+                "\"example\"".to_string()
+            }
+        }
+    }
+}
+
+/// Renders a field's selection set: `Page<T>` return types unwrap to
+/// `{ items { <leaves> } nextToken }`; everything else selects its leaf
+/// fields directly. Degrades gracefully (empty braces) if the payload type
+/// has no scalar/enum leaves to select, rather than panicking.
+fn selection_set(type_name: &str, index: &BTreeMap<String, TypeKind>) -> Option<String> {
+    let Some(TypeKind::Object(obj)) = index.get(type_name) else {
+        // Scalar/enum leaf return type: no selection set needed.
+        return None;
+    };
+
+    let is_page = type_name.ends_with("Page")
+        && obj.fields.iter().any(|f| f.node.name.node == "items")
+        && obj.fields.iter().any(|f| f.node.name.node == "nextToken");
+
+    if is_page {
+        let items_field = obj
+            .fields
+            .iter()
+            .find(|f| f.node.name.node == "items")
+            .expect("checked above");
+        let item_type = base_type_name(&items_field.node.ty.node);
+        let leaves = match index.get(&item_type) {
+            Some(TypeKind::Object(item_obj)) => leaf_field_names(item_obj, index),
+            _ => Vec::new(),
+        };
+        return Some(format!("{{ items {{ {} }} nextToken }}", leaves.join(" ")));
+    }
+
+    let leaves = leaf_field_names(obj, index);
+    Some(format!("{{ {} }}", leaves.join(" ")))
+}
+
+/// Synthesizes example queries for the first 3 fields of a service's query
+/// type: page-unwraps paginated return types, selects a handful of leaf
+/// fields, and fills in placeholders for required arguments (plus
+/// `limit: 5` when the field accepts one).
+fn synthesize_examples(sdl: &str, query_type_name: &str) -> Vec<String> {
+    let index = index_types(sdl);
+    let Some(TypeKind::Object(query_obj)) = index.get(query_type_name) else {
+        return Vec::new();
+    };
+
+    query_obj
+        .fields
+        .iter()
+        .take(3)
+        .map(|f| synthesize_field_query(&f.node, &index))
+        .collect()
+}
+
+fn synthesize_field_query(field: &FieldDefinition, index: &BTreeMap<String, TypeKind>) -> String {
+    let field_name = field.name.node.as_str();
+
+    let mut args = Vec::new();
+    for arg in &field.arguments {
+        let arg_node = &arg.node;
+        let arg_name = arg_node.name.node.as_str();
+        let type_name = base_type_name(&arg_node.ty.node);
+        let is_required = !arg_node.ty.node.nullable && arg_node.default_value.is_none();
+        if is_required {
+            args.push(format!(
+                "{arg_name}: {}",
+                placeholder_value(arg_name, &type_name, index)
+            ));
+        } else if arg_name == "limit" && type_name == "Int" {
+            args.push("limit: 5".to_string());
+        }
+    }
+
+    let return_type_name = base_type_name(&field.ty.node);
+    let selection = selection_set(&return_type_name, index);
+
+    let args_str = if args.is_empty() {
+        String::new()
+    } else {
+        format!("({})", args.join(", "))
+    };
+    match selection {
+        Some(sel) => format!("{{ {field_name}{args_str} {sel} }}"),
+        None => format!("{{ {field_name}{args_str} }}"),
+    }
+}
+
+/// One example query for a service page: an optional bolded caption (from a
+/// curated file's `#` comment line) plus the query itself. Synthesized
+/// examples always have `caption: None`.
+#[allow(dead_code)]
+struct Example {
+    caption: Option<String>,
+    query: String,
+}
+
+/// Splits a curated `docs/examples/<slug>.graphql` file's contents into
+/// examples. A `#`-prefixed line starts a new example and becomes its
+/// caption; every following non-blank, non-comment line is appended to that
+/// example's query (multi-line queries are joined with spaces). A blank line
+/// ends the current example. A file whose first line is a query with no
+/// preceding comment yields an example with `caption: None`.
+#[allow(dead_code)]
+fn parse_curated_examples(contents: &str) -> Vec<Example> {
+    let mut examples = Vec::new();
+    let mut caption: Option<String> = None;
+    let mut query_lines: Vec<&str> = Vec::new();
+
+    fn flush(caption: &mut Option<String>, query_lines: &mut Vec<&str>, examples: &mut Vec<Example>) {
+        if !query_lines.is_empty() {
+            examples.push(Example {
+                caption: caption.take(),
+                query: query_lines.join(" "),
+            });
+            query_lines.clear();
+        }
+    }
+
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            flush(&mut caption, &mut query_lines, &mut examples);
+        } else if let Some(rest) = trimmed.strip_prefix('#') {
+            flush(&mut caption, &mut query_lines, &mut examples);
+            caption = Some(rest.trim().to_string());
+        } else {
+            query_lines.push(trimmed);
+        }
+    }
+    flush(&mut caption, &mut query_lines, &mut examples);
+
+    examples
+}
+
+/// Reads and parses `<dir>/<slug>.graphql`, if present. Split out from
+/// `load_curated_examples` so tests can point at a scratch directory instead
+/// of the real `docs/examples/`.
+#[allow(dead_code)]
+fn load_curated_examples_from(dir: &Path, slug: &str) -> Option<Vec<Example>> {
+    let contents = fs::read_to_string(dir.join(format!("{slug}.graphql"))).ok()?;
+    Some(parse_curated_examples(&contents))
+}
+
+/// Reads `docs/examples/<slug>.graphql`, if present. Presence of this file
+/// fully replaces synthesis for that service — see Decision 4 in
+/// `specs/example-docs.md`.
+#[allow(dead_code)]
+fn load_curated_examples(slug: &str) -> Option<Vec<Example>> {
+    load_curated_examples_from(Path::new("docs/examples"), slug)
+}
+
+/// Resolves the examples to render for a service: a curated file, if one was
+/// loaded, replaces synthesis entirely; otherwise the synthesized queries are
+/// used as-is (uncaptioned).
+#[allow(dead_code)]
+fn resolve_examples(curated: Option<Vec<Example>>, synthesized: Vec<String>) -> Vec<Example> {
+    curated.unwrap_or_else(|| {
+        synthesized
+            .into_iter()
+            .map(|query| Example {
+                caption: None,
+                query,
+            })
+            .collect()
+    })
+}
+
 fn render_page(page: &ServicePage) -> String {
     let mut out = String::new();
     out.push_str(&format!("# {}\n\n", page.title));
@@ -188,12 +472,16 @@ fn render_summary(pages: &[ServicePage]) -> String {
     out
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut pages: Vec<ServicePage> = Vec::new();
+    let mut failures: Vec<String> = Vec::new();
 
     macro_rules! page {
         ($pages:ident, $slug:expr, $title:expr, $feature:expr, $note:expr, $query:ty) => {{
-            let (query_type_name, sdl) = sdl_for::<$query>();
+            let (query_type_name, sdl, schema) = sdl_for::<$query>();
+            let examples = synthesize_examples(&sdl, &query_type_name);
+            validate_examples(&schema, &examples, $slug, &mut failures).await;
             $pages.push(ServicePage {
                 slug: $slug,
                 title: $title,
@@ -207,10 +495,12 @@ fn main() {
 
     // EC2 is the only service with mutations (see registry.rs's MutationRoot),
     // so it's built with Ec2Mutation instead of EmptyMutation.
-    let (ec2_query_type_name, ec2_sdl) = sdl_for_with_mutation::<
+    let (ec2_query_type_name, ec2_sdl, ec2_schema) = sdl_for_with_mutation::<
         vapor::schema::ec2::queries::Ec2Query,
         vapor::schema::ec2::mutations::Ec2Mutation,
     >();
+    let ec2_examples = synthesize_examples(&ec2_sdl, &ec2_query_type_name);
+    validate_examples(&ec2_schema, &ec2_examples, "ec2", &mut failures).await;
     pages.push(ServicePage {
         slug: "ec2",
         title: "EC2",
@@ -1035,6 +1325,22 @@ fn main() {
         "expected 102 service pages (one per registry.rs QueryRoot entry)"
     );
 
+    // Example validation gate: every synthesized example must be a
+    // structurally valid query against its own service's schema. A resolver
+    // dying on a missing (deliberately unregistered) AWS client is fine and
+    // expected; a query that never starts resolving (e.g. references an
+    // unknown field) is an authoring bug and fails the build.
+    if !failures.is_empty() {
+        eprintln!(
+            "gen-docs: {} example query failure(s) across service schemas:",
+            failures.len()
+        );
+        for failure in &failures {
+            eprintln!("  {failure}");
+        }
+        std::process::exit(1);
+    }
+
     // Drift check: every field in the fully-merged schema's `type Query` must
     // be accounted for by exactly one of the per-service pages above, and
     // vice versa. If registry.rs gains/loses a service without this table
@@ -1150,6 +1456,186 @@ mod tests {
     }
 
     #[test]
+    fn index_types_indexes_object_scalar_and_enum_definitions() {
+        let sdl = "type Query {\n  widgets: [Widget!]!\n}\n\
+                   type Widget {\n  name: String!\n  status: Status!\n}\n\
+                   enum Status {\n  ACTIVE\n  INACTIVE\n}\n\
+                   scalar DateTime\n";
+        let types = index_types(sdl);
+        assert_eq!(
+            types.keys().cloned().collect::<Vec<_>>(),
+            vec![
+                "DateTime".to_string(),
+                "Query".to_string(),
+                "Status".to_string(),
+                "Widget".to_string(),
+            ]
+        );
+        assert!(matches!(types["Query"], TypeKind::Object(_)));
+        assert!(matches!(types["Widget"], TypeKind::Object(_)));
+        assert!(matches!(types["Status"], TypeKind::Enum(_)));
+        assert!(matches!(types["DateTime"], TypeKind::Scalar));
+    }
+
+    #[test]
+    fn index_types_returns_empty_map_on_parse_error() {
+        assert_eq!(index_types("type { broken").len(), 0);
+    }
+
+    #[test]
+    fn synthesize_examples_unwraps_paginated_field() {
+        let sdl = "type Query {\n  s3Buckets: S3BucketPage!\n}\n\
+                   type S3BucketPage {\n  items: [S3Bucket!]!\n  nextToken: String\n}\n\
+                   type S3Bucket {\n  name: String!\n  creationDate: String!\n}\n";
+        let examples = synthesize_examples(sdl, "Query");
+        assert_eq!(
+            examples,
+            vec!["{ s3Buckets { items { name creationDate } nextToken } }".to_string()]
+        );
+    }
+
+    #[test]
+    fn synthesize_examples_selects_leaves_directly_for_non_paginated_field() {
+        let sdl = "type Query {\n  stsCallerIdentity: StsIdentity!\n}\n\
+                   type StsIdentity {\n  account: String!\n  arn: String!\n  userId: String!\n}\n";
+        let examples = synthesize_examples(sdl, "Query");
+        assert_eq!(
+            examples,
+            vec!["{ stsCallerIdentity { arn userId account } }".to_string()]
+        );
+    }
+
+    #[test]
+    fn synthesize_examples_fills_required_string_argument() {
+        let sdl = "type Query {\n\
+                   \x20\x20glueTables(databaseName: String!): GlueTablePage!\n\
+                   }\n\
+                   type GlueTablePage {\n  items: [GlueTable!]!\n  nextToken: String\n}\n\
+                   type GlueTable {\n  name: String!\n}\n";
+        let examples = synthesize_examples(sdl, "Query");
+        assert_eq!(
+            examples,
+            vec![
+                "{ glueTables(databaseName: \"my-db\") { items { name } nextToken } }".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn synthesize_examples_degrades_gracefully_with_no_scalar_leaves() {
+        let sdl = "type Query {\n  widget: Widget!\n}\n\
+                   type Widget {\n  nested: Nested!\n}\n\
+                   type Nested {\n  value: String!\n}\n";
+        let examples = synthesize_examples(sdl, "Query");
+        assert_eq!(examples, vec!["{ widget {  } }".to_string()]);
+    }
+
+    #[test]
+    fn synthesize_examples_caps_at_three_query_fields() {
+        let sdl = "type Query {\n\
+                   \x20\x20one: Widget!\n\
+                   \x20\x20two: Widget!\n\
+                   \x20\x20three: Widget!\n\
+                   \x20\x20four: Widget!\n\
+                   }\n\
+                   type Widget {\n  name: String!\n}\n";
+        assert_eq!(synthesize_examples(sdl, "Query").len(), 3);
+    }
+
+    #[test]
+    fn parse_curated_examples_splits_caption_and_query() {
+        let contents = "# List all widgets\n\
+                         { widgets { name } }\n\
+                         \n\
+                         # Get one widget\n\
+                         { widget(id: \"abc\") { name } }\n";
+        let examples = parse_curated_examples(contents);
+        assert_eq!(examples.len(), 2);
+        assert_eq!(examples[0].caption.as_deref(), Some("List all widgets"));
+        assert_eq!(examples[0].query, "{ widgets { name } }");
+        assert_eq!(examples[1].caption.as_deref(), Some("Get one widget"));
+        assert_eq!(examples[1].query, "{ widget(id: \"abc\") { name } }");
+    }
+
+    #[test]
+    fn parse_curated_examples_handles_query_with_no_preceding_comment() {
+        let contents = "{ widgets { name } }\n\
+                         \n\
+                         # Get one widget\n\
+                         { widget(id: \"abc\") { name } }\n";
+        let examples = parse_curated_examples(contents);
+        assert_eq!(examples.len(), 2);
+        assert_eq!(examples[0].caption, None);
+        assert_eq!(examples[0].query, "{ widgets { name } }");
+        assert_eq!(examples[1].caption.as_deref(), Some("Get one widget"));
+    }
+
+    #[test]
+    fn parse_curated_examples_joins_multiline_query() {
+        let contents = "# Nested selection\n\
+                         { widget(id: \"abc\") {\n\
+                         \x20\x20name\n\
+                         \x20\x20status\n\
+                         } }\n";
+        let examples = parse_curated_examples(contents);
+        assert_eq!(examples.len(), 1);
+        assert_eq!(examples[0].query, "{ widget(id: \"abc\") { name status } }");
+    }
+
+    #[test]
+    fn resolve_examples_prefers_curated_over_synthesized() {
+        let curated = vec![Example {
+            caption: Some("Curated".to_string()),
+            query: "{ curated }".to_string(),
+        }];
+        let synthesized = vec!["{ synthesized }".to_string()];
+        let resolved = resolve_examples(Some(curated), synthesized);
+        assert_eq!(resolved.len(), 1);
+        assert_eq!(resolved[0].caption.as_deref(), Some("Curated"));
+        assert_eq!(resolved[0].query, "{ curated }");
+    }
+
+    #[test]
+    fn resolve_examples_falls_back_to_synthesized_when_no_curated_file() {
+        let synthesized = vec!["{ synthesized }".to_string()];
+        let resolved = resolve_examples(None, synthesized);
+        assert_eq!(resolved.len(), 1);
+        assert_eq!(resolved[0].caption, None);
+        assert_eq!(resolved[0].query, "{ synthesized }");
+    }
+
+    #[test]
+    fn load_curated_examples_from_reads_file_when_present() {
+        let dir = std::env::temp_dir().join(format!(
+            "gen_docs_test_{}_{}",
+            std::process::id(),
+            "load_curated_examples_from_reads_file_when_present"
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("widget.graphql"), "# List\n{ widgets { name } }\n").unwrap();
+
+        let examples = load_curated_examples_from(&dir, "widget").unwrap();
+        assert_eq!(examples.len(), 1);
+        assert_eq!(examples[0].caption.as_deref(), Some("List"));
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn load_curated_examples_from_returns_none_when_absent() {
+        let dir = std::env::temp_dir().join(format!(
+            "gen_docs_test_{}_{}",
+            std::process::id(),
+            "load_curated_examples_from_returns_none_when_absent"
+        ));
+        fs::create_dir_all(&dir).unwrap();
+
+        assert!(load_curated_examples_from(&dir, "missing-service").is_none());
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
     fn render_page_includes_note_when_present() {
         let page = ServicePage {
             slug: "s3",
@@ -1208,5 +1694,33 @@ mod tests {
             "# Summary\n\n[Introduction](introduction.md)\n\n# AWS Services\n\n\
              - [Alpha](services/a.md)\n- [Beta](services/b.md)\n"
         );
+    }
+
+    struct HeuristicQuery;
+
+    #[async_graphql::Object]
+    impl HeuristicQuery {
+        // Never registered via `.data(...)` below, so this always dies at
+        // `ctx.data::<String>()?` — after the executor has already started
+        // resolving the field, producing a non-empty error `path`.
+        async fn needs_context(&self, ctx: &async_graphql::Context<'_>) -> async_graphql::Result<String> {
+            Ok(ctx.data::<String>()?.clone())
+        }
+    }
+
+    #[tokio::test]
+    async fn unknown_field_error_has_empty_path() {
+        let schema = Schema::build(HeuristicQuery, EmptyMutation, EmptySubscription).finish();
+        let resp = schema.execute("{ noSuchField }").await;
+        assert!(!resp.errors.is_empty());
+        assert!(resp.errors.iter().all(|e| e.path.is_empty()));
+    }
+
+    #[tokio::test]
+    async fn missing_context_data_error_has_non_empty_path() {
+        let schema = Schema::build(HeuristicQuery, EmptyMutation, EmptySubscription).finish();
+        let resp = schema.execute("{ needsContext }").await;
+        assert!(!resp.errors.is_empty());
+        assert!(resp.errors.iter().all(|e| !e.path.is_empty()));
     }
 }
