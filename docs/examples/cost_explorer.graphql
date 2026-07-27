@@ -1,0 +1,2 @@
+# Check cost and usage
+{ costAndUsage(start: "2024-01-01", end: "2024-02-01", granularity: "MONTHLY") { items { timePeriodStart timePeriodEnd totalAmount totalUnit } nextToken } }

@@ -1,0 +1,2 @@
+# List issued certificates
+{ acmCertificates(statuses: ["ISSUED"]) { items { domainName status notAfter } nextToken } }

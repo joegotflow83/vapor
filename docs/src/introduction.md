@@ -28,10 +28,11 @@ Each service page below lists the exact feature flag it needs. See
 [FEATURE_FLAGS.md](https://github.com/joegotflow83/vapor/blob/master/FEATURE_FLAGS.md) for feature
 groups and other build options.
 
-## Example query
+## Example queries
 
-```bash
-vapor query '{ s3Buckets { name creationDate } }'
-```
+Every service page in the sidebar leads with runnable example queries (and, for EC2,
+mutations) validated against that service's live schema — there's no single query that
+represents all 102 services, so browse the page for the service you need.
 
-Browse the sidebar for the full set of queries available per service.
+Quoted values in those examples like `"my-db"` or `"i-0abc123"` are placeholders to
+substitute with your own resource identifiers, not literal values to copy verbatim.

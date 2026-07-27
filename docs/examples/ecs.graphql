@@ -1,0 +1,2 @@
+# List clusters and services
+{ ecsClusters { items { name status activeServicesCount } nextToken } }

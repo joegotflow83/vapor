@@ -101,7 +101,7 @@ curl -H "Authorization: Bearer $VAPOR_AUTH_TOKEN" http://localhost:4000/graphql 
 
 ## GraphQL Schema
 
-The full GraphQL query reference for all 107 services — one page per
+The full GraphQL query reference for all 102 services — one page per
 service, field names, arguments, and types — is generated directly from the
 live schema (so it can never drift the way hand-written docs do) and
 published at **https://joegotflow83.github.io/vapor/**. It's rebuilt by
@@ -114,138 +114,37 @@ published at **https://joegotflow83.github.io/vapor/**. It's rebuilt by
 
 ## Examples
 
+A handful of representative queries below; every one is quoted verbatim from a curated
+file under `docs/examples/` that the `gen-docs` build validates against the live schema —
+see the [full query reference](https://joegotflow83.github.io/vapor/) for all 102 services.
+
 ### CLI query examples
 
-**List all running instances:**
-```bash
-vapor query '{ instances(state: RUNNING) { items { id instanceType privateIp tags { key value } } nextToken } }'
-```
-
-**List Lambda functions:**
-```bash
-vapor query '{ lambdaFunctions { items { functionName runtime memorySize state } nextToken } }'
-```
-
-**List EKS clusters:**
-```bash
-vapor query '{ eksClusters { items { name status version endpoint } nextToken } }'
-```
-
-**List S3 buckets:**
+**Plain list — S3 buckets:**
 ```bash
 vapor query '{ s3Buckets { items { name region versioning } nextToken } }'
 ```
 
-**List RDS instances:**
+**Filtered list — running EC2 instances:**
 ```bash
-vapor query '{ dbInstances { items { dbInstanceIdentifier engine dbInstanceStatus multiAz } nextToken } }'
+vapor query '{ instances(state: RUNNING) { items { id instanceType privateIp tags { key value } } nextToken } }'
 ```
 
-**Get CloudWatch alarms in ALARM state:**
-```bash
-vapor query '{ alarms(state: ALARM) { items { alarmName stateValue metricName } nextToken } }'
-```
-
-**List CloudWatch log groups:**
-```bash
-vapor query '{ logGroups(prefix: "/aws/lambda") { items { name retentionInDays } nextToken } }'
-```
-
-**List IAM roles:**
-```bash
-vapor query '{ iamRoles { items { roleName arn createDate } nextToken } }'
-```
-
-**List ACM certificates:**
-```bash
-vapor query '{ acmCertificates(statuses: ["ISSUED"]) { items { domainName status notAfter } nextToken } }'
-```
-
-**List SQS queues:**
-```bash
-vapor query '{ sqsQueues { items nextToken } }'
-```
-
-**List ECS clusters and services:**
-```bash
-vapor query '{ ecsClusters { items { clusterName status activeServicesCount } nextToken } }'
-```
-
-**Get GuardDuty findings:**
-```bash
-vapor query '{ guarddutyDetectors { items { detectorId } nextToken } }' # get a detector ID first
-vapor query '{ guarddutyFindings(detectorId: "abc123", minSeverity: 7.0) { items { id title severity } nextToken } }'
-```
-
-**Inspect Bedrock foundation models:**
-```bash
-vapor query '{ bedrockFoundationModels { modelId modelName providerName inputModalities outputModalities } }'
-```
-
-**Check AWS cost and usage:**
-```bash
-vapor query '{ costAndUsage(start: "2024-01-01", end: "2024-02-01", granularity: "MONTHLY") { items { timePeriodStart timePeriodEnd total { amount unit } } nextToken } }'
-```
-
-**List Step Functions state machines:**
-```bash
-vapor query '{ stateMachines { items { name stateMachineArn type status } nextToken } }'
-```
-
-**List Glue databases and tables:**
-```bash
-vapor query '{ glueDatabases { items { name description } nextToken } }'
-vapor query '{ glueTables(databaseName: "my-db") { items { name tableType } nextToken } }'
-```
-
-**Get caller identity:**
+**Non-paginated singleton — caller identity:**
 ```bash
 vapor query '{ stsCallerIdentity { account userId arn } }'
 ```
 
-**Target a specific region:**
+**Nested selection — CloudWatch alarms with their metric:**
 ```bash
-vapor query '{ instances(state: RUNNING) { items { id privateIp } nextToken } }' --region eu-west-1
+vapor query '{ alarms(state: ALARM) { items { name state metric { metricName } } nextToken } }'
 ```
 
-**Compact output for piping to jq:**
-```bash
-vapor query '{ lambdaFunctions { items { functionName runtime } nextToken } }' --format compact | jq '.data.lambdaFunctions.items[].functionName'
-```
-
-### Mutation examples
+### Mutation example
 
 **Stop instances:**
 ```bash
 vapor query 'mutation { stopInstances(ids: ["i-0abc123"]) { instanceId previousState currentState } }'
-```
-
-**Start instances:**
-```bash
-vapor query 'mutation { startInstances(ids: ["i-0abc123"]) { instanceId previousState currentState } }'
-```
-
-**Terminate instances:**
-```bash
-vapor query 'mutation { terminateInstances(ids: ["i-0abc123"]) { instanceId currentState } }'
-```
-
-**Launch a new instance:**
-```bash
-vapor query 'mutation {
-  runInstances(input: {
-    imageId: "ami-0abcdef1234567890"
-    instanceType: "t3.micro"
-    minCount: 1
-    maxCount: 1
-    keyName: "my-key"
-    subnetId: "subnet-0abc123"
-    securityGroupIds: ["sg-0abc123"]
-    tags: [{ key: "Name", value: "my-new-instance" }, { key: "Environment", value: "dev" }]
-  }) {
-    id instanceType state privateIp
-  }
-}'
 ```
 
 ### Server mode
@@ -257,16 +156,11 @@ vapor serve
 # GraphQL endpoint:    http://localhost:4000/graphql
 ```
 
-**Start on a custom port targeting a specific region:**
-```bash
-vapor serve --port 8080 --region us-west-2
-```
-
 **Query the server with curl:**
 ```bash
 curl -s http://localhost:4000/graphql \
   -H 'Content-Type: application/json' \
-  -d '{"query":"{ instances(state: RUNNING) { items { id instanceType privateIp } nextToken } }"}' \
+  -d '{"query":"{ stsCallerIdentity { account userId arn } }"}' \
   | jq .
 ```
 
@@ -432,5 +326,5 @@ AWS_PROFILE=my-profile vapor serve
 
 To use explicit credentials:
 ```bash
-AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... vapor query '{ s3Buckets { items { name } nextToken } }'
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... vapor query '{ s3Buckets { items { name region versioning } nextToken } }'
 ```

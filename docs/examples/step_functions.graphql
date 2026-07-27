@@ -1,0 +1,2 @@
+# List state machines
+{ stateMachines { items { name arn machineType status } nextToken } }

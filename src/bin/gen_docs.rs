@@ -34,15 +34,7 @@ struct ServicePage {
     /// check below.
     query_type_name: String,
     sdl: String,
-}
-
-fn sdl_for<Q>() -> (String, String, Schema<Q, EmptyMutation, EmptySubscription>)
-where
-    Q: ObjectType + Default + Send + Sync + 'static,
-{
-    let schema = Schema::build(Q::default(), EmptyMutation, EmptySubscription).finish();
-    let sdl = clean_sdl(&schema.sdl());
-    (Q::type_name().into_owned(), sdl, schema)
+    examples: Vec<Example>,
 }
 
 fn sdl_for_with_mutation<Q, M>() -> (String, String, Schema<Q, M, EmptySubscription>)
@@ -55,6 +47,60 @@ where
     (Q::type_name().into_owned(), sdl, schema)
 }
 
+/// Builds one service's page: SDL, examples (curated or synthesized), and the
+/// example-validation gate.
+///
+/// Deliberately a standalone function rather than code inlined into `main` by
+/// the `page!` macro. Inlining ~102 expansions — each holding its own
+/// monomorphized `Schema<Q, M, S>` live across an `.await` — into a single
+/// `#[tokio::main] async fn main` produced one generator type big enough to
+/// OOM rustc on the 16 GB Linux CI runners under `cargo test` and
+/// `cargo llvm-cov` instrumentation (exit 143 mid-`Compiling vapor`). Here
+/// each service monomorphizes into its own small body and `main` stays a
+/// plain, synchronous sequence of calls.
+fn build_page_with_mutation<Q, M>(
+    rt: &tokio::runtime::Runtime,
+    slug: &'static str,
+    title: &'static str,
+    feature: &'static str,
+    note: Option<&'static str>,
+    failures: &mut Vec<String>,
+) -> ServicePage
+where
+    Q: ObjectType + Default + Send + Sync + 'static,
+    M: ObjectType + Default + Send + Sync + 'static,
+{
+    let (query_type_name, sdl, schema) = sdl_for_with_mutation::<Q, M>();
+    let synthesized = synthesize_examples(&sdl, &query_type_name);
+    let curated = load_curated_examples(slug);
+    let examples = resolve_examples(curated, synthesized);
+    rt.block_on(validate_examples(&schema, &examples, slug, failures));
+    ServicePage {
+        slug,
+        title,
+        feature,
+        note,
+        query_type_name,
+        sdl,
+        examples,
+    }
+}
+
+/// [`build_page_with_mutation`] for the common case of a query-only service.
+fn build_page<Q>(
+    rt: &tokio::runtime::Runtime,
+    slug: &'static str,
+    title: &'static str,
+    feature: &'static str,
+    note: Option<&'static str>,
+    failures: &mut Vec<String>,
+) -> ServicePage
+where
+    Q: ObjectType + Default + Send + Sync + 'static,
+{
+    build_page_with_mutation::<Q, EmptyMutation>(rt, slug, title, feature, note, failures)
+}
+
 /// Executes every synthesized/curated example against the service's own
 /// (credential-free) schema and records real failures. A resolver that runs
 /// far enough to call `ctx.data::<...Client>()?` and die there produces an
@@ -64,7 +110,7 @@ where
 /// is a real authoring mistake in the example.
 async fn validate_examples<Q, M, S>(
     schema: &Schema<Q, M, S>,
-    examples: &[String],
+    examples: &[Example],
     label: &str,
     failures: &mut Vec<String>,
 ) where
@@ -73,9 +119,9 @@ async fn validate_examples<Q, M, S>(
     S: SubscriptionType + Send + Sync + 'static,
 {
     for example in examples {
-        let resp = schema.execute(example.as_str()).await;
+        let resp = schema.execute(example.query.as_str()).await;
         for err in resp.errors.iter().filter(|e| e.path.is_empty()) {
-            failures.push(format!("{label}: `{example}` -> {}", err.message));
+            failures.push(format!("{label}: `{}` -> {}", example.query, err.message));
         }
     }
 }
@@ -258,7 +304,11 @@ fn leaf_field_names(obj: &SdlObjectType, index: &BTreeMap<String, TypeKind>) -> 
 /// Produces a placeholder literal for a required argument, based on its
 /// resolved type and name. Enum arguments use their first declared value
 /// (unquoted); everything else falls back to a type-appropriate guess.
-fn placeholder_value(arg_name: &str, type_name: &str, index: &BTreeMap<String, TypeKind>) -> String {
+fn placeholder_value(
+    arg_name: &str,
+    type_name: &str,
+    index: &BTreeMap<String, TypeKind>,
+) -> String {
     if let Some(TypeKind::Enum(enum_type)) = index.get(type_name) {
         if let Some(first) = enum_type.values.first() {
             return first.node.value.node.to_string();
@@ -303,10 +353,11 @@ fn selection_set(type_name: &str, index: &BTreeMap<String, TypeKind>) -> Option<
             .find(|f| f.node.name.node == "items")
             .expect("checked above");
         let item_type = base_type_name(&items_field.node.ty.node);
-        let leaves = match index.get(&item_type) {
-            Some(TypeKind::Object(item_obj)) => leaf_field_names(item_obj, index),
-            _ => Vec::new(),
+        let Some(TypeKind::Object(item_obj)) = index.get(&item_type) else {
+            // Scalar/enum item type (e.g. `items: [String]`): no sub-selection needed.
+            return Some("{ items nextToken }".to_string());
         };
+        let leaves = leaf_field_names(item_obj, index);
         return Some(format!("{{ items {{ {} }} nextToken }}", leaves.join(" ")));
     }
 
@@ -368,7 +419,6 @@ fn synthesize_field_query(field: &FieldDefinition, index: &BTreeMap<String, Type
 /// One example query for a service page: an optional bolded caption (from a
 /// curated file's `#` comment line) plus the query itself. Synthesized
 /// examples always have `caption: None`.
-#[allow(dead_code)]
 struct Example {
     caption: Option<String>,
     query: String,
@@ -380,13 +430,16 @@ struct Example {
 /// example's query (multi-line queries are joined with spaces). A blank line
 /// ends the current example. A file whose first line is a query with no
 /// preceding comment yields an example with `caption: None`.
-#[allow(dead_code)]
 fn parse_curated_examples(contents: &str) -> Vec<Example> {
     let mut examples = Vec::new();
     let mut caption: Option<String> = None;
     let mut query_lines: Vec<&str> = Vec::new();
 
-    fn flush(caption: &mut Option<String>, query_lines: &mut Vec<&str>, examples: &mut Vec<Example>) {
+    fn flush(
+        caption: &mut Option<String>,
+        query_lines: &mut Vec<&str>,
+        examples: &mut Vec<Example>,
+    ) {
         if !query_lines.is_empty() {
             examples.push(Example {
                 caption: caption.take(),
@@ -415,7 +468,6 @@ fn parse_curated_examples(contents: &str) -> Vec<Example> {
 /// Reads and parses `<dir>/<slug>.graphql`, if present. Split out from
 /// `load_curated_examples` so tests can point at a scratch directory instead
 /// of the real `docs/examples/`.
-#[allow(dead_code)]
 fn load_curated_examples_from(dir: &Path, slug: &str) -> Option<Vec<Example>> {
     let contents = fs::read_to_string(dir.join(format!("{slug}.graphql"))).ok()?;
     Some(parse_curated_examples(&contents))
@@ -424,7 +476,6 @@ fn load_curated_examples_from(dir: &Path, slug: &str) -> Option<Vec<Example>> {
 /// Reads `docs/examples/<slug>.graphql`, if present. Presence of this file
 /// fully replaces synthesis for that service — see Decision 4 in
 /// `specs/example-docs.md`.
-#[allow(dead_code)]
 fn load_curated_examples(slug: &str) -> Option<Vec<Example>> {
     load_curated_examples_from(Path::new("docs/examples"), slug)
 }
@@ -432,7 +483,6 @@ fn load_curated_examples(slug: &str) -> Option<Vec<Example>> {
 /// Resolves the examples to render for a service: a curated file, if one was
 /// loaded, replaces synthesis entirely; otherwise the synthesized queries are
 /// used as-is (uncaptioned).
-#[allow(dead_code)]
 fn resolve_examples(curated: Option<Vec<Example>>, synthesized: Vec<String>) -> Vec<Example> {
     curated.unwrap_or_else(|| {
         synthesized
@@ -455,6 +505,18 @@ fn render_page(page: &ServicePage) -> String {
     if let Some(note) = page.note {
         out.push_str(&format!("> {note}\n\n"));
     }
+    if !page.examples.is_empty() {
+        out.push_str("## Examples\n\n");
+        for example in &page.examples {
+            if let Some(caption) = &example.caption {
+                out.push_str(&format!("**{caption}:**\n"));
+            }
+            out.push_str("```bash\nvapor query '");
+            out.push_str(&example.query);
+            out.push_str("'\n```\n\n");
+        }
+    }
+    out.push_str("## Schema\n\n");
     out.push_str("```graphql\n");
     out.push_str(page.sdl.trim());
     out.push_str("\n```\n");
@@ -472,43 +534,33 @@ fn render_summary(pages: &[ServicePage]) -> String {
     out
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
+    // Synchronous `main` driving an explicit runtime: see
+    // `build_page_with_mutation` for why the per-service work must not be
+    // inlined into one big `async fn main`.
+    let rt = tokio::runtime::Runtime::new().expect("build tokio runtime");
     let mut pages: Vec<ServicePage> = Vec::new();
     let mut failures: Vec<String> = Vec::new();
 
     macro_rules! page {
-        ($pages:ident, $slug:expr, $title:expr, $feature:expr, $note:expr, $query:ty) => {{
-            let (query_type_name, sdl, schema) = sdl_for::<$query>();
-            let examples = synthesize_examples(&sdl, &query_type_name);
-            validate_examples(&schema, &examples, $slug, &mut failures).await;
-            $pages.push(ServicePage {
-                slug: $slug,
-                title: $title,
-                feature: $feature,
-                note: $note,
-                query_type_name,
-                sdl,
-            })
-        }};
+        ($pages:ident, $slug:expr, $title:expr, $feature:expr, $note:expr, $query:ty) => {
+            $pages.push(build_page::<$query>(
+                &rt,
+                $slug,
+                $title,
+                $feature,
+                $note,
+                &mut failures,
+            ))
+        };
     }
 
     // EC2 is the only service with mutations (see registry.rs's MutationRoot),
     // so it's built with Ec2Mutation instead of EmptyMutation.
-    let (ec2_query_type_name, ec2_sdl, ec2_schema) = sdl_for_with_mutation::<
+    pages.push(build_page_with_mutation::<
         vapor::schema::ec2::queries::Ec2Query,
         vapor::schema::ec2::mutations::Ec2Mutation,
-    >();
-    let ec2_examples = synthesize_examples(&ec2_sdl, &ec2_query_type_name);
-    validate_examples(&ec2_schema, &ec2_examples, "ec2", &mut failures).await;
-    pages.push(ServicePage {
-        slug: "ec2",
-        title: "EC2",
-        feature: "ec2",
-        note: None,
-        query_type_name: ec2_query_type_name,
-        sdl: ec2_sdl,
-    });
+    >(&rt, "ec2", "EC2", "ec2", None, &mut failures));
 
     page!(
         pages,
@@ -1495,6 +1547,17 @@ mod tests {
     }
 
     #[test]
+    fn synthesize_examples_omits_subselection_for_scalar_paginated_items() {
+        let sdl = "type Query {\n  dynamoTables(limit: Int): TableNamePage!\n}\n\
+                   type TableNamePage {\n  items: [String!]!\n  nextToken: String\n}\n";
+        let examples = synthesize_examples(sdl, "Query");
+        assert_eq!(
+            examples,
+            vec!["{ dynamoTables(limit: 5) { items nextToken } }".to_string()]
+        );
+    }
+
+    #[test]
     fn synthesize_examples_selects_leaves_directly_for_non_paginated_field() {
         let sdl = "type Query {\n  stsCallerIdentity: StsIdentity!\n}\n\
                    type StsIdentity {\n  account: String!\n  arn: String!\n  userId: String!\n}\n";
@@ -1644,11 +1707,12 @@ mod tests {
             note: Some("note text"),
             query_type_name: "S3Query".to_string(),
             sdl: "type S3Query {\n  buckets: [S3Bucket!]!\n}".to_string(),
+            examples: Vec::new(),
         };
         assert_eq!(
             render_page(&page),
             "# S3\n\nCargo feature: `s3` (`cargo build --features s3`)\n\n\
-             > note text\n\n```graphql\ntype S3Query {\n  buckets: [S3Bucket!]!\n}\n```\n"
+             > note text\n\n## Schema\n\n```graphql\ntype S3Query {\n  buckets: [S3Bucket!]!\n}\n```\n"
         );
     }
 
@@ -1661,11 +1725,42 @@ mod tests {
             note: None,
             query_type_name: "XQuery".to_string(),
             sdl: "type XQuery {\n  a: Int\n}".to_string(),
+            examples: Vec::new(),
         };
         assert_eq!(
             render_page(&page),
             "# X\n\nCargo feature: `x` (`cargo build --features x`)\n\n\
-             ```graphql\ntype XQuery {\n  a: Int\n}\n```\n"
+             ## Schema\n\n```graphql\ntype XQuery {\n  a: Int\n}\n```\n"
+        );
+    }
+
+    #[test]
+    fn render_page_includes_examples_section() {
+        let page = ServicePage {
+            slug: "x",
+            title: "X",
+            feature: "x",
+            note: None,
+            query_type_name: "XQuery".to_string(),
+            sdl: "type XQuery {\n  a: Int\n}".to_string(),
+            examples: vec![
+                Example {
+                    caption: Some("List things".to_string()),
+                    query: "{ things { name } }".to_string(),
+                },
+                Example {
+                    caption: None,
+                    query: "{ other }".to_string(),
+                },
+            ],
+        };
+        assert_eq!(
+            render_page(&page),
+            "# X\n\nCargo feature: `x` (`cargo build --features x`)\n\n\
+             ## Examples\n\n\
+             **List things:**\n```bash\nvapor query '{ things { name } }'\n```\n\n\
+             ```bash\nvapor query '{ other }'\n```\n\n\
+             ## Schema\n\n```graphql\ntype XQuery {\n  a: Int\n}\n```\n"
         );
     }
 
@@ -1679,6 +1774,7 @@ mod tests {
                 note: None,
                 query_type_name: "AQuery".to_string(),
                 sdl: String::new(),
+                examples: Vec::new(),
             },
             ServicePage {
                 slug: "b",
@@ -1687,6 +1783,7 @@ mod tests {
                 note: None,
                 query_type_name: "BQuery".to_string(),
                 sdl: String::new(),
+                examples: Vec::new(),
             },
         ];
         assert_eq!(
@@ -1703,7 +1800,10 @@ mod tests {
         // Never registered via `.data(...)` below, so this always dies at
         // `ctx.data::<String>()?` — after the executor has already started
         // resolving the field, producing a non-empty error `path`.
-        async fn needs_context(&self, ctx: &async_graphql::Context<'_>) -> async_graphql::Result<String> {
+        async fn needs_context(
+            &self,
+            ctx: &async_graphql::Context<'_>,
+        ) -> async_graphql::Result<String> {
             Ok(ctx.data::<String>()?.clone())
         }
     }

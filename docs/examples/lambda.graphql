@@ -1,0 +1,2 @@
+# List Lambda functions
+{ lambdaFunctions { items { functionName runtime memorySize state } nextToken } }

@@ -1,0 +1,2 @@
+# Inspect foundation models
+{ bedrockFoundationModels { modelId modelName providerName inputModalities outputModalities } }

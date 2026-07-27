@@ -1,0 +1,14 @@
+# List all running instances
+{ instances(state: RUNNING) { items { id instanceType privateIp tags { key value } } nextToken } }
+
+# Stop instances
+mutation { stopInstances(ids: ["i-0abc123"]) { instanceId previousState currentState } }
+
+# Start instances
+mutation { startInstances(ids: ["i-0abc123"]) { instanceId previousState currentState } }
+
+# Terminate instances
+mutation { terminateInstances(ids: ["i-0abc123"]) { instanceId currentState } }
+
+# Launch a new instance
+mutation { runInstances(input: { imageId: "ami-0abcdef1234567890" instanceType: "t3.micro" minCount: 1 maxCount: 1 keyName: "my-key" subnetId: "subnet-0abc123" securityGroupIds: ["sg-0abc123"] tags: [{ key: "Name", value: "my-new-instance" }, { key: "Environment", value: "dev" }] }) { id instanceType state privateIp } }

@@ -1,0 +1,2 @@
+# List EKS clusters
+{ eksClusters { items { name status version endpoint } nextToken } }

@@ -1,0 +1,5 @@
+# Get alarms in ALARM state
+{ alarms(state: ALARM) { items { name state metric { metricName } } nextToken } }
+
+# List log groups
+{ logGroups(prefix: "/aws/lambda") { items { name retentionInDays } nextToken } }

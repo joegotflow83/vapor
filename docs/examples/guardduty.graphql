@@ -1,0 +1,5 @@
+# List detectors
+{ guarddutyDetectors { items { id } nextToken } }
+
+# Get findings for a detector
+{ guarddutyFindings(detectorId: "abc123", minSeverity: 7.0) { items { id title severity } nextToken } }

@@ -1,0 +1,2 @@
+# List RDS instances
+{ dbInstances { items { id engine status multiAz } nextToken } }

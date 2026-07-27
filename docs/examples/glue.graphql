@@ -1,0 +1,5 @@
+# List databases
+{ glueDatabases { items { name description } nextToken } }
+
+# List tables in a database
+{ glueTables(databaseName: "my-db") { items { name tableType } nextToken } }

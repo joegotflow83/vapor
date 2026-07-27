@@ -1,0 +1,2 @@
+# Get caller identity
+{ stsCallerIdentity { account userId arn } }
