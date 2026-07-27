@@ -22,18 +22,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     # A wedged --all-features build otherwise burns the full 6h per-job maximum
     # before GitHub cancels it (that is exactly how the ubuntu leg failed on
-    # 8617e45). macOS, the slowest healthy leg, does build+test in ~61 min.
-    timeout-minutes: 120
+    # 8617e45). Sized for a cold cache on the slowest leg: macOS needed 53 min
+    # to build and was still running tests at 67 min when a 120 min cap fired.
+    timeout-minutes: 180
 
     env:
-      # The page-file bump below fixes the linker's rlib mmap, but rustc itself
-      # then OOMs ("memory allocation of N bytes failed") emitting full debuginfo
-      # for the final --all-features `vapor` crate on the Windows runner. Linux
-      # hits the same wall from the other side: full debuginfo for ~102 SDK
-      # crates plus the test binaries overruns the runner's root partition. Only
-      # macOS, with the roomiest disk-to-workload ratio, keeps dev debuginfo.
-      CARGO_PROFILE_DEV_DEBUG: ${{ matrix.os == 'macos-latest' && '2' || '0' }}
-      CARGO_PROFILE_TEST_DEBUG: ${{ matrix.os == 'macos-latest' && '2' || '0' }}
+      # No debuginfo on any leg. Windows rustc OOMs emitting it for the final
+      # --all-features `vapor` crate; Linux overruns the runner's root partition
+      # on ~102 SDK crates plus their test binaries. macOS survived it but pays
+      # for it twice — in build time and in a target dir big enough that the
+      # saved caches blew the repo's 10GB quota and evicted macOS's own. Nothing
+      # debugs a binary on a runner, so this costs us nothing.
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
 
     steps:
     - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
