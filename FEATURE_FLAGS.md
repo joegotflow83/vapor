@@ -2,6 +2,9 @@
 
 This document describes how to use the feature flags system in Vapor to enable/disable AWS services at build time.
 
+This is the reference list of flags. For the surrounding build process — prerequisites, build
+cost, cross-compiling, verification — see [BUILDING.md](BUILDING.md).
+
 ## Available Features
 
 ### Individual Service Features

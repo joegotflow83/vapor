@@ -194,7 +194,8 @@ services it was built with. The prebuilt GitHub release binaries ship the `relea
 
 So `Unknown field "sagemakerEndpoints"` may mean the query is fine but this binary lacks the
 `sagemaker` feature. Verify by introspecting (below) before concluding the query is wrong. The
-fix is a rebuild: `cargo build --release --features "ec2 s3 lambda rds"`.
+fix is a rebuild: `cargo build --release --features "ec2 s3 lambda rds"`. Full procedure,
+including a step-by-step agent track, in [BUILDING.md](BUILDING.md).
 
 Naming gotchas in the feature list: `kafka` → MSK, `cognitoidentityprovider` → Cognito, `sfn` →
 Step Functions, `docdb` → DocumentDB, `cloudwatch` → CloudWatch **and** Logs. `FEATURE_FLAGS.md`

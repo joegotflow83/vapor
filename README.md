@@ -38,6 +38,10 @@ actually in use and prints a ready-to-run `cargo build` command with the matchin
 ./scripts/detect-aws-services.sh
 ```
 
+Full build documentation — toolchain prerequisites, choosing features, build cost and OOM
+avoidance, cross-compiling, verification, and a step-by-step procedure for AI agents — is in
+[BUILDING.md](BUILDING.md).
+
 ## Prerequisites
 
 Valid AWS credentials must be available via one of the standard mechanisms:
