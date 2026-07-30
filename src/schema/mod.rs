@@ -66,6 +66,7 @@ pub mod datasync;
 pub mod detective;
 #[cfg(feature = "directconnect")]
 pub mod direct_connect;
+pub mod discovery;
 #[cfg(feature = "dms")]
 pub mod dms;
 #[cfg(feature = "docdb")]

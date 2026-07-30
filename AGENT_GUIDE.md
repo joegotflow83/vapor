@@ -99,6 +99,47 @@ Query field names are service-prefixed only where they'd otherwise collide — E
 names (`instances`, `vpcs`, `subnets`, `volumes`, `snapshots`, `securityGroups`), while other
 services prefix (`s3Buckets`, `stsCallerIdentity`, `ecsClusters`).
 
+**Leaf field names are the AWS SDK's own names, camelCased — never normalized.** If the AWS API
+calls it `FunctionName`, vapor calls it `functionName`, not `name`. A type exposes a plain `name`
+only where AWS itself does (EKS clusters, CodeArtifact domains); Lambda has `functionName`,
+CloudFormation `stackName`, IAM `roleName`, DynamoDB `tableName`. There are no renames anywhere in
+the schema, so this rule holds for all ~400 types: **the AWS API reference is the field
+reference.** Don't guess `name` — and if you do, the error tells you what to use instead (below).
+
+Nothing generalizes for the *query* prefixes, though. Most are the service name, but these aren't
+derivable and the "Did you mean" suggester won't bridge them:
+
+| Service | Prefix | Example |
+|---|---|---|
+| CloudFormation | `cfn` | `cfnStacks`, `cfnExports` |
+| API Gateway (REST / v1) | `apigwRest` | `apigwRestApis`, `apigwRestStages` |
+| API Gateway v2 (HTTP / WebSocket) | `apiV2` | `apiV2Apis`, `apiV2Routes` |
+| Route 53 | `r53` | `r53HostedZones`, `r53Records` |
+| Direct Connect | `dx` | `dxConnections` |
+| Organizations | `org` | `orgAccounts`, `orgPolicies` |
+| DynamoDB | `dynamo` | `dynamoTables`, `dynamoScan` |
+| DocumentDB | `docdb` | `docdbClusters` |
+| RDS | `db` | `dbInstances`, `dbClusters`, `dbSnapshots` |
+| Elastic Beanstalk | `beanstalk` | `beanstalkEnvironments` |
+| WAFv2 | `waf` | `wafWebAcls`, `wafIpSets` |
+| Secrets Manager | `secret` | `secretValue`, `secretsList` |
+| ACM Private CA | *(none)* | `privateCertificateAuthorities` |
+
+And these services take **no** prefix at all, owning the bare name the way EC2 does:
+
+- **CloudWatch + Logs** — `alarms`, `logGroups`, `logStreams`, `logEvents`
+- **ELBv2** — `loadBalancers`, `targetGroups`, `listeners`, `listenerRules`
+- **Auto Scaling** — `autoScalingGroups`, `scalingActivities`
+- **Step Functions** — `stateMachines`, `executions`, `executionDetail`
+- **SSM** — `parameters`, `documents`, `managedInstances`
+- **CodeBuild / CodeDeploy / CodePipeline** — `builds`, `deployments`, `pipelines`
+- **Cost Explorer** — `costAndUsage`, `costForecast`
+- **Config** — `configRules`, `complianceByRule`, `complianceByResource`
+
+Multi-word service names split on the word boundary: `codeCommitRepositories`, `codeArtifactDomains`,
+`eventBridgeRules`, `quickSightUsers` — not `codecommit…`. When unsure, list the queries by
+introspection (see [Discovery](#discovery--find-fields-without-guessing)) rather than guessing.
+
 ### Pagination — the `Page` contract
 
 **Every list query returns a `Page<T>`, not a bare list:**
@@ -179,7 +220,10 @@ context.
 Common failure classes:
 
 - **`Unknown field "fooBars"`** — either a typo, or *the service isn't compiled into this
-  binary* (see below). Not an AWS error; nothing was called.
+  binary* (see below). Not an AWS error; nothing was called. When the unknown field is on a
+  *result* type rather than at the query root, the message ends with that type's complete field
+  list — `Unknown field "name" on type "LambdaFunction". Fields on LambdaFunction: functionName,
+  runtime, …` — so a wrong guess corrects itself without a separate introspection round trip.
 - **`AccessDeniedException`** — the credentials lack the IAM permission. Don't retry.
 - **`ThrottlingException`** — vapor already retries 3× with backoff; if it still surfaces, back
   off and reduce `limit`.

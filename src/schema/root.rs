@@ -548,7 +548,8 @@ pub fn build_schema(config: &SdkConfig) -> Schema<QueryRoot, MutationRoot, Empty
         .limit_depth(16)
         .limit_complexity(4096)
         .extension(crate::telemetry::AuditLog)
-        .extension(crate::error::ErrorCode);
+        .extension(crate::error::ErrorCode)
+        .extension(crate::schema::discovery::FieldHints);
 
     builder.finish()
 }
