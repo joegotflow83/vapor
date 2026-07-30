@@ -103,6 +103,16 @@ curl -H "Authorization: Bearer $VAPOR_AUTH_TOKEN" http://localhost:4000/graphql 
   -d '{"query": "{ s3Buckets { items { name } nextToken } }"}'
 ```
 
+### Version
+
+```
+vapor version      # or: vapor --version / vapor -V
+```
+
+Prints the version of the binary (e.g. `vapor 0.3.1`), taken from `CARGO_PKG_VERSION`
+at build time. The `--version` flag also works on the subcommands themselves
+(`vapor serve --version`).
+
 ## GraphQL Schema
 
 The full GraphQL query reference for all 102 services — one page per

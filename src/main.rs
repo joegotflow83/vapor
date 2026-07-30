@@ -15,7 +15,12 @@ enum OutputFormat {
 }
 
 #[derive(Parser)]
-#[command(name = "vapor", about = "GraphQL interface over AWS APIs")]
+#[command(
+    name = "vapor",
+    about = "GraphQL interface over AWS APIs",
+    version,
+    propagate_version = true
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -47,6 +52,8 @@ enum Commands {
         #[arg(long, env = "VAPOR_AUTH_TOKEN", hide_env_values = true)]
         auth_token: Option<String>,
     },
+    /// Print the version of this binary.
+    Version,
 }
 
 #[tokio::main]
@@ -95,6 +102,9 @@ async fn main() {
             let config = aws::config::load_aws_config(region.as_deref()).await;
             let schema = schema::root::build_schema(&config);
             server::run_server(schema, port, &bind, auth_token).await;
+        }
+        Commands::Version => {
+            println!("vapor {}", env!("CARGO_PKG_VERSION"));
         }
     }
 }
