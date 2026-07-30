@@ -13,9 +13,9 @@
 
 use std::sync::Arc;
 
-use async_graphql::Response;
 use async_graphql::extensions::{Extension, ExtensionContext, ExtensionFactory, NextRequest};
 use async_graphql::registry::Registry;
+use async_graphql::Response;
 
 /// Appends the parent type's field list to unknown-field validation errors.
 pub struct FieldHints;
@@ -142,7 +142,9 @@ mod tests {
 
     #[tokio::test]
     async fn leaves_valid_queries_untouched() {
-        let res = schema().execute("{ lambdaFunctions { functionName } }").await;
+        let res = schema()
+            .execute("{ lambdaFunctions { functionName } }")
+            .await;
         assert!(res.errors.is_empty());
     }
 }
