@@ -1,7 +1,8 @@
 //! Makes "unknown field" errors self-healing.
 //!
-//! vapor's leaf field names mirror the AWS SDK's own names (see AGENT_GUIDE.md
-//! §Naming), so a caller guessing `name` on a type AWS calls `FunctionName`
+//! vapor's leaf field names mirror the AWS SDK's own names (see
+//! `skills/aws-vapor/references/conventions.md`), so a caller guessing `name`
+//! on a type AWS calls `FunctionName`
 //! guesses wrong. async-graphql's built-in "Did you mean" can't bridge that gap
 //! — its Levenshtein threshold is `max(len/2, 1)` and requires a strictly
 //! smaller distance, so `name` → `functionName` (distance 8, threshold 6) never
