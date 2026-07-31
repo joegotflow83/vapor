@@ -81,6 +81,10 @@ Four rules cover most of it; the details are in
    and caps an unbounded response.
 3. **Filter in the arguments**, not afterwards — filtering happens at AWS, so
    filtered-out rows are never transferred. `instances(state: RUNNING, tags: [{key: "Env", value: "prod"}])`.
+   When you already know which resource you want, **name it** rather than
+   listing the collection and picking: `ecsClusters(clusterArns: ["prod"])`,
+   `instances(ids: ["i-0abc123"])`, `s3Bucket(name: "my-bucket")`. That skips
+   the discovery call, so it is one API call instead of two.
 4. **Leaf field names are the AWS SDK's own names, camelCased — never
    normalized.** Lambda has `functionName`, not `name`; CloudFormation has
    `stackName`; IAM has `roleName`. The AWS API reference is the field
@@ -141,6 +145,7 @@ Human-readable per-service reference, generated from the live schema:
 ## Checklist
 
 Before: only answering fields selected · `limit` set · filters in arguments ·
-`--format compact` · related lookups batched.
+known resources named rather than listed · `--format compact` · related lookups
+batched.
 
 After: exit code checked · `nextToken` checked before assuming the list is complete.
