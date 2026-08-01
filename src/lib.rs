@@ -6,6 +6,8 @@
 
 pub mod aws;
 pub mod error;
+pub mod readonly;
 pub mod schema;
 pub mod server;
+pub mod services;
 pub mod telemetry;

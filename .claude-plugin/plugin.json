@@ -1,0 +1,11 @@
+{
+  "name": "vapor",
+  "description": "Query live AWS accounts through vapor's GraphQL CLI, returning only the fields asked for instead of full AWS CLI JSON dumps. Read-only.",
+  "version": "0.4.0",
+  "author": {
+    "name": "Joseph Moran"
+  },
+  "homepage": "https://joegotflow83.github.io/vapor/",
+  "repository": "https://github.com/joegotflow83/vapor",
+  "keywords": ["aws", "graphql", "cloud", "read-only", "token-efficient"]
+}

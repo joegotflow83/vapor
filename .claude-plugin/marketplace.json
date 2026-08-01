@@ -1,0 +1,14 @@
+{
+  "name": "vapor",
+  "owner": {
+    "name": "Joseph Moran",
+    "url": "https://github.com/joegotflow83"
+  },
+  "plugins": [
+    {
+      "name": "vapor",
+      "source": "./",
+      "description": "Query live AWS accounts through vapor's GraphQL CLI, returning only the fields asked for instead of full AWS CLI JSON dumps. Read-only."
+    }
+  ]
+}

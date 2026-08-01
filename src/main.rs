@@ -2,8 +2,10 @@
 
 mod aws;
 mod error;
+mod readonly;
 mod schema;
 mod server;
+mod services;
 mod telemetry;
 
 use clap::{Parser, Subcommand, ValueEnum};
@@ -35,6 +37,19 @@ enum Commands {
         #[arg(long, default_value = "json")]
         format: OutputFormat,
     },
+    /// Execute a GraphQL query, refusing anything that is not a read.
+    ///
+    /// Mutations and subscriptions are rejected before AWS credentials are
+    /// touched, so this subcommand is safe for an agent to run unattended.
+    Read {
+        query: String,
+        #[arg(long)]
+        region: Option<String>,
+        #[arg(long, default_value = "json")]
+        format: OutputFormat,
+    },
+    /// List the AWS services compiled into this binary.
+    Services,
     Serve {
         #[arg(long)]
         port: Option<u16>,
@@ -56,6 +71,45 @@ enum Commands {
     Version,
 }
 
+fn render(value: &serde_json::Value, format: &OutputFormat) -> String {
+    match format {
+        OutputFormat::Json => serde_json::to_string_pretty(value).unwrap(),
+        OutputFormat::Compact => serde_json::to_string(value).unwrap(),
+    }
+}
+
+/// Run a GraphQL document against AWS and print the response envelope. Exits
+/// non-zero if the response carried any errors.
+async fn execute(query: &str, region: Option<&str>, format: &OutputFormat) {
+    let config = aws::config::load_aws_config(region).await;
+    let schema = schema::root::build_schema(&config);
+    let result = schema.execute(query).await;
+    let envelope = serde_json::to_value(&result).unwrap();
+    println!("{}", render(&envelope, format));
+
+    if !result.errors.is_empty() {
+        for error in &result.errors {
+            eprintln!("Error: {}", error.message);
+        }
+        std::process::exit(1);
+    }
+}
+
+/// Report a refused write in the same envelope shape a GraphQL error would
+/// take, so callers can parse one response format regardless of outcome.
+fn refuse(message: &str, format: &OutputFormat) -> ! {
+    let envelope = serde_json::json!({
+        "data": null,
+        "errors": [{
+            "message": message,
+            "extensions": { "code": readonly::READ_ONLY_VIOLATION },
+        }],
+    });
+    println!("{}", render(&envelope, format));
+    eprintln!("Error: {message}");
+    std::process::exit(1);
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
@@ -74,22 +128,25 @@ async fn main() {
             region,
             format,
         } => {
-            let config = aws::config::load_aws_config(region.as_deref()).await;
-            let schema = schema::root::build_schema(&config);
-            let result = schema.execute(&query).await;
-
-            let output = match format {
-                OutputFormat::Json => serde_json::to_string_pretty(&result).unwrap(),
-                OutputFormat::Compact => serde_json::to_string(&result).unwrap(),
-            };
-            println!("{output}");
-
-            if !result.errors.is_empty() {
-                for error in &result.errors {
-                    eprintln!("Error: {}", error.message);
-                }
-                std::process::exit(1);
+            execute(&query, region.as_deref(), &format).await;
+        }
+        Commands::Read {
+            query,
+            region,
+            format,
+        } => {
+            if let Err(message) = readonly::ensure_read_only(&query) {
+                refuse(&message, &format);
             }
+            execute(&query, region.as_deref(), &format).await;
+        }
+        Commands::Services => {
+            println!("vapor {}", env!("CARGO_PKG_VERSION"));
+            println!(
+                "services ({}): {}",
+                services::ENABLED_SERVICES.len(),
+                services::ENABLED_SERVICES.join(" ")
+            );
         }
         Commands::Serve {
             port,
