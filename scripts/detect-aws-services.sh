@@ -194,16 +194,18 @@ echo "Detected services -> feature flags: ${feature_list:-(none)}"
 
 if $include_standard; then
   # Drop anything the `standard` group already covers, so the build command
-  # doesn't list a feature twice.
-  build_features=$(
-    for f in $feature_list; do
-      case " $standard_features " in
-        *" $f "*) ;;
-        *) echo "$f" ;;
-      esac
-    done | sort -u | paste -sd' ' -
-  )
-  build_features="standard${build_features:+ $build_features}"
+  # doesn't list a feature twice. Built with a plain loop rather than a
+  # command substitution: a `case` nested inside `$( ... )` trips up some
+  # shell parsers, which read the pattern's `)` as closing the substitution.
+  # $feature_list is already sorted and deduped, so appending preserves that.
+  extra=""
+  for f in $feature_list; do
+    case " $standard_features " in
+      *" $f "*) continue ;;
+    esac
+    extra="${extra:+$extra }$f"
+  done
+  build_features="standard${extra:+ $extra}"
   echo "Assumed (not detectable via the tagging API): standard -> $standard_features"
   echo "Pass --no-standard to build only what was detected."
 else
