@@ -13,17 +13,29 @@ set -euo pipefail
 # (bare IAM policies, STS, etc.) may not surface here. Cross-check against
 # FEATURE_FLAGS.md if a service you use doesn't show up.
 #
+# The suggested build always includes the `standard` feature group: services
+# that answer for any account regardless of what is deployed (STS, IAM, Cost
+# Explorer, Budgets, Service Quotas, CloudWatch, CloudTrail, EC2). They have no
+# taggable resources, so the tagging API can never report them — they are
+# assumed, not detected. Pass --no-standard for a strictly detected build.
+#
 # Usage:
 #   ./scripts/detect-aws-services.sh                 # scan the current default region
 #   ./scripts/detect-aws-services.sh --all-regions    # scan every enabled region (slower)
+#   ./scripts/detect-aws-services.sh --no-standard    # omit the assumed `standard` group
 #   AWS_PROFILE=my-profile ./scripts/detect-aws-services.sh
 
 command -v aws >/dev/null 2>&1 || { echo "error: aws CLI is required" >&2; exit 1; }
 
 all_regions=false
-if [[ "${1:-}" == "--all-regions" ]]; then
-  all_regions=true
-fi
+include_standard=true
+for arg in "$@"; do
+  case "$arg" in
+    --all-regions) all_regions=true ;;
+    --no-standard) include_standard=false ;;
+    *) echo "error: unknown argument '$arg'" >&2; exit 1 ;;
+  esac
+done
 
 if $all_regions; then
   regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text)
@@ -165,18 +177,42 @@ while IFS= read -r svc; do
   fi
 done <<< "$services"
 
+# Members of the `standard` feature group in Cargo.toml. Listed here only so
+# detected hits can be filtered out of the "detected" line — the build command
+# names the group itself, not its members. Keep in sync with Cargo.toml.
+standard_features="sts iam ec2 cloudwatch cloudtrail costexplorer budgets servicequotas"
+
 feature_list=$(sort -u "$features_file" | paste -sd' ' -)
 
-if [[ -z "$feature_list" ]]; then
+if [[ -z "$feature_list" ]] && ! $include_standard; then
   echo "No taggable resources matched a known vapor feature. Nothing to suggest." >&2
   exit 0
 fi
 
 echo
-echo "Detected services -> feature flags: $feature_list"
+echo "Detected services -> feature flags: ${feature_list:-(none)}"
+
+if $include_standard; then
+  # Drop anything the `standard` group already covers, so the build command
+  # doesn't list a feature twice.
+  build_features=$(
+    for f in $feature_list; do
+      case " $standard_features " in
+        *" $f "*) ;;
+        *) echo "$f" ;;
+      esac
+    done | sort -u | paste -sd' ' -
+  )
+  build_features="standard${build_features:+ $build_features}"
+  echo "Assumed (not detectable via the tagging API): standard -> $standard_features"
+  echo "Pass --no-standard to build only what was detected."
+else
+  build_features="$feature_list"
+fi
+
 if [[ -s "$unmapped_file" ]]; then
   echo "Unrecognized ARN service namespaces (cross-check FEATURE_FLAGS.md manually): $(paste -sd' ' - < "$unmapped_file")" >&2
 fi
 echo
 echo "Suggested build command:"
-echo "  cargo build --release --no-default-features --features \"$feature_list\""
+echo "  cargo build --release --no-default-features --features \"$build_features\""

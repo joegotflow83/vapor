@@ -277,6 +277,16 @@ docs = [
 ]
 
 # Feature groups for easier combinations
+# Services that answer for any AWS account regardless of what is deployed in it.
+# None of these are resource-shaped, so the Resource Groups Tagging API that
+# scripts/detect-aws-services.sh scans with can never report them — they have to
+# be assumed rather than detected. Deliberately excludes `health` (needs a
+# Business/Enterprise support plan) and `organizations` (fails for standalone
+# accounts), which are always callable but not always answerable.
+standard = [
+    "sts", "iam", "ec2", "cloudwatch", "cloudtrail",
+    "costexplorer", "budgets", "servicequotas",
+]
 # Basic AWS services
 basic = ["ec2", "s3", "lambda", "ssm"]
 # Web services
@@ -290,10 +300,11 @@ devops = ["codepipeline", "codebuild", "codedeploy", "cloudformation"]
 # Curated set of the ~26 most commonly used services, built for prebuilt GitHub releases.
 # Users with a broader footprint should build their own binary — see scripts/detect-aws-services.sh.
 release = [
-    "ec2", "s3", "lambda", "iam", "rds", "dynamodb",
-    "cloudwatch", "cloudwatchlogs", "sqs", "sns", "kms", "secretsmanager",
+    "standard",
+    "s3", "lambda", "rds", "dynamodb",
+    "cloudwatchlogs", "sqs", "sns", "kms", "secretsmanager",
     "ecs", "ecr", "eks", "elbv2", "autoscaling", "route53",
-    "cloudfront", "cloudformation", "sts", "apigateway", "apigatewayv2", "eventbridge",
+    "cloudfront", "cloudformation", "apigateway", "apigatewayv2", "eventbridge",
     "ssm", "kinesis",
 ]
 

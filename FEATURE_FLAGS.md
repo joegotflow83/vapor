@@ -116,18 +116,31 @@ Each AWS service has its own feature flag that can be enabled/disabled:
 ### Feature Groups
 Predefined feature groups for common combinations:
 
+- `standard` - Services that answer for any AWS account regardless of what is deployed in it:
+  sts, iam, ec2, cloudwatch (and cloudwatchlogs), cloudtrail, costexplorer, budgets,
+  servicequotas. None of these are resource-shaped, so `detect-aws-services.sh` cannot
+  discover them — it assumes them instead. Deliberately excludes `health` (requires a
+  Business/Enterprise support plan) and `organizations` (fails for standalone accounts).
 - `basic` - Basic AWS services: ec2, s3, lambda, ssm
 - `web` - Web services: ec2, elbv2, s3, lambda, apigateway
 - `data` - Data services: s3, dynamodb, redshift, athena, glue
 - `monitoring` - Monitoring and management: cloudwatch, cloudwatchlogs, config, inspector2, securityhub
 - `devops` - DevOps services: codepipeline, codebuild, codedeploy, cloudformation
-- `release` - Curated ~26 commonly used services, built for prebuilt GitHub releases: ec2, s3, lambda, iam, rds, dynamodb, cloudwatch, cloudwatchlogs, sqs, sns, kms, secretsmanager, ecs, ecr, eks, elbv2, autoscaling, route53, cloudfront, cloudformation, sts, apigateway, apigatewayv2, eventbridge, ssm, kinesis
+- `release` - Curated set of commonly used services, built for prebuilt GitHub releases:
+  the `standard` group plus s3, lambda, rds, dynamodb, cloudwatchlogs, sqs, sns, kms,
+  secretsmanager, ecs, ecr, eks, elbv2, autoscaling, route53, cloudfront, cloudformation,
+  apigateway, apigatewayv2, eventbridge, ssm, kinesis
 
 ### Building for Your Own AWS Account
 
 The prebuilt release binaries only include the `release` feature group. If you rely on a service
 outside that set, run `./scripts/detect-aws-services.sh` to scan your account (via the Resource
 Groups Tagging API) and print a `cargo build` command with only the features you actually need.
+
+That scan reports **taggable resources**, so it has two blind spots. Untagged resources of an
+otherwise-ordinary service will not surface, and account-level services have no resources to
+find at all — the script assumes the `standard` group to cover the latter. Pass `--no-standard`
+if you want a strictly detected build.
 
 ## Usage Examples
 
