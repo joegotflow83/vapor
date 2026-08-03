@@ -83,6 +83,7 @@ map_service() {
     route53) echo route53 ;;
     cloudfront) echo cloudfront ;;
     cloudformation) echo cloudformation ;;
+    cloudtrail) echo cloudtrail ;;
     sts) echo sts ;;
     apigateway) echo apigateway ;;
     events) echo eventbridge ;;
@@ -177,10 +178,11 @@ while IFS= read -r svc; do
   fi
 done <<< "$services"
 
-# Members of the `standard` feature group in Cargo.toml. Listed here only so
-# detected hits can be filtered out of the "detected" line — the build command
-# names the group itself, not its members. Keep in sync with Cargo.toml.
-standard_features="sts iam ec2 cloudwatch cloudtrail costexplorer budgets servicequotas"
+# Members of the `standard` feature group in Cargo.toml, plus cloudwatchlogs,
+# which `cloudwatch` enables transitively. Listed here only so detected hits can
+# be filtered out of the build command — it names the group, not its members.
+# Keep in sync with Cargo.toml.
+standard_features="sts iam ec2 cloudwatch cloudwatchlogs cloudtrail costexplorer budgets servicequotas"
 
 feature_list=$(sort -u "$features_file" | paste -sd' ' -)
 
